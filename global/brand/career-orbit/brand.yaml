@@ -1,0 +1,76 @@
+# Career Orbit brand kit: the Fuzentrix LMS. Extends ../_shared/house.yaml (typography, shapes, motion, code colours, audio).
+# Colours merge the LMS app's navy ramp (text, surfaces, buttons) with the logo's teal (accent), so logo, app and videos match.
+id: career-orbit
+name: Career Orbit
+product: Fuzentrix LMS
+parent: Fuzentrix Education
+extends: ../_shared/house.yaml
+
+logo:
+  stacked: careerorbit_logo.svg                      # master (rebuilt 2026-10-21; icon fill is a raster colour map)
+  horizontal: careerorbit_logo_horizontal.svg        # icon beside the wordmark: video corner logo, navbars, wide spaces
+  icon: careerorbit_icon.svg
+  on-dark:                                           # white CAREER, teal ORBIT, icon tone-lifted so its navy reads on dark
+    stacked: careerorbit_logo_on-dark.svg
+    horizontal: careerorbit_logo_horizontal_on-dark.svg
+    icon: careerorbit_icon_on-dark.svg
+  white:                                             # single-colour white: photos, busy or coloured backgrounds
+    stacked: careerorbit_logo_white.svg
+    horizontal: careerorbit_logo_horizontal_white.svg
+    icon: careerorbit_icon_white.svg
+  png:
+    stacked: [careerorbit_logo_1000w.png, careerorbit_logo_2000w.png, careerorbit_logo_4000w.png]
+    horizontal: [careerorbit_logo_horizontal_1000w.png, careerorbit_logo_horizontal_2000w.png]
+    icon: [careerorbit_icon_1024w.png]
+    on-dark: [careerorbit_logo_on-dark_2000w.png, careerorbit_logo_horizontal_on-dark_2000w.png, careerorbit_icon_on-dark_1024w.png]
+    white: [careerorbit_logo_white_2000w.png, careerorbit_logo_horizontal_white_2000w.png, careerorbit_icon_white_1024w.png]
+  wordmark: { parts: [CAREER, ORBIT], font: Montserrat, weights: [750, 475], colors: ["#1C2F58", "#30809F"] }   # inside the logo artwork only
+  clear-space: height of the "C" in CAREER, on every side
+  min-width: { stacked: 160px, horizontal: 200px, icon: 32px }
+
+colors:
+  # LMS app ramp (fuzentrix_ui/src/styles/theme.css): text, surfaces, buttons
+  navy:        "#0D274C"   # brand-900: headings and body text
+  navy-950:    "#081830"   # brand-950: dark panels (with navy as a gradient)
+  deep:        "#07152B"   # brand-deep: deepest surface
+  action:      "#1B53A2"   # brand-600: buttons, links, emphasis in small text (7.4:1 on white)
+  action-hover: "#174484"  # brand-700
+  blue-500:    "#2D6CBD"
+  blue-400:    "#5B91D1"
+  blue-300:    "#8FB4E0"
+  blue-200:    "#C3D7EE"
+  line:        "#DDE9F6"   # brand-100: card borders, dividers
+  tint:        "#EFF5FB"   # brand-50: pills, icon wells, page base
+  surface:     "#FFFFFF"   # cards
+  surface-warm: "#FBFAF7"  # LMS navbar and app shell
+  slate:       "#52657D"   # secondary text
+  # Logo identity: accents
+  teal:        "#16BBC8"   # orbit top and dot: THE accent (icons, progress, active states, accents on dark). Never text on white (2.3:1)
+  orbit-text:  "#30809F"   # "ORBIT": title emphasis at heading sizes (4.4:1 on white)
+  orbit-mid:   "#1790B4"   # middle of the orbit gradient
+  orbit-blue:  "#145695"
+  orbit-navy:  "#164673"
+
+gradients:
+  orbit: ["#164673", "#145695", "#1790B4", "#16BBC8"]   # the logo's ring, bottom right to top: hero titles, brand moments, progress
+  deep:  ["#0D274C", "#081830"]                          # the LMS sidebar and auth panel: dark panels, cutaway backgrounds
+
+roles:
+  text: navy
+  text-secondary: slate
+  title-emphasis: orbit-text
+  small-emphasis: action
+  accent: teal
+  action: action
+  highlight: warning            # amber boxes and pointer wires (house semantic colour)
+  card: surface
+  card-border: line
+  pill: tint
+  page: tint
+  dark-panel: deep
+  on-dark-text: "#FFFFFF"
+  on-dark-accent: teal
+
+bug:       { logo: careerorbit_logo_horizontal_2000w.png, height: 40 }   # white pill, top right
+name-card: { title: "Instructor · Career Orbit" }
+lms-app-fonts: Avenir (display), Source Sans 3 (UI)   # recorded for reference; videos use the house fonts

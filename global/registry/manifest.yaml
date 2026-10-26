@@ -1,0 +1,1176 @@
+# Vendored HyperFrames registry items (fzv registry add). Mount with the `hf` template.
+items:
+- name: browser-device-stage
+  type: component
+  file: browser-device-stage/browser-device-stage.html
+  title: Browser Device Stage
+  description: A generic app surface in token-native device chrome (browser, window, or phone). The screen is a slot for caller img/video/HTML with a token-styled skeleton default; one settle entrance,
+    a readable hold, and an optional screen swap.
+  tags:
+  - stage
+  - product-demo
+  - device
+  - browser
+  - phone
+  - slot
+  - chrome
+  duration: null
+  size: null
+  variables:
+  - id: chrome
+    type: enum
+    description: Device frame drawn around the screen slot.
+    default: browser
+    options:
+    - value: browser
+      label: Browser
+    - value: window
+      label: Window
+    - value: phone
+      label: Phone
+  - id: title
+    type: string
+    description: Address pill text (browser) or title bar text (window).
+    default: app.example.com
+  - id: swap_at
+    type: number
+    description: Seconds from mount start to swap to the second screen. 0 disables the swap.
+    default: 0
+  - id: accent
+    type: enum
+    description: Token the skeleton accent elements ride.
+    default: green
+    options:
+    - value: green
+      label: Green
+    - value: blue
+      label: Blue
+    - value: violet
+      label: Violet
+  - id: exit
+    type: enum
+    description: Optional departure. None holds the final frame.
+    default: none
+    options:
+    - value: none
+      label: None
+    - value: fade
+      label: Fade
+    - value: up
+      label: Up
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/browser-device-stage
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: browser-device-stage
+- name: chart-story
+  type: component
+  file: chart-story/chart-story.html
+  title: Chart Story
+  description: 'One chart builds from data in reading order and lands the exact supplied values: staggered bars, a left-to-right line with area fill, a sweeping donut, or filling progress bars, with an
+    accented value callout on the emphasized datum.'
+  tags:
+  - motion-primitive
+  - proof
+  - stats
+  - chart
+  - bars
+  - line
+  - donut
+  - progress
+  - deterministic
+  duration: null
+  size: null
+  variables:
+  - id: type
+    type: enum
+    description: Chart form the data builds into.
+    default: bars
+    options:
+    - value: bars
+      label: Bars
+    - value: line
+      label: Line
+    - value: donut
+      label: Donut
+    - value: progress
+      label: Progress
+  - id: data
+    type: string
+    description: Comma-separated numbers; the chart lands exactly on these values.
+    default: 12, 28, 45, 64
+  - id: labels
+    type: string
+    description: Comma-separated labels, one per datum.
+    default: Q1, Q2, Q3, Q4
+  - id: emphasize
+    type: number
+    description: Index of the datum that takes the accent and the value callout. Clamped to the data range.
+    default: 3
+  - id: unit
+    type: string
+    description: Suffix appended to every displayed value.
+    default: '%'
+  - id: accent
+    type: enum
+    description: Contract color used by the emphasized datum and its callout.
+    default: green
+    options:
+    - value: green
+      label: Green
+    - value: blue
+      label: Blue
+    - value: violet
+      label: Violet
+  - id: exit
+    type: enum
+    description: Optional departure. Proof stats end on the still hold, so the default is none.
+    default: none
+    options:
+    - value: none
+      label: None
+    - value: fade
+      label: Fade
+    - value: up
+      label: Up
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/chart-story
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: chart-story
+- name: chat-message
+  type: component
+  file: chat-message/chat-message.html
+  title: Chat Message
+  description: 'One message arrives on the measured entry - scale 0.75, 0.12s, growing from its sender''s corner. The type is an enum switched like marker-highlight''s style: a received or sent bubble with
+    a real tail, a large emoji row, an image, or a link card with title and domain. The atom that chat-thread builds conversations from'
+  tags:
+  - video-primitive
+  - chat
+  - mock-ui
+  - message
+  duration: null
+  size: null
+  variables:
+  - id: type
+    type: enum
+    description: Which message form arrives.
+    default: sent
+    options:
+    - value: recv
+      label: Received
+    - value: sent
+      label: Sent
+    - value: emoji
+      label: Emoji
+    - value: img
+      label: Image
+    - value: card
+      label: Link card
+  - id: text
+    type: string
+    description: Bubble text, or the emoji row for the Emoji type.
+    default: wait look 👀
+  - id: cardTitle
+    type: string
+    description: Link-card title (Link card type only).
+    default: HyperFrames — Write HTML, render pixel-perfect video
+  - id: cardDomain
+    type: string
+    description: Link-card domain line (Link card type only).
+    default: hyperframes.heygen.com
+  - id: tail
+    type: enum
+    description: The bubble tail anchoring the message to its side.
+    default: 'on'
+    options:
+    - value: 'on'
+      label: 'On'
+    - value: 'off'
+      label: 'Off'
+  - id: delivered
+    type: enum
+    description: The receipt under a sent message.
+    default: 'on'
+    options:
+    - value: 'on'
+      label: 'On'
+    - value: 'off'
+      label: 'Off'
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/chat-message
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: chat-message
+- name: code-diff
+  type: block
+  file: code-diff/code-diff.html
+  title: Code Diff
+  description: An edit shown as a colored diff — removed lines collapse in red, added lines expand in green.
+  tags:
+  - code
+  - code-animation
+  - diff
+  - developer
+  duration: 6
+  size:
+    width: 1920
+    height: 1080
+  variables: []
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/code-diff
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: code-diff
+- name: code-highlight
+  type: block
+  file: code-highlight/code-highlight.html
+  title: Code Highlight Sweep
+  description: A highlight band sweeps across a target line while the surrounding context dims — draws the eye to one line.
+  tags:
+  - code
+  - code-animation
+  - highlight
+  - developer
+  duration: 5
+  size:
+    width: 1920
+    height: 1080
+  variables: []
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/code-highlight
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: code-highlight
+- name: code-morph
+  type: block
+  file: code-morph/code-morph.html
+  title: Code Morph
+  description: One snippet transforms into another — tokens glide between positions, leavers fade out, enterers fade in. Shiki Magic Move re-driven as a paused GSAP timeline.
+  tags:
+  - code
+  - code-animation
+  - morph
+  - refactor
+  - developer
+  duration: 7
+  size:
+    width: 1920
+    height: 1080
+  variables: []
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/code-morph
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: code-morph
+- name: code-terminal-run
+  type: component
+  file: code-terminal-run/code-terminal-run.html
+  title: Code Terminal Run
+  description: 'A token-chrome terminal panel runs one command: the prompt line types deterministically behind an integer-cycle caret, executes after a beat, and output lines print one per cue before a
+    fresh prompt appears.'
+  tags:
+  - motion-primitive
+  - product-demo
+  - terminal
+  - typing
+  - deterministic
+  duration: null
+  size: null
+  variables:
+  - id: prompt_glyph
+    type: string
+    description: Leading glyph before the command and the trailing prompt. Empty string hides it.
+    default: $
+  - id: cadence
+    type: enum
+    description: 'Keystroke rhythm: uniform fixed steps or seeded human chunks.'
+    default: human
+    options:
+    - value: uniform
+      label: Uniform
+    - value: human
+      label: Human
+  - id: cues
+    type: string
+    description: Comma-separated seconds relative to mount start; cue N sets when output line N prints. Empty uses the authored rhythm.
+    default: ''
+  - id: accent
+    type: enum
+    description: Color of the prompt glyph and caret.
+    default: green
+    options:
+    - value: green
+      label: Green
+    - value: blue
+      label: Blue
+    - value: violet
+      label: Violet
+  - id: exit
+    type: enum
+    description: Outgoing transition. Frame roots own transitions; none holds the end frame.
+    default: none
+    options:
+    - value: none
+      label: None
+    - value: fade
+      label: Fade
+    - value: up
+      label: Up
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/code-terminal-run
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: code-terminal-run
+- name: comparison-split
+  type: component
+  file: comparison-split/comparison-split.html
+  title: Comparison Split
+  description: Two full-bleed panels compare before and after states as a persistent divider wipes the vivid after layer over the muted before layer and rests at a configurable split.
+  tags:
+  - prop
+  - ui-props
+  - compare
+  - holdable
+  - before-after
+  - wipe
+  duration: null
+  size: null
+  variables:
+  - id: split
+    type: number
+    description: Target resting position of the comparison divider.
+    default: 50
+  - id: orientation
+    type: enum
+    description: Axis and direction used by the comparison wipe.
+    default: horizontal
+    options:
+    - value: horizontal
+      label: Horizontal
+    - value: vertical
+      label: Vertical
+  - id: labelA
+    type: string
+    description: Caption shown on the base before panel.
+    default: Before
+  - id: labelB
+    type: string
+    description: Caption shown on the revealed after panel.
+    default: After
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/comparison-split
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: comparison-split
+- name: conic-progress-ring
+  type: component
+  file: conic-progress-ring/conic-progress-ring.html
+  title: Conic Progress Ring
+  description: A token-driven conic progress ring whose angular fill and center count settle together from one registered percentage.
+  tags:
+  - data
+  - progress
+  - ring
+  - conic-gradient
+  - prove
+  - demonstrate
+  duration: null
+  size: null
+  variables:
+  - id: progress
+    type: number
+    description: Target angular fill from 0 to 100.
+    default: 100
+  - id: thickness
+    type: number
+    description: Ring stroke thickness as a percent of the ring radius.
+    default: 12
+  - id: label
+    type: string
+    description: Numeric target shown in the center and counted in sync with the fill.
+    default: '100'
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/conic-progress-ring
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: conic-progress-ring
+- name: constellation-hub
+  type: component
+  file: constellation-hub/constellation-hub.html
+  title: Constellation Hub
+  description: Feature nodes brighten in narration order as real-length SVG connectors draw outward from a fixed central hub, then settle into one lockup.
+  tags:
+  - motion-primitive
+  - feature-tour
+  - hub
+  - nodes
+  - connector
+  - reveal
+  duration: null
+  size: null
+  variables:
+  - id: hub_label
+    type: string
+    description: Text displayed inside the fixed central hub.
+    default: Product
+  - id: nodes
+    type: string
+    description: Comma-separated feature labels introduced in narration order.
+    default: Capture,Compose,Render,Share
+  - id: cues
+    type: string
+    description: Comma-separated seconds (from mount start) for each node reveal. Empty keeps the authored even spread.
+    default: ''
+  - id: accent
+    type: enum
+    description: Highlight color used by the hub, connectors, and active nodes.
+    default: green
+    options:
+    - value: green
+      label: Green
+    - value: blue
+      label: Blue
+    - value: violet
+      label: Violet
+  - id: exit
+    type: enum
+    description: 'Optional departure. Default none: the lockup holds until the frame cuts.'
+    default: none
+    options:
+    - value: none
+      label: None
+    - value: fade
+      label: Fade
+    - value: up
+      label: Up
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/constellation-hub
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: constellation-hub
+- name: count-up
+  type: component
+  file: count-up/count-up.html
+  title: Count Up
+  description: A token-native stat counter that eases between values, counting up or down, and lands with a restrained scale pulse.
+  tags:
+  - motion-primitive
+  - proof
+  - stats
+  - counter
+  - number
+  - countdown
+  - deterministic
+  duration: null
+  size: null
+  variables:
+  - id: start
+    type: number
+    description: First value shown by the count.
+    default: 0
+  - id: end
+    type: number
+    description: Final value where the count lands.
+    default: 100
+  - id: prefix
+    type: string
+    description: Optional text shown before the value.
+    default: ''
+  - id: suffix
+    type: string
+    description: Optional text shown after the value.
+    default: '%'
+  - id: accent
+    type: enum
+    description: Color used by the count.
+    default: green
+    options:
+    - value: green
+      label: Green
+    - value: blue
+      label: Blue
+    - value: violet
+      label: Violet
+  - id: glow
+    type: boolean
+    description: Optional soft accent glow under the count. Off by default.
+    default: false
+  - id: exit
+    type: enum
+    description: 'Optional departure. Default none: the landed value holds until the frame cuts.'
+    default: none
+    options:
+    - value: none
+      label: None
+    - value: fade
+      label: Fade
+    - value: up
+      label: Up
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/count-up
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: count-up
+- name: cursor-annotate
+  type: component
+  file: cursor-annotate/cursor-annotate.html
+  title: Annotate Cursor
+  description: A marker pen glides onto the frame and hand-draws a loose loop, an underline, or an arrow around a region, the ink laid exactly under its nib, then lifts and leaves.
+  tags:
+  - cursor
+  - motion-primitive
+  - pen
+  - annotation
+  - draw-on
+  - highlight
+  duration: null
+  size: null
+  variables:
+  - id: shape
+    type: enum
+    default: circle
+    options:
+    - value: circle
+      label: Loose loop
+    - value: underline
+      label: Underline
+    - value: arrow
+      label: Arrow
+  - id: color
+    type: color
+    default: '#f43f5e'
+  - id: target_x
+    type: number
+    default: 40
+  - id: target_y
+    type: number
+    default: 38
+  - id: target_w
+    type: number
+    default: 20
+  - id: target_h
+    type: number
+    default: 16
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/cursor-annotate
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: cursor-annotate
+- name: data-chart
+  type: block
+  file: data-chart/data-chart.html
+  title: Data Chart
+  description: Animated bar + line chart with staggered reveal, NYT-style typography, and value labels
+  tags:
+  - data
+  - chart
+  - statistics
+  duration: 15
+  size:
+    width: 1920
+    height: 1080
+  variables: []
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/data-chart
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: data-chart
+- name: flowchart
+  type: block
+  file: flowchart/flowchart.html
+  title: Flowchart
+  description: Animated decision tree with SVG connectors, sticky-note nodes, cursor interaction, and typing correction
+  tags:
+  - diagram
+  - flowchart
+  - interactive
+  duration: 12
+  size:
+    width: 1920
+    height: 1080
+  variables: []
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/flowchart
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: flowchart
+- name: grid-card-assemble
+  type: component
+  file: grid-card-assemble/grid-card-assemble.html
+  title: Grid Card Assemble
+  description: N capability cards (thin-line icon that draws on, mono label, optional muted body) stagger-assemble into a grid or vertical list with a fade plus short slide into slot, then hold perfectly
+    still.
+  tags:
+  - motion-primitive
+  - layout
+  - grid
+  - list
+  - stagger
+  - assemble
+  - feature-tour
+  duration: null
+  size: null
+  variables:
+  - id: items
+    type: string
+    description: 'Comma-separated cards (3 to 12). "Label: body" adds a one-line muted body under the label.'
+    default: Capture,Compose,Render,Publish
+  - id: layout
+    type: enum
+    description: Grid wraps by columns; list stacks vertically.
+    default: grid
+    options:
+    - value: grid
+      label: Grid
+    - value: list
+      label: List
+  - id: columns
+    type: number
+    description: 'Grid column count (grid layout only). 0 picks automatically: one row up to 3 items, then ceil(sqrt(N)).'
+    default: 0
+  - id: cues
+    type: string
+    description: Comma-separated per-item entrance times in seconds. Blank entries use the default cascade.
+    default: ''
+  - id: accent
+    type: enum
+    description: Accent token family used by the card icons.
+    default: green
+    options:
+    - value: green
+      label: Green
+    - value: blue
+      label: Blue
+    - value: violet
+      label: Violet
+  - id: exit
+    type: enum
+    description: 'How the assembled layout leaves the frame. Default none: the hold ends the film.'
+    default: none
+    options:
+    - value: none
+      label: None
+    - value: fade
+      label: Fade
+    - value: up
+      label: Up
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/grid-card-assemble
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: grid-card-assemble
+- name: hw-arrow
+  type: component
+  file: hw-arrow/hw-arrow.html
+  title: Hand-Drawn Arrow
+  description: Wobbled draw-on arrow with straight, gentle, and swoop curve poses, a four-way stroke texture matrix (plain/soft/sharp/spray), and a travel-aligned head-arrival stretch pulse with spring
+    recovery; boils while on screen
+  tags:
+  - handwritten
+  - annotation
+  - arrow
+  - overlay
+  duration: null
+  size: null
+  variables: []
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/hw-arrow
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: hw-arrow
+- name: hw-box-label
+  type: component
+  file: hw-box-label/hw-box-label.html
+  title: Hand-Drawn Box Label
+  description: Wobbled rounded rectangle draws on — across the authored stroke matrix (plain/soft/sharp/spray) — or drops in and lands with a volume-true contact squash and bouncy spring recovery, with
+    a handwritten label above or centered; boils
+  tags:
+  - handwritten
+  - annotation
+  - overlay
+  duration: null
+  size: null
+  variables: []
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/hw-box-label
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: hw-box-label
+- name: hw-callout-circle
+  type: component
+  file: hw-callout-circle/hw-callout-circle.html
+  title: Scribble Callout Circle
+  description: Wobbled ellipse draws around a target with optional scribble fill and curved connector; the handwritten label pops in WITH momentum and the drawn shapes absorb the arrival with a volume-preserving
+    contact squash; outline and connector take the family stroke matrix (plain/soft/sharp/spray); boils
+  tags:
+  - handwritten
+  - annotation
+  - callout
+  - overlay
+  duration: null
+  size: null
+  variables: []
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/hw-callout-circle
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: hw-callout-circle
+- name: hw-pipeline
+  type: block
+  file: hw-pipeline/hw-pipeline.html
+  title: Hand-Drawn Flowchart
+  description: Wobbled boxes with handwritten labels joined by curved connectors, drawing on in sequence from a node list
+  tags:
+  - handwritten
+  - diagram
+  - data-viz
+  - overlay
+  duration: 7
+  size:
+    width: 1920
+    height: 1080
+  variables: []
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/hw-pipeline
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: hw-pipeline
+- name: hw-underline
+  type: component
+  file: hw-underline/hw-underline.html
+  title: Squiggle Marks
+  description: Hand-drawn squiggle underline, double-pass strikethrough, and bracket marks that draw on
+  tags:
+  - handwritten
+  - annotation
+  - text-treatment
+  duration: null
+  size: null
+  variables: []
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/hw-underline
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: hw-underline
+- name: kinetic-type-swap
+  type: component
+  file: kinetic-type-swap/kinetic-type-swap.html
+  title: Kinetic Type Swap
+  description: A held sentence keeps its fixed text in place while one widest-word masked slot rolls through alternatives and settles on the final option.
+  tags:
+  - motion-primitive
+  - text-effects
+  - kinetic-type
+  - word-swap
+  - reveal
+  duration: null
+  size: null
+  variables:
+  - id: prefix
+    type: string
+    description: Fixed sentence text before the rolling word slot.
+    default: Ship
+  - id: options
+    type: string
+    description: Comma-separated words shown in the rolling slot.
+    default: faster,smarter,together
+  - id: suffix
+    type: string
+    description: Fixed sentence text after the rolling word slot.
+    default: ''
+  - id: cues
+    type: string
+    description: Comma-separated seconds (from mount start) for each word swap. Empty keeps the authored even spread.
+    default: ''
+  - id: accent
+    type: enum
+    description: Color used by the rolling word slot.
+    default: green
+    options:
+    - value: green
+      label: Green
+    - value: blue
+      label: Blue
+    - value: violet
+      label: Violet
+  - id: exit
+    type: enum
+    description: 'Optional departure. Default none: the sentence holds until the frame cuts.'
+    default: none
+    options:
+    - value: none
+      label: None
+    - value: fade
+      label: Fade
+    - value: up
+      label: Up
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/kinetic-type-swap
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: kinetic-type-swap
+- name: marker-highlight
+  type: component
+  file: marker-highlight/marker-highlight.html
+  title: Marker Highlight
+  description: Display text settles in, then one hand-drawn marker stroke (highlight, circle, underline, or scribble) draws over the emphasized word on cue.
+  tags:
+  - motion-primitive
+  - typography
+  - emphasis
+  - marker
+  - deterministic
+  duration: null
+  size: null
+  variables:
+  - id: text
+    type: string
+    description: Full line of display text.
+    default: Ship it with confidence
+  - id: emphasis_word
+    type: string
+    description: First case-insensitive substring match in text receives the marker. Empty or unmatched draws no marker.
+    default: confidence
+  - id: style
+    type: enum
+    description: Shape of the hand-drawn marker stroke.
+    default: highlight
+    options:
+    - value: highlight
+      label: Highlight
+    - value: circle
+      label: Circle
+    - value: underline
+      label: Underline
+    - value: scribble
+      label: Scribble
+  - id: draw_at
+    type: number
+    description: Second (from mount start) the marker starts drawing. Clamped so the stroke completes before any exit.
+    default: 0.9
+  - id: accent
+    type: enum
+    description: Marker ink color from the contract token map.
+    default: green
+    options:
+    - value: green
+      label: Green
+    - value: blue
+      label: Blue
+    - value: violet
+      label: Violet
+  - id: exit
+    type: enum
+    description: 'Optional departure. Default none: the lockup holds until the frame cuts.'
+    default: none
+    options:
+    - value: none
+      label: None
+    - value: fade
+      label: Fade
+    - value: up
+      label: Up
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/marker-highlight
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: marker-highlight
+- name: mk-line-graph
+  type: block
+  file: mk-line-graph/mk-line-graph.html
+  title: Minimal Line Graph
+  description: One or two SVG series draw on with dots popping and value labels riding the draw front; dim baseline axis, x-labels, color-dot legend
+  tags:
+  - data-viz
+  - chart
+  - graph
+  - minimal
+  duration: 7
+  size:
+    width: 1920
+    height: 1080
+  variables: []
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/mk-line-graph
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: mk-line-graph
+- name: mk-progress-stat
+  type: block
+  file: mk-progress-stat/mk-progress-stat.html
+  title: Count-Up Stat Card
+  description: Big-numeral statistic with count-up, label, thin progress track filling to value/max, and caption; light and dark schemes
+  tags:
+  - data-viz
+  - stat
+  - minimal
+  duration: 7
+  size:
+    width: 1920
+    height: 1080
+  variables: []
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/mk-progress-stat
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: mk-progress-stat
+- name: mk-specs-list
+  type: block
+  file: mk-specs-list/mk-specs-list.html
+  title: Specs Checklist
+  description: 'Left-aligned specs/traits checklist over footage or a board: rows slide in staggered with an accent underline sweep; light and dark schemes'
+  tags:
+  - data-viz
+  - list
+  - minimal
+  - professional
+  duration: 8
+  size:
+    width: 1920
+    height: 1080
+  variables: []
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/mk-specs-list
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: mk-specs-list
+- name: mk-usage-arc
+  type: component
+  file: mk-usage-arc/mk-usage-arc.html
+  title: Hairline Arc Gauge
+  description: Thin circular gauge that draws on while its percentage counts up; one helper call drives both
+  tags:
+  - data-viz
+  - gauge
+  - minimal
+  duration: null
+  size: null
+  variables: []
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/mk-usage-arc
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: mk-usage-arc
+- name: notification-stack
+  type: component
+  file: notification-stack/notification-stack.html
+  title: Notification Stack
+  description: 1 to 5 token notification cards slide-settle into a vertical stack on cues, newest on top; one card grows slightly and brightens as the focus while the rest dim by position.
+  tags:
+  - motion-primitive
+  - product-demo
+  - notification
+  - stack
+  - stagger
+  duration: null
+  size: null
+  variables:
+  - id: titles
+    type: string
+    description: Comma-separated card titles (1 to 5 cards).
+    default: Build queued,Checks passed,Deploy live
+  - id: bodies
+    type: string
+    description: Comma-separated body lines matched to titles by index. Blank entries hide that body line.
+    default: Pipeline started for main,All 42 checks green,Now serving version 2.4
+  - id: expand
+    type: number
+    description: Index of the focus card in the titles list. -1 focuses the newest card (top of the stack).
+    default: -1
+  - id: cues
+    type: string
+    description: Comma-separated per-card arrival times in seconds. Blank entries use the default rhythm.
+    default: ''
+  - id: accent
+    type: enum
+    description: Accent token family used by the icon dots.
+    default: green
+    options:
+    - value: green
+      label: Green
+    - value: blue
+      label: Blue
+    - value: violet
+      label: Violet
+  - id: exit
+    type: enum
+    description: 'How the stack leaves the frame. Default none: the hold ends the film.'
+    default: none
+    options:
+    - value: none
+      label: None
+    - value: fade
+      label: Fade
+    - value: up
+      label: Up
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/notification-stack
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: notification-stack
+- name: offset-path-traveler
+  type: component
+  file: offset-path-traveler/offset-path-traveler.html
+  title: Offset Path Traveler
+  description: A slotted traveler follows an authored path with tangent rotation, curved entry, and curved exit.
+  tags:
+  - motion-primitive
+  - product-demo
+  - path
+  - traveler
+  - auto-rotate
+  duration: null
+  size: null
+  variables:
+  - id: path
+    type: string
+    description: SVG path data authored in a 1000 by 500 route viewBox.
+    default: M -90 390 C 150 490 190 70 430 185 C 650 300 720 105 850 145 C 970 180 1030 85 1090 35
+  - id: traveler_label
+    type: string
+    description: Text displayed inside the default traveler chip.
+    default: Live preview
+  - id: accent
+    type: enum
+    description: Color used by the traveler and route.
+    default: green
+    options:
+    - value: green
+      label: Green
+    - value: blue
+      label: Blue
+    - value: violet
+      label: Violet
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/offset-path-traveler
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: offset-path-traveler
+- name: press-ripple
+  type: component
+  file: press-ripple/press-ripple.html
+  title: Press Ripple
+  description: A cursor decel-arrives from off-stage, lands slightly off-center on a caller-positioned target, compresses with it in lockstep, releases with two small click rings while the label swaps to
+    a check, then exits off-stage while the confirmed state holds.
+  tags:
+  - cursor
+  - motion-primitive
+  - product-demo
+  - press
+  - ripple
+  - payoff
+  duration: null
+  size: null
+  variables:
+  - id: label
+    type: string
+    description: Text inside the default pill target.
+    default: Get started
+  - id: done_label
+    type: string
+    description: Text beside the check once the default pill is pressed.
+    default: Saved
+  - id: target_x
+    type: number
+    description: Zone center, percent of host width.
+    default: 50
+  - id: target_y
+    type: number
+    description: Zone center, percent of host height.
+    default: 50
+  - id: press_at
+    type: number
+    description: Seconds from mount start when the press begins.
+    default: 0.9
+  - id: cursor
+    type: enum
+    description: Pointer tone.
+    default: light
+    options:
+    - value: light
+      label: Light
+    - value: dark
+      label: Dark
+  - id: accent
+    type: enum
+    description: Contract color for the click rings and the confirmation check.
+    default: green
+    options:
+    - value: green
+      label: Green
+    - value: blue
+      label: Blue
+    - value: violet
+      label: Violet
+  - id: exit
+    type: enum
+    description: How the frame leaves. None holds the pressed state.
+    default: none
+    options:
+    - value: none
+      label: None
+    - value: fade
+      label: Fade
+    - value: up
+      label: Fade up
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/press-ripple
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: press-ripple
+- name: radial-surround
+  type: component
+  file: radial-surround/radial-surround.html
+  title: Radial Surround
+  description: 'Labeled hairline chips assemble around a centered subject on an elliptical ring, then optionally converge inward with a subtle edge dim. The center never moves: surrounded, not zoomed.'
+  tags:
+  - motion-primitive
+  - problem-setup
+  - radial
+  - ring
+  - surround
+  - converge
+  duration: null
+  size: null
+  variables:
+  - id: center_label
+    type: string
+    description: Label on the default center token card.
+    default: Your team
+  - id: chips
+    type: string
+    description: Comma-separated chip labels that surround the center (up to 12).
+    default: Docs,Tickets,Dashboards,Inbox,Chat,Sheets
+  - id: close_in
+    type: boolean
+    description: Converge the ring inward with a subtle edge dim after assembly. The center never moves.
+    default: true
+  - id: cues
+    type: string
+    description: Comma-separated per-chip entrance times in seconds. Blank entries use the default cascade.
+    default: ''
+  - id: accent
+    type: enum
+    description: Accent token family used by the center card tint.
+    default: green
+    options:
+    - value: green
+      label: Green
+    - value: blue
+      label: Blue
+    - value: violet
+      label: Violet
+  - id: exit
+    type: enum
+    description: 'How the surrounded stage leaves the frame. Default none: the crowded hold ends the film.'
+    default: none
+    options:
+    - value: none
+      label: None
+    - value: fade
+      label: Fade
+    - value: up
+      label: Up
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/radial-surround
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: radial-surround
+- name: state-chip-rail
+  type: component
+  file: state-chip-rail/state-chip-rail.html
+  title: State Chip Rail
+  description: 'A rail of mono status chips advances a seek-safe data-state snap machine on a cue schedule: active chip ink on surface, done chips dim, pending chips hollow, optional badges pop beside one
+    state.'
+  tags:
+  - motion-primitive
+  - product-demo
+  - state-machine
+  - status
+  - chips
+  - rail
+  duration: null
+  size: null
+  variables:
+  - id: states
+    type: string
+    description: Comma-separated chip labels in machine order (2 to 8 states).
+    default: Queued,Reading,Drafting,Done
+  - id: times
+    type: string
+    description: Comma-separated activation times in seconds, one per advance (state 1 onward). Blank entries use the default even rhythm.
+    default: ''
+  - id: badge_state
+    type: number
+    description: Index of the state the badges pop beside.
+    default: 1
+  - id: badges
+    type: string
+    description: Comma-separated badge labels shown beside the badge state. Empty disables.
+    default: ''
+  - id: accent
+    type: enum
+    description: Accent token family used by the active chip.
+    default: green
+    options:
+    - value: green
+      label: Green
+    - value: blue
+      label: Blue
+    - value: violet
+      label: Violet
+  - id: exit
+    type: enum
+    description: 'How the rail leaves the frame. Default none: the hold ends the film.'
+    default: none
+    options:
+    - value: none
+      label: None
+    - value: fade
+      label: Fade
+    - value: up
+      label: Up
+  source: https://github.com/heygen-com/hyperframes/tree/main/registry/state-chip-rail
+  licence: Apache-2.0 (HyperFrames registry)
+  comp_id: state-chip-rail

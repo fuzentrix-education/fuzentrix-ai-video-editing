@@ -1,0 +1,2 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 140"><path d="M100 26 Q60 8 16 18 V122 Q60 112 100 130 Z" fill="var(--fz-action)"/><path d="M100 26 Q140 8 184 18 V122 Q140 112 100 130 Z" fill="var(--fz-accent)"/>
+<path d="M100 26 V130" stroke="var(--fz-text)" stroke-width="4"/><path d="M34 44 Q60 38 84 46 M34 64 Q60 58 84 66 M116 46 Q140 38 166 44 M116 66 Q140 58 166 64" stroke="var(--fz-tint)" stroke-width="5" fill="none" stroke-linecap="round"/></svg>

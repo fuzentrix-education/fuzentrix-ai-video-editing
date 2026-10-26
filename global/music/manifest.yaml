@@ -1,0 +1,15 @@
+# Licensed music tracks (design §9b). Music is OFF by default; a video's prompt switches it on with a track id or mood,
+# e.g. "Music: calm-focus, low". Only tracks listed here are ever used. Record the licence for every track.
+tracks:
+- id: calm-piano
+  mood: calm
+  file: calm-piano.m4a
+  duration: 183.6
+  source: https://commons.wikimedia.org/wiki/File:Erik_Satie_-_gymnopedies_-_la_1_ere._lent_et_douloureux.ogg
+  licence: Public domain (Musopen recording, Robin Alciatore)
+- id: focus-piano
+  mood: focus
+  file: focus-piano.m4a
+  duration: 265.8
+  source: https://commons.wikimedia.org/wiki/File:Bach-Siloti,_Prelude_in_B_minor_(J._S._Bach,_arranged_Siloti),_arrangement_of_Prelude_in_E_minor_BWV_855a.ogg
+  licence: CC0 1.0 (Felipe Sarro)

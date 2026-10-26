@@ -1,0 +1,2 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 180"><path d="M20 34 V146 Q20 170 80 170 Q140 170 140 146 V34 Z" fill="var(--fz-action)"/><ellipse cx="80" cy="34" rx="60" ry="22" fill="var(--fz-accent)"/>
+<path d="M20 74 Q20 98 80 98 Q140 98 140 74 M20 112 Q20 136 80 136 Q140 136 140 112" fill="none" stroke="var(--fz-tint)" stroke-width="5"/></svg>

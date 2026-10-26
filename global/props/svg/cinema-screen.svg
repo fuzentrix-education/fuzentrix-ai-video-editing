@@ -1,0 +1,2 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200"><rect x="10" y="10" width="300" height="170" rx="14" fill="var(--fz-text)"/><rect x="24" y="24" width="272" height="142" rx="8" fill="var(--fz-action)"/>
+<path d="M146 70 L186 95 L146 120 Z" fill="#FFFFFF" opacity=".9"/><rect x="40" y="150" width="240" height="6" rx="3" fill="var(--fz-tint)" opacity=".4"/><rect x="40" y="150" width="140" height="6" rx="3" fill="var(--fz-accent)"/></svg>

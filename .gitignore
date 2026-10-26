@@ -1,0 +1,12 @@
+.venv/
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+# per-video working files live in each video's own folder, never in this repo
+tests/_work/
+# caches
+*.lufs
+global/registry/catalog.json
+.hyperframes/

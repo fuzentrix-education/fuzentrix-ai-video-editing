@@ -1,0 +1,959 @@
+{
+ "code-card": {
+  "name": "code-card",
+  "family": "code",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Dark editor card. Lines type in spoken chunks or at a steady speed; highlights, active-line bar, Run press. Registers `id` so notes can point at its lines.",
+  "params": {
+   "id": "name for notes and traces",
+   "lines": "[code lines]",
+   "title": "tab title (default main.py)",
+   "lang": "python | c | cpp | java | javascript (default: from the title's extension)",
+   "recorded": "reference mode: the lines exactly as typed in the recording, when `lines` corrects them (rule E9)",
+   "logic_fix": "why a correction changes the output (goes to 'to confirm')",
+   "at": "",
+   "until": "",
+   "box": "default: main slot (left)",
+   "fs": "font px (default 38)",
+   "type": "[{line, at, cps} | {line, parts: [[lastCharIndex, at], ...]}]",
+   "reveal": "[{lines: [n...], at}] show whole lines",
+   "highlights": "[{line, cols: [c0, c1], at, until, tone: ''|green|red}]",
+   "active": "[{line, at}]",
+   "active_off": "time",
+   "caret_off": "time",
+   "run": "time the Run button is pressed",
+   "focus": "[{keep: [lines], at, until}] dim the other lines"
+  }
+ },
+ "note": {
+  "name": "note",
+  "family": "code",
+  "layers": [
+   "plate"
+  ],
+  "doc": "An explanation card outside the code, joined to its target by a wire (rule L6). Target a code line, a terminal line, a recording highlight or a point.",
+  "params": {
+   "nt": "optional mono pill (markdown/code)",
+   "text": "explanation (markdown, 16 words max)",
+   "at": "",
+   "until": "",
+   "box": "x, y, w (default: side slot)",
+   "target": "{code: id, line} | {code: id, run: true} | {term: id, line} | {rec: id, hl: name} | {point: [x, y]}",
+   "elbow_x": "optional x for the wire's bend"
+  }
+ },
+ "terminal": {
+  "name": "terminal",
+  "family": "code",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Output panel. With `exec` it runs the code card's program and prints its exact output (input echoed where it is read, errors in red), scrolling like a real terminal. Registers `id` for notes.",
+  "params": {
+   "id": "",
+   "title": "default Output",
+   "at": "",
+   "until": "",
+   "box": "default: bottom-left",
+   "exec": "{code: code-card id, stdin: [lines typed into the program], at, pace, times: [t per line], after_input, tone, tones: {line index: tone}, expect_error} runs the code at build time and prints its real output (rule E7)",
+   "input": "{text, at} shown as 'input > text' (manual mode)",
+   "lines": "[{text, input, at, tone: ok|warn|bad|dim}] (filled by exec; by hand needs `manual`)",
+   "chips": "[{text, at}] instead of lines (needs `manual`)",
+   "manual": "reason the output is written by hand (rule E7)",
+   "lh": "line height (default 44)"
+  }
+ },
+ "tiles": {
+  "name": "tiles",
+  "family": "code",
+  "layers": [
+   "plate"
+  ],
+  "doc": "A row or grid of value tiles that change state (now / ok / bad / skip / dim), e.g. loop values or rounds.",
+  "params": {
+   "id": "",
+   "values": "[...]",
+   "label": "optional label above (markdown)",
+   "at": "",
+   "until": "",
+   "box": "x, y (default main slot)",
+   "size": "tile px (default 100)",
+   "gap": "px (default size+16)",
+   "cols": "wrap after n tiles",
+   "states": "[{i: index | value: v, state, at}]",
+   "note": "{text, at, until} small text under the tiles"
+  }
+ },
+ "trace": {
+  "name": "trace",
+  "family": "code",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Loop trace panel: the variable box, the condition check with its True/False result, per iteration. Optionally drives a code card's highlights, a tiles row and a terminal.",
+  "params": {
+   "var": "variable name (default i)",
+   "cond": "condition text after the value, e.g. '== 6'",
+   "at": "",
+   "until": "",
+   "box": "default: side slot",
+   "iterations": "[{v, val: time value appears, chk: time check starts, res: time result shows, result: true|false, pr: time print runs, out: time output appears, out_text}]",
+   "code": "code-card id (optional)",
+   "check_line": "line of the if",
+   "print_line": "line of the print",
+   "hit_line": "line that runs when true (e.g. break)",
+   "tiles": "tiles id (optional)",
+   "term": "terminal id (optional; prints out_text)"
+  }
+ },
+ "problem": {
+  "name": "problem",
+  "family": "code",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Problem statement card; phrases colour as they are read out.",
+  "params": {
+   "label": "default Problem",
+   "text": "markdown",
+   "highlights": "[{text, at, tone: emph|danger|warning|success}]",
+   "at": "",
+   "until": "",
+   "box": "default: main slot (top)",
+   "size": "font px (default 38)"
+  }
+ },
+ "variables": {
+  "name": "variables",
+  "family": "code",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Variable boxes that update as the code runs (name = value).",
+  "params": {
+   "vars": "[{name, value, at}]",
+   "updates": "[{name, value, at}]",
+   "at": "",
+   "until": "",
+   "box": "default: side slot"
+  }
+ },
+ "recording-window": {
+  "name": "recording-window",
+  "family": "code",
+  "layers": [
+   "plate"
+  ],
+  "static": true,
+  "doc": "The whole screen recording in a branded window, never cropped or zoomed (rule L7); step tracker in the title bar; highlight boxes in recording coordinates. Registers `id` for notes. Needs a recording listed in the spec's recordings.",
+  "params": {
+   "id": "recording id (from recordings)",
+   "title": "window title",
+   "at": "",
+   "until": "",
+   "box": "x, y, w[, h] (fits inside; aspect kept)",
+   "steps": "[{label, at}]",
+   "highlights": "[{name, box: [x, y, w, h] in recording pixels, at, until}]",
+   "hide": "[{at, until}] periods to hide the window (e.g. concept scenes)"
+  }
+ },
+ "term-reveal": {
+  "name": "term-reveal",
+  "family": "kinetic",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "The key term or a takeaway built word by word (12 words at most). Words in *stars* get the brand gradient.",
+  "params": {
+   "text": "markdown, 12 words max",
+   "times": "optional [time per word]; default staggered from at",
+   "at": "",
+   "until": "",
+   "box": "default: main slot",
+   "size": "px (default 88)"
+  }
+ },
+ "rule-stack": {
+  "name": "rule-stack",
+  "family": "kinetic",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "Two or three short lines that stack into a rule or takeaway; the last line is emphasised.",
+  "params": {
+   "lines": "[{text, at}]",
+   "until": "",
+   "box": "default: main slot",
+   "size": "px (default 64)"
+  }
+ },
+ "contrast": {
+  "name": "contrast",
+  "family": "kinetic",
+  "layers": [
+   "plate"
+  ],
+  "doc": "'X vs Y' split: two titles with a short line each and a 'vs' between.",
+  "params": {
+   "left": "{title, text, at, tone}",
+   "right": "{title, text, at, tone}",
+   "vs_at": "",
+   "until": "",
+   "box": "default: main slot"
+  }
+ },
+ "blocks": {
+  "name": "blocks",
+  "family": "diagram",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Labelled blocks with icons and arrows on a light blueprint grid (architecture, client-server, request flow). Coordinates relative to the box.",
+  "params": {
+   "nodes": "[{id, x, y, w, h, text, icon, at}]",
+   "links": "[{from, to, label, at, tone: hot|green|red}]",
+   "grid": "true to draw the blueprint grid (default true)",
+   "at": "",
+   "until": "",
+   "box": "default: main slot"
+  }
+ },
+ "table": {
+  "name": "table",
+  "family": "diagram",
+  "layers": [
+   "plate"
+  ],
+  "doc": "A data table (database rows, comparisons). Rows enter when said; cells or rows can be highlighted.",
+  "params": {
+   "title": "optional",
+   "columns": "[header...]",
+   "rows": "[[cell...]...]",
+   "row_at": "[time per row] (default all at `at`)",
+   "highlights": "[{row, col (optional), at, until, tone: emph|success|danger}]",
+   "at": "",
+   "until": "",
+   "box": "default: main slot",
+   "key_cols": "[indices shown as key columns]"
+  }
+ },
+ "bars": {
+  "name": "bars",
+  "family": "data",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Bar chart that builds as values are said.",
+  "params": {
+   "title": "optional",
+   "items": "[{label, value, at, tone: accent|success|danger|warning}]",
+   "max": "scale max (default largest value)",
+   "unit": "suffix",
+   "at": "",
+   "until": "",
+   "box": "default: main slot"
+  }
+ },
+ "counter": {
+  "name": "counter",
+  "family": "data",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "A number that counts up to its value, with a label.",
+  "params": {
+   "value": "number",
+   "from": "start (default 0)",
+   "prefix": "",
+   "suffix": "",
+   "locale": "digit grouping (default en-IN: 10,000 \u00b7 1,00,000)",
+   "label": "markdown",
+   "at": "",
+   "until": "",
+   "dur": "count duration (default 1.2)",
+   "box": "default: main slot"
+  }
+ },
+ "curve": {
+  "name": "curve",
+  "family": "data",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Line chart that draws itself (growth, Big-O). Points are in data units.",
+  "params": {
+   "series": "[{label, points: [[x, y]...], tone, at}]",
+   "x_label": "",
+   "y_label": "",
+   "xmax": "",
+   "ymax": "",
+   "at": "",
+   "until": "",
+   "box": "default: main slot"
+  }
+ },
+ "bug": {
+  "name": "bug",
+  "family": "core",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "Brand logo, top right, in a white pill. Stays until the clip ends.",
+  "params": {
+   "at": "appear time (default: clip start)"
+  }
+ },
+ "header": {
+  "name": "header",
+  "family": "core",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Section label and title, top left (the header band).",
+  "params": {
+   "label": "small mono label",
+   "title": "title; *word* = emphasis",
+   "at": "",
+   "until": ""
+  }
+ },
+ "title-hero": {
+  "name": "title-hero",
+  "family": "core",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Opening title over the intro shot: label, two-line title (second line in the brand gradient), optional focus chip.",
+  "params": {
+   "label": "",
+   "title": "two lines separated by \\n",
+   "focus": "optional chip text (markdown)",
+   "at": "",
+   "until": "",
+   "box": "default: hero slot"
+  }
+ },
+ "name-card": {
+  "name": "name-card",
+  "family": "core",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "Instructor name card. Only when the instructor introduces themself (rule E5).",
+  "params": {
+   "name": "as said in the audio",
+   "role": "default: brand name-card title",
+   "at": "",
+   "until": "",
+   "box": "default: namecard slot"
+  }
+ },
+ "agenda": {
+  "name": "agenda",
+  "family": "core",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Numbered list of cards, each entering when said (agenda, plan, steps).",
+  "params": {
+   "label": "optional label above",
+   "items": "[{text, icon, tone, at}]",
+   "until": "",
+   "box": "default: main slot"
+  }
+ },
+ "definition": {
+  "name": "definition",
+  "family": "core",
+  "layers": [
+   "plate"
+  ],
+  "doc": "One-sentence definition in a card; phrases underline as they are said.",
+  "params": {
+   "text": "the sentence (markdown)",
+   "highlights": "[{text: exact phrase in text, at}]",
+   "at": "",
+   "until": "",
+   "box": "default: main slot (top)",
+   "size": "font px (default 46)"
+  }
+ },
+ "type-cards": {
+  "name": "type-cards",
+  "family": "core",
+  "layers": [
+   "plate"
+  ],
+  "doc": "2-4 concept cards side by side (e.g. break / continue / pass).",
+  "params": {
+   "cards": "[{keyword, icon, tone, text, at, emphasis_at}]",
+   "until": "",
+   "box": "default: main slot"
+  }
+ },
+ "chips": {
+  "name": "chips",
+  "family": "core",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "A row of short keyword or question chips.",
+  "params": {
+   "items": "[{text, icon, tone, at}]",
+   "until": "",
+   "box": "default: main slot",
+   "gap": "px between chips (default 24)"
+  }
+ },
+ "card": {
+  "name": "card",
+  "family": "core",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "A single text card with an optional icon and label: a takeaway, a fact, a question.",
+  "params": {
+   "label": "",
+   "icon": "",
+   "tone": "",
+   "text": "markdown",
+   "at": "",
+   "until": "",
+   "box": "default: main slot",
+   "size": "font px (default 32)"
+  }
+ },
+ "summary": {
+  "name": "summary",
+  "family": "core",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Recap rows with optional keyword chips at the end of a row.",
+  "params": {
+   "rows": "[{icon, tone, text, at, chips: [{text, tone, at}]}]",
+   "until": "",
+   "box": "default: main slot"
+  }
+ },
+ "flowchart": {
+  "name": "flowchart",
+  "family": "core",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Nodes and arrows, with an optional marker that walks the path. Node coordinates are relative to the box.",
+  "params": {
+   "nodes": "[{id, x, y, w, h, text, kind: box|term|dec|ok, at}]",
+   "edges": "[{from, to, label, tone: hot|green|red, at, path: optional svg path in box coords}]",
+   "walk": "[{node, at}]",
+   "until": "",
+   "box": "default: main slot"
+  }
+ },
+ "cutaway": {
+  "name": "cutaway",
+  "family": "core",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Full-frame backdrop for a short full-screen moment (rule L3: at most 12 s each, 10% of runtime). Put the scenes that belong to it after it, with box set inside the full frame.",
+  "params": {
+   "at": "",
+   "until": "required",
+   "tone": "light (plate image) | deep (dark brand gradient)"
+  }
+ },
+ "studio-tag": {
+  "name": "studio-tag",
+  "family": "core",
+  "layers": [
+   "studio"
+  ],
+  "doc": "Light graphic for the instructor's studio shots (rule L4): a keyword, the step in progress or a short takeaway, in the studio frame's free area. 12 words at most.",
+  "params": {
+   "label": "optional small label",
+   "text": "markdown, 12 words at most",
+   "icon": "",
+   "at": "",
+   "until": ""
+  }
+ },
+ "captions": {
+  "name": "captions",
+  "family": "core",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "Subtitles. Only when the video prompt switches them on (rule E3).",
+  "params": {
+   "cues": "[{text, at, until}]",
+   "y": "top of the caption bar (default 960)"
+  }
+ },
+ "image": {
+  "name": "image",
+  "family": "core",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "Place an image file from the video's assets (e.g. a screenshot or diagram).",
+  "params": {
+   "src": "path under assets/",
+   "at": "",
+   "until": "",
+   "box": "required",
+   "radius": "corner radius (default brand)"
+  }
+ },
+ "data-flow": {
+  "name": "data-flow",
+  "family": "explainer",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Items (chips with icons) fly into a container (database, table, folder, server, cloud) as they are named; the container fills and counts. For collecting / storing / saving data.",
+  "params": {
+   "target": "{kind: database|table|folder|server|cloud, label, x, y, size} (box coords; default right side)",
+   "items": "[{text, icon, at, x, y}] flying in at `at` (sources default to a column on the left)",
+   "count": "{to, label} the container counts up as items arrive (optional)",
+   "at": "",
+   "until": "",
+   "box": "default: main slot"
+  }
+ },
+ "process-flow": {
+  "name": "process-flow",
+  "family": "explainer",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Inputs box -> process (spinning icon) -> output card: dots travel through when the process runs. For data -> information, raw -> processed, input -> output.",
+  "params": {
+   "inputs": "{label, items: [text | {text, at}]}",
+   "process": "{label, icon (default gear), at}",
+   "output": "{label, text (markdown), at, note}",
+   "banner": "{text, at} equation under the flow (optional)",
+   "at": "",
+   "until": "",
+   "box": "default: main slot"
+  }
+ },
+ "type-convert": {
+  "name": "type-convert",
+  "family": "explainer",
+  "layers": [
+   "plate"
+  ],
+  "doc": "A value changes type: a quoted value with its type badge goes through the conversion function and comes out converted. For input() -> int(), str(), float().",
+  "params": {
+   "value": "the value, e.g. 20",
+   "from_type": "default str",
+   "to_type": "default int",
+   "fn": "default int()",
+   "label": "caption above (markdown)",
+   "at": "input value appears",
+   "convert_at": "it goes through the function",
+   "then": "{text, at} a follow-up line, e.g. '20 + 1 = 21' (optional)",
+   "until": "",
+   "box": "x, y, w (default side slot)"
+  }
+ },
+ "range-gen": {
+  "name": "range-gen",
+  "family": "explainer",
+  "layers": [
+   "plate"
+  ],
+  "doc": "A range generator emits its numbers one by one into slots (first ones paced, the rest quickly), optionally stopping at a break value. For range(), loops generating values.",
+  "params": {
+   "call": "e.g. range(1, n+1)",
+   "n": "optional 'n = 20' tag",
+   "start": "first value (default 1)",
+   "end": "last value generated (inclusive)",
+   "max_slots": "slots shown (default 10; longer ranges show \u2026 and the last)",
+   "at": "",
+   "emit_at": "first number",
+   "pace": "s per number (default 0.45)",
+   "times": "[time per number] instead of pace",
+   "stop_value": "value where `break` stops the loop",
+   "stop_at": "time it stops",
+   "note": "{text, at} (e.g. 'n+1 is not included')",
+   "until": "",
+   "box": "x, y, w (default main slot)",
+   "size": "slot px (default 78)"
+  }
+ },
+ "request-flow": {
+  "name": "request-flow",
+  "family": "explainer",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Nodes with big icons; packets travel along curved links when they are sent (request -> processing -> result back). Optional blocked direct path. For client/server, user -> DBMS -> database, API calls.",
+  "params": {
+   "nodes": "[{id, text, icon, x, y, at}] (box coords)",
+   "links": "[{from, to, at}]",
+   "packets": "[{from, to, label, at, dur, kind: req|res}]",
+   "blocked": "{from, to, label, at} dashed red arc with a cross",
+   "results": "[{text, at, x, y}] small cards that appear (e.g. the returned record)",
+   "at": "",
+   "until": "",
+   "box": "default: main slot"
+  }
+ },
+ "icon-grid": {
+  "name": "icon-grid",
+  "family": "explainer",
+  "layers": [
+   "plate"
+  ],
+  "doc": "A grid of icons standing for many items (students, records, files) with a count; optional magnifier scanning row by row, a found cell, or a cross. For 'thousands of records', manual search.",
+  "params": {
+   "icon": "user | file | database \u2026",
+   "cols": "default 14",
+   "rows": "default 5",
+   "count": "number shown (counts up)",
+   "label": "under the number",
+   "at": "",
+   "until": "",
+   "scan": "{at, until} magnifier sweeps the rows",
+   "find": "{index, at} highlight one cell",
+   "cross": "{at, text} red slash + text",
+   "box": "default: main slot",
+   "cell": "px (default 44)"
+  }
+ },
+ "form-card": {
+  "name": "form-card",
+  "family": "explainer",
+  "layers": [
+   "plate"
+  ],
+  "doc": "A record / form / receipt card whose field values type in as they are said. For 'your name, age, branch\u2026', a student record, a filled form.",
+  "params": {
+   "title": "",
+   "icon": "",
+   "fields": "[{label, value, at}]",
+   "stamp": "{text, at, tone: ok|bad|accent}",
+   "at": "",
+   "until": "",
+   "box": "x, y, w (default side slot)"
+  }
+ },
+ "db-tables": {
+  "name": "db-tables",
+  "family": "explainer",
+  "layers": [
+   "plate"
+  ],
+  "doc": "A database frame with its tables appearing inside, each with rows. For 'a database stores students, faculty, library records\u2026'.",
+  "params": {
+   "label": "default 'Inside a database'",
+   "tables": "[{title, icon, rows: [text], at}]",
+   "ok": "{text, at} chip under the frame",
+   "at": "",
+   "until": "",
+   "box": "default: main slot"
+  }
+ },
+ "hub": {
+  "name": "hub",
+  "family": "explainer",
+  "layers": [
+   "plate"
+  ],
+  "doc": "A central badge (the system) with spokes to what it does, each appearing as named. For DBMS -> create/retrieve/update/delete, a component and its jobs.",
+  "params": {
+   "title": "centre badge text",
+   "subtitle": "",
+   "label": "small label above",
+   "spokes": "[{text, icon, at}]",
+   "caption": "{text, at}",
+   "at": "",
+   "until": "",
+   "box": "default: main slot"
+  }
+ },
+ "mockup": {
+  "name": "mockup",
+  "family": "explainer",
+  "layers": [
+   "plate"
+  ],
+  "doc": "A browser window or phone with app screens that change as they are described: typing into fields, pressing buttons, a loading spinner, results. For 'open the portal, log in, click results\u2026', an app.",
+  "params": {
+   "kind": "browser | phone",
+   "url": "browser address / phone app title",
+   "screens": "[{at, elements: [{title} | {subtitle} | {field, value, at} | {button, press_at} | {row, value} | {spinner, at, until} | {stat, value} | {badge}]}]",
+   "cursor": "[{x, y, at, click}] in frame coords",
+   "at": "",
+   "until": "",
+   "box": "x, y, w, h (default main slot)"
+  }
+ },
+ "callouts": {
+  "name": "callouts",
+  "family": "explainer",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "Short chips that pop up at free positions as each point is said, with a gentle float (pain points, benefits, reactions). Screen coordinates.",
+  "params": {
+   "items": "[{text, icon, tone: red|amber|green|'', x, y, at, until}]",
+   "until": ""
+  }
+ },
+ "checklist": {
+  "name": "checklist",
+  "family": "explainer",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Rows that tick off one by one as they are said (benefits, requirements, a recap). The last row may be a highlighted conclusion.",
+  "params": {
+   "title": "",
+   "items": "[{text, icon, at}]",
+   "conclusion": "{text, at} dark banner under the list",
+   "at": "",
+   "until": "",
+   "box": "x, y, w (default main slot)"
+  }
+ },
+ "big-word": {
+  "name": "big-word",
+  "family": "explainer",
+  "layers": [
+   "plate"
+  ],
+  "doc": "One giant word letter by letter (the term being introduced: DBMS, DATABASE), with an optional expansion line. Once per term, when it is first named.",
+  "params": {
+   "text": "the word",
+   "sub": "expansion or tagline (markdown), e.g. '*D*atabase *M*anagement *S*ystem'",
+   "sub_at": "",
+   "at": "",
+   "until": "",
+   "box": "x, y, w (default hero slot)",
+   "size": "px (default 170)"
+  }
+ },
+ "scene": {
+  "name": "scene",
+  "family": "explainer",
+  "layers": [
+   "plate"
+  ],
+  "static": false,
+  "doc": "Compose mode only: switch the background behind the instructor to a dark brand scene for a big moment (the hero reveal, a fun fact); text turns light for its duration.",
+  "params": {
+   "kind": "dark",
+   "at": "",
+   "until": ""
+  }
+ },
+ "presenter": {
+  "name": "presenter",
+  "family": "presenter",
+  "layers": [
+   "plate"
+  ],
+  "static": true,
+  "doc": "Keyed instructor with poses: wide, close, side-right, side-left, corner (bottom right). Added automatically in compose mode from the spec's `presenter.poses`.",
+  "params": {
+   "poses": "[{name, at, x, y, scale (optional custom)}]",
+   "crop": "[x, y, w, h] of the cut-out in source pixels (set by ingest)",
+   "box": "{w, h, margin, radius}: the bottom-right pose sits in a rounded box (setting presenter.corner_box)"
+  }
+ },
+ "corner-box": {
+  "name": "corner-box",
+  "family": "presenter",
+  "layers": [
+   "plate"
+  ],
+  "static": true,
+  "doc": "Rough cuts: frame the instructor's bottom-right area in the brand box during corner shots (added automatically by build).",
+  "params": {
+   "box": "[x, y, w, h]",
+   "radius": "corner radius",
+   "plate": "plate image the editor used",
+   "intervals": "[[start, end]] corner shots"
+  }
+ },
+ "prop": {
+  "name": "prop",
+  "family": "props",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "Place a character or prop from the library; optional idle motion and reactions.",
+  "params": {
+   "asset": "library id (global/props/manifest.yaml)",
+   "box": "x, y, w, h",
+   "at": "",
+   "until": "",
+   "enter": "pop | slide | fade",
+   "idle": "bob | none",
+   "flip": "mirror horizontally",
+   "react": "[{kind: shake|pulse|tick|cross, at}]",
+   "label": "{text, at} caption under the prop"
+  }
+ },
+ "prop-move": {
+  "name": "prop-move",
+  "family": "props",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Move a prop along a path (a car driving past, a ball rolling), with easing and optional speed lines.",
+  "params": {
+   "asset": "",
+   "box": "start x, y and size w, h",
+   "path": "[[x, y]...] later positions (absolute px)",
+   "times": "[arrival time per point]",
+   "at": "appear",
+   "until": "",
+   "enter": "pop | slide | fade",
+   "flip": "",
+   "speed_lines": "true for motion streaks"
+  }
+ },
+ "prop-scene": {
+  "name": "prop-scene",
+  "family": "props",
+  "layers": [
+   "plate"
+  ],
+  "doc": "A small staged scene: a ground line (road or desk) with several props, each with its own entrance and moves.",
+  "params": {
+   "ground": "road | desk | none",
+   "box": "scene area x, y, w, h (ground sits at the bottom)",
+   "at": "",
+   "until": "",
+   "props": "[{asset, x, y, w, h (relative to box), at, flip, moves: [{to: [x, y], at}], react: [{kind, at}]}]"
+  }
+ },
+ "hf": {
+  "name": "hf",
+  "family": "registry",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "Mount an installed HyperFrames registry item (fzv registry list) in a box: its variables set the content, `cues` (word anchors) time its steps.",
+  "params": {
+   "item": "registry item name",
+   "at": "",
+   "until": "",
+   "box": "x, y, w, h",
+   "vars": "{variable: value} (see fzv registry list)",
+   "cues": "[times] for items with a `cues` variable (one per step)"
+  }
+ },
+ "sketch-board": {
+  "name": "sketch-board",
+  "family": "sketch",
+  "layers": [
+   "plate"
+  ],
+  "doc": "A clean whiteboard panel for a sketch scene (inside the free area, or full frame inside a cutaway).",
+  "params": {
+   "at": "",
+   "until": "",
+   "box": "default: main slot",
+   "label": "optional handwritten title"
+  }
+ },
+ "sketch-draw": {
+  "name": "sketch-draw",
+  "family": "sketch",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Draw a library prop or character as marker outlines, stroke by stroke; optional light colour fill afterwards and a handwritten label.",
+  "params": {
+   "asset": "props library id",
+   "box": "x, y, w, h",
+   "at": "",
+   "dur": "drawing time (default 1.6 s)",
+   "until": "",
+   "tone": "ink | accent | emph | red | green",
+   "fill": "true to tint fills after drawing",
+   "label": "{text, at}"
+  }
+ },
+ "sketch-text": {
+  "name": "sketch-text",
+  "family": "sketch",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "Handwritten text that writes itself on (left-to-right wipe).",
+  "params": {
+   "text": "short text",
+   "box": "x, y, w",
+   "size": "px (default 52)",
+   "tone": "ink | accent | emph | red | green",
+   "at": "",
+   "until": "",
+   "dur": "write time (default ~0.06 s per char)"
+  }
+ },
+ "sketch-list": {
+  "name": "sketch-list",
+  "family": "sketch",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Hand-lettered list; each item writes on with a drawn tick or bullet when said.",
+  "params": {
+   "items": "[{text, at, mark: tick|cross|dot}]",
+   "box": "x, y, w",
+   "size": "px (default 46)",
+   "until": ""
+  }
+ },
+ "sketch-flow": {
+  "name": "sketch-flow",
+  "family": "sketch",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Hand-drawn boxes and arrows (coordinates relative to the box); each part draws on when said.",
+  "params": {
+   "nodes": "[{id, x, y, w, h, text, at, tone}]",
+   "edges": "[{from, to, at, label, tone}]",
+   "until": "",
+   "box": "default: main slot"
+  }
+ },
+ "sketch-mark": {
+  "name": "sketch-mark",
+  "family": "sketch",
+  "layers": [
+   "plate"
+  ],
+  "doc": "A hand-drawn annotation over anything on screen: circle, underline, arrow, box, tick or cross.",
+  "params": {
+   "shape": "circle | underline | arrow | box | tick | cross",
+   "box": "x, y, w, h (for arrow: from top-left to bottom-right)",
+   "tone": "accent | red | green | ink",
+   "at": "",
+   "until": ""
+  }
+ }
+}

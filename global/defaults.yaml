@@ -1,0 +1,54 @@
+# Global defaults for every video. A video's prompt can override any of these (design D9); overrides are logged in edit/decisions.md.
+brand: career-orbit                 # which kit in global/brand/ when the prompt doesn't name one
+mode: auto                          # overlay (editor's rough cut) | compose (raw footage) | auto (detected at ingest)
+
+styles:
+  base: [core, code]                # always available
+  content: [kinetic, diagram, data] # the planner adds these where the content calls for them
+  props: true                       # characters and props library (global/props)
+  on_request: [sketch]              # only when the prompt asks ("sketch edit")
+  max_content_families_per_section: 2
+
+subtitles: { enabled: false, language: en, max_chars: 42, max_lines: 2, sidecar_srt: true }
+music:     { enabled: false, track: null, rel_lufs: -18, fade_s: 2.0 }   # audible bed 18 LU under the voice ("low" -22, "high" -14), gently ducked
+sfx:                                # rule A5: every visual event has its sound, never the same sound twice in a row
+  enabled: true                     # the team's library in global/sfx/ (fzv sfx add) is used first; files rotate per category
+  level_db: -4                      # all SFX a little quieter than the house levels
+  minor: true                       # element entrances (pop, swish, blip, tick); prompt "SFX: minimal" turns them off
+  minor_gap_s: 0.35                 # an entrance sound is skipped only when another sound lands within 0.35 s (no stacking)
+  whoosh_gap_s: 1.5                 # whooshes never pile up
+  max_per_min: 0                    # optional cap per minute (0 = none)
+  fallback: synth                   # categories missing from the library: synth (varied takes) | none
+recordings: { use: show, corrections: tidy }
+  # use: show = the whole recording in a window | reference = never shown; code and output are rebuilt as animations from it
+  # corrections (reference mode): tidy = fix typos, spacing and false starts in the rebuilt code | exact = copy it as typed
+name_card: when_introduced          # only when the instructor introduces themself in the audio
+outro: none                         # no end cards: the editors' intro animation brands the video
+bug:       { layers: [plate, studio] }
+presenter:                          # compose mode (raw / green-screen footage); rough cuts keep the editor's framing (rule L1)
+  corner_box: true                  # bottom-right pose sits in a rounded brand box (rule L5); prompt "Presenter box: off" turns it off
+  box: { w: 500, h: 420, margin: 40, radius: 28 }
+
+cutaways: { max_each_s: 12, max_total_pct: 10 }
+clutter:  { max_blocks: 4, max_words: 40, max_code_lines: 12, max_focus: 1, studio_max_blocks: 1, studio_max_words: 12 }
+empty:    { max_gap_s: 2.0 }        # never a plain-instructor stretch (rule L4)
+visuals:  { max_text_only_s: 15, min_section_s: 30 }   # rules V1/V2: show the process; at most 15 s of words-only screen
+
+graphics_fps: 25                    # graphics render at 25 fps; delivery keeps the source frame rate
+layout:                             # 1920x1080 slots; ingest trims them so they never touch the instructor's safe zone
+  hero:      { x: 96,   y: 150, w: 800,  h: 420 }
+  header:    { x: 92,   y: 78,  w: 1240, h: 110 }
+  main:      { x: 96,   y: 230, w: 1220, h: 760 }
+  side:      { x: 1360, y: 150, w: 480,  h: 560 }
+  bottom:    { x: 96,   y: 736, w: 640,  h: 290 }
+  recording: { x: 100,  y: 104, w: 1720, h: 600 }
+  studio:    { x: 96,   y: 120, w: 760,  h: 300 }
+  namecard:  { x: 1452, y: 820 }
+  bug:       { right: 56, top: 24 }
+
+transcription: { model: large-v3-turbo, language: en, chunk_max_s: 14, chunk_min_s: 5 }
+render:  { workers: auto, ram_per_worker_gb: 1.0, reserve_gb: 2.0 }
+output:
+  name: "{title} - Edited.mp4"
+  video: { crf: 17, pix_fmt: yuv420p }
+  audio: { codec: aac, bitrate: 320k, rate: 48000 }

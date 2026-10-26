@@ -1,0 +1,5 @@
+#!/bin/bash
+# fzv: run the CLI with the repo's own Python environment, from anywhere.
+# Add <repo>/bin to PATH, or call it by path.
+R="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+exec "$R/.venv/bin/python" -m fzv "$@"

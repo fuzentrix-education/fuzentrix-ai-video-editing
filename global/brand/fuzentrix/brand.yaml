@@ -1,0 +1,53 @@
+# Fuzentrix Education brand kit. Extends ../_shared/house.yaml (typography, shapes, motion, code colours, audio).
+id: fuzentrix
+name: Fuzentrix Education
+extends: ../_shared/house.yaml
+
+logo:
+  source: "source/MAIN LOGO (original).svg"   # from fuzentrix_landing_site/public: the original vector
+  stacked: fuzentrix_logo.svg                 # master: icon above the FUZENTRIX / EDUCATION wordmark
+  horizontal: fuzentrix_logo_horizontal.svg   # icon beside the wordmark: use for the video corner logo and wide spaces
+  icon: fuzentrix_icon.svg                    # book, figure and cap without the wordmark
+  on-dark:                                    # white versions for navy or dark backgrounds
+    stacked: fuzentrix_logo_on-dark.svg
+    horizontal: fuzentrix_logo_horizontal_on-dark.svg
+    icon: fuzentrix_icon_on-dark.svg
+  png:                                        # transparent PNGs for video, slides and web
+    stacked: [fuzentrix_logo_1000w.png, fuzentrix_logo_2000w.png, fuzentrix_logo_4000w.png]
+    horizontal: [fuzentrix_logo_horizontal_1000w.png, fuzentrix_logo_horizontal_2000w.png]
+    icon: [fuzentrix_icon_1024w.png]
+    on-dark: [fuzentrix_logo_on-dark_2000w.png, fuzentrix_logo_horizontal_on-dark_2000w.png, fuzentrix_icon_on-dark_1024w.png]
+  clear-space: height of the "F" in FUZENTRIX, on every side
+  min-width: { stacked: 160px, horizontal: 200px, icon: 32px }
+
+colors:
+  ink:        "#0D274C"   # logo gradient (bottom); website primary: headings and body text
+  brand-blue: "#3381C2"   # logo gradient (top): primary accent, large emphasis (AA for large text only)
+  brand-mid:  "#205487"   # midpoint of the logo gradient: emphasis in small text (AAA on white)
+  charcoal:   "#1A1A1A"   # "EDUCATION" in the logo: logo only
+  coral:      "#CF501B"   # website accent: calls to action and sparing emphasis
+  orange:     "#D9731D"   # website focus ring: highlight boxes and pointer wires in video
+  cyan:       "#38BDF8"   # website accent: accents on dark (code cards, terminals)
+  slate:      "#5C6B80"   # website muted text: secondary text
+  surface:    "#F3F6FA"   # website muted background: page base
+  tint:       "#ECF6FB"   # website accent background: pills, icon wells
+  line:       "#E1E7EF"   # website border: card borders
+
+gradients:
+  logo: ["#0D274C", "#3381C2"]   # bottom to top, as in the logo: hero titles, wipes, progress bars
+
+roles:                            # what the templates use
+  text: ink
+  text-secondary: slate
+  title-emphasis: brand-blue
+  small-emphasis: brand-mid
+  accent: brand-blue
+  highlight: orange               # code highlight boxes, wires
+  cta: coral
+  card-border: line
+  pill: tint
+  on-dark-accent: cyan
+
+bug:       { logo: fuzentrix_logo_horizontal_2000w.png, height: 40 }
+name-card: { title: "Instructor · Fuzentrix Education" }
+website-font: Geist               # the landing site's UI font; videos use the house fonts

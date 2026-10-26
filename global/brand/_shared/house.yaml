@@ -1,0 +1,70 @@
+# House style shared by every Fuzentrix brand (Career Orbit, Fuzentrix Education).
+# Each brand's brand.yaml extends this file and only adds its logo, colour roles and a few labels.
+# Keeping typography, shapes, motion and sound here is what makes every video look like one family.
+
+fonts:                                   # all SIL Open Font Licence; files in ./fonts
+  display:  { family: Outfit,         weights: [600, 700, 800, 900], use: titles, headings, numbers }
+  body:     { family: Inter,          weights: [500, 600, 700],      use: body text, chips, UI labels }
+  mono:     { family: JetBrains Mono, weights: [500, 700],           use: code, labels, terminals, ligatures: false }
+  wordmark: { family: Montserrat,     weights: [400, 700, 800],      use: Career Orbit wordmark only }
+  hand:     { family: Caveat,         weights: [600, 700],           use: Sketch style labels only }
+
+type-scale:                              # px at 1920x1080
+  hero: 92
+  h1: 60
+  h2: 44
+  body: 30
+  small: 26                              # never smaller for on-screen text
+  label: 20                              # mono, uppercase, 0.2em tracking
+  code-card: [34, 46]
+  terminal: 30
+
+shape:
+  card-radius: 26
+  chip-radius: 999
+  code-radius: 26
+  card-border: 1px solid line
+  card-shadow: "0 30px 60px -22px rgba(13,39,76,.28), 0 2px 8px rgba(13,39,76,.06)"
+
+semantic:                                # same meaning in every brand
+  success: "#12A150"
+  danger:  "#E5484D"
+  warning: "#F6AD55"
+  info-purple: "#7C5CD6"
+
+code:                                    # dark editor and terminal cards
+  bg: ["#13274A", "#0B1730"]
+  text: "#FFFFFF"
+  gutter: "rgba(220,231,244,.32)"
+  keyword: "#7DD3FC"
+  function: "#FBBF24"
+  number: "#6EE7B7"
+  string: "#F9A8D4"
+  operator: "#CBD5E1"
+  comment: "#7B8BA5"
+  on-light: { keyword: "#0E7490", function: "#B45309", number: "#047857", string: "#BE185D" }   # code inside white cards
+
+motion:
+  enter:     { duration: 0.55, ease: power3.out }
+  exit:      { duration: 0.35, ease: power2.in }
+  pop:       { duration: 0.5,  ease: "back.out(1.8)" }
+  stagger: 0.04
+  wire-draw: 0.45
+  draw-on:   { speed-px-per-s: 900 }     # Sketch strokes
+
+audio:
+  target-lufs: -14
+  true-peak: -1
+  voice-highpass-hz: 70
+  sfx-offset-db: -8                      # relative to a -22 LUFS voice; scaled to the actual voice level
+  music: none
+
+plate: plate/slide_background.png        # white plate with blue arcs (1672x941, scaled to 1080p): the editors' background
+
+layout:                                  # 1920x1080
+  margin-left: 96
+  header-band: [78, 180]
+  edge-safe: 40
+  bug: { position: top-right, inset: [26, 56], pill: true }
+
+outro: none                              # no end cards; the editors' intro animation brands every video

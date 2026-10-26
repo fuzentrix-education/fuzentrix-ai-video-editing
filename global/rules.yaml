@@ -1,0 +1,23 @@
+# Machine-checkable rules (design §8). `fzv validate` enforces every rule with check: auto. A video's prompt may override any rule;
+# the override is logged in edit/decisions.md. Numbers come from defaults.yaml where noted.
+rules:
+  E2:  { check: auto, what: "output duration equals the raw cut (no outro)" }
+  E3:  { check: auto, what: "no captions unless subtitles.enabled; notes at most 16 words", note_max_words: 16 }
+  E5:  { check: auto, what: "name card only near the instructor's self-introduction" }
+  E7:  { check: auto, what: "terminal output is the program's real output (exec), or carries manual: <reason>" }
+  E8:  { check: auto, what: "Recording: reference -> no recording-window; code and output are rebuilt" }
+  V1:  { check: auto, what: "every section >= 30 s has an animated explanation (not only text templates)" }
+  V2:  { check: auto, what: "at most visuals.max_text_only_s (15 s) of words-only screen", from_defaults: visuals }
+  V3:  { check: advice, what: "concept moments (global/concepts.yaml) are shown with a matching template" }
+  A5:  { check: auto, what: "SFX from global/sfx first, rotating files per category; synthesised fallback varies every take; no stacked duplicates", from_defaults: sfx }
+  E9:  { check: auto, what: "corrections of a recording never change the program's output silently (logic_fix + confirm); exact mode copies it as typed" }
+  L1:  { check: auto, what: "overlay mode: no templates that touch the instructor (presenter, halo, frame); the brand corner box (setting presenter.corner_box) is the only exception", forbidden_in_overlay: [presenter] }
+  L2:  { check: auto, what: "no content block intersects the instructor's safe zone (except during cutaways)", margin_px: 16 }
+  L3:  { check: auto, what: "cutaways within limits", from_defaults: cutaways }
+  L4:  { check: auto, what: "never a plain-instructor stretch: plate shots never empty longer than max_gap_s; every studio shot carries a studio-layer graphic", from_defaults: empty }
+  L6:  { check: auto, what: "notes never overlap code cards or terminals" }
+  L7:  { check: auto, what: "recordings are shown whole (recording-window only scales to fit)" }
+  L8:  { check: auto, what: "nothing within 40 px of the frame edge (except the cutaway backdrop)", edge_px: 40 }
+  L10: { check: auto, what: "clutter budget per moment", from_defaults: clutter }
+  T3:  { check: auto, what: "no text overflowing its card" }
+  A3:  { check: auto, what: "final mix -14 LUFS integrated, -1 dBTP", lufs: -14, true_peak: -1 }

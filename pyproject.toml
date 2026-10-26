@@ -1,0 +1,17 @@
+[project]
+name = "fzv"
+version = "0.1.0"
+description = "Fuzentrix video editing automations: turns instructor videos into on-brand teaching videos with motion graphics"
+requires-python = ">=3.11"
+dependencies = ["pyyaml>=6", "numpy>=1.26", "scipy>=1.11", "pillow>=10"]
+
+[project.optional-dependencies]
+mlx = ["mlx-whisper"]                 # Apple Silicon transcription
+cuda = ["faster-whisper"]             # NVIDIA / CPU transcription elsewhere
+dev = ["pytest>=8"]
+
+[project.scripts]
+fzv = "fzv.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

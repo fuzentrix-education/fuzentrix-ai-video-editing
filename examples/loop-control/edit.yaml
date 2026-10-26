@@ -1,0 +1,190 @@
+# NOTE (2026-10-26): written before rules V1–V3 ("show the process") and the bottom-right box. `fzv validate` now reports its
+# text-only stretches (V2) and two terminals that reach into the box (L2). Keep it as the reference for spec SYNTAX, not as the
+# visual bar; the next re-edit of Loop Control brings it up to the current guidelines (docs/WORKFLOW.md, CLAUDE.md step 3).
+# Reference spec: "Loop Control Statements" (Durga, 899 s rough cut, overlay mode).
+# Shows every common pattern: intro, agenda, an analogy with props, definitions, type cards, a flowchart, a traced code example,
+# code typed to dictation with notes outside the code, a summary, and a studio-layer tag for every studio shot (rule L4).
+# Times are seconds read from the transcript; "@phrase" anchors work too (see the code-card in s05).
+title: Loop Control Statements
+brand: career-orbit
+mode: overlay
+styles: [core, code, props]
+quiet: [[0.0, 4.6, "the editor's Career Orbit logo animation plays here"]]
+decisions: |
+  Base families only (Core + Code) plus props for the two real-world analogies; no kinetic/diagram/data moments were
+  needed. Example 2 (531.8-669.4) has a separate screen recording in the source folder; this reference keeps it as a
+  code card so the example runs without it.
+confirm:
+  - "Example 3 code was rebuilt from her dictation (no recording exists): if i == 8: print(\"Lucky number found\"); break; print(i)"
+
+sections:
+  - id: intro
+    range: [0.0, 22.04]
+    bug: false                         # the editor's logo animation plays first
+    scenes:
+      - title-hero: { label: "Python · Loops", title: "Loop Control\nStatements", focus: "Focus: the `break` statement", focus_at: 6.4, at: 5.15, until: 12.66 }
+      - name-card: { name: Durga, at: 7.2, until: 12.0 }
+      - bug: { at: 12.9 }
+      - header: { label: "Python · Loops", title: "Loop control *statements*", at: 12.7, until: 18.7 }
+      - chips: { box: { x: 96, y: 230 }, until: 18.7, items: [{ text: Syntax, icon: code, at: 14.3 }, { text: How it works, icon: loop, at: 15.4 }, { text: Real-world examples, icon: sparkle, tone: amber, at: 16.3 }] }
+
+  - id: analogy
+    range: [22.04, 82.76]
+    scenes:
+      - agenda: { label: In this video, until: 35.2, items: [{ text: Loop control statements, icon: loop, at: 22.1 }, { text: Their types, icon: list, at: 24.2 }, { text: "The `break` statement", icon: stop, tone: red, at: 25.1 }, { text: Example programs, icon: code, tone: dark, at: 27.0 }] }
+      - header: { label: Real-world example, title: "The traffic police *checkpoint*", at: 39.4, until: 82.7 }
+      - prop-scene:
+          ground: road
+          box: { x: 96, y: 300, w: 1220, h: 400 }
+          at: 40.0
+          until: 82.7
+          props:
+            - { asset: police, x: 560, y: 40, w: 120, h: 220, at: 42.6 }
+            - { asset: ambulance, x: 20, y: 290, w: 200, h: 100, at: 52.9, moves: [{ to: [360, 290], at: 53.8 }, { to: [1000, 290], at: 57.2 }], until: 58.3 }
+            - { asset: car, x: 20, y: 296, w: 190, h: 95, at: 58.7, moves: [{ to: [360, 296], at: 59.3 }, { to: [1000, 296], at: 67.9 }], until: 69.3 }
+      - card: { label: Checks, text: "Driving licence · Vehicle certificates · **All correct?**", box: { x: 1360, y: 150, w: 480 }, at: 60.9, until: 82.7, size: 30 }
+      - card: { icon: bulb, text: "The police **decides based on a condition**: stop, let go, or hold", box: { x: 96, y: 780, w: 1220 }, at: 77.0, until: 82.7 }
+
+  - id: definition
+    range: [82.76, 140.82]
+    scenes:
+      - header: { label: Definition, title: "Loop control *statements*", at: 97.3, until: 103.6 }
+      - definition: { text: "Loop control statements are used to change the normal execution flow of a loop.", highlights: [{ text: change the normal execution flow, at: 100.1 }], at: 97.9, until: 103.6 }
+      - header: { label: Loop control statements, title: "Three *types*", at: 114.9, until: 132.9 }
+      - type-cards:
+          until: 132.9
+          cards:
+            - { keyword: break, icon: stop, tone: red, text: "Exits the loop **immediately**", at: 116.2, emphasis_at: 125.9 }
+            - { keyword: continue, icon: skip, tone: amber, text: "Skips the rest of this round, goes to the **next**", at: 117.2, emphasis_at: 128.8 }
+            - { keyword: pass, icon: pass, tone: purple, text: "Does **nothing**: a placeholder", at: 118.4, emphasis_at: 131.3 }
+
+  - id: theatre
+    range: [140.82, 183.5]
+    scenes:
+      - header: { label: Real-world example, title: "A movie in the *theatre*", at: 141.0, until: 168.0 }
+      - prop: { asset: cinema-screen, box: { x: 96, y: 250, w: 640, h: 400 }, at: 142.6, until: 168.0 }
+      - prop-scene: { box: { x: 120, y: 650, w: 700, h: 120 }, at: 143.8, until: 160.8, props: [{ asset: audience, x: 0, y: 0, w: 110, h: 100 }, { asset: audience, x: 130, y: 0, w: 110, h: 100 }, { asset: audience, x: 260, y: 0, w: 110, h: 100 }, { asset: audience, x: 390, y: 0, w: 110, h: 100 }, { asset: audience, x: 520, y: 0, w: 110, h: 100 }] }
+      - card: { label: Announcement, icon: warn, tone: red, text: "**Fire emergency**: please exit", box: { x: 830, y: 250, w: 490 }, at: 151.3, until: 168.0, size: 34 }
+      - card: { label: In programming, text: "The movie → a running **loop** · Fire emergency → the **condition** · Everyone leaves → `break`", box: { x: 830, y: 470, w: 490 }, at: 165.2, until: 168.0, size: 28 }
+
+  - id: syntax
+    range: [183.5, 279.1]
+    scenes:
+      - header: { label: The break statement, title: Definition, at: 183.6, until: 190.66 }
+      - definition: { text: "The `break` statement is used to exit the loop immediately when a specified condition is true.", highlights: [{ text: exit the loop immediately, at: 185.9 }, { text: specified condition is true, at: 188.7 }], at: 183.9, until: 190.66 }
+      - header: { label: The break statement, title: "Syntax & *flow*", at: 206.1, until: 269.4 }
+      - code-card: { id: syn, title: syntax.py, lines: ["for variable in sequence:", "    if condition:", "        break"], box: { x: 96, y: 236, w: 680 }, fs: 34, at: 206.3, until: 269.4,
+                     type: [{ line: 1, at: 206.6, cps: 18 }, { line: 2, at: 209.5, cps: 18 }, { line: 3, at: 210.9, cps: 18 }], caret_off: 212.0,
+                     highlights: [{ line: 2, cols: [4, 15], at: 216.5, until: 235.4 }, { line: 3, cols: [8, 12], at: 225.9, until: 235.4, tone: red }, { line: 2, cols: [4, 15], at: 241.9, until: 268.9, tone: green }, { line: 3, cols: [8, 12], at: 242.1, until: 268.9, tone: green }] }
+      - flowchart:
+          box: { x: 860, y: 236, w: 460, h: 640 }
+          until: 269.4
+          nodes:
+            - { id: it, x: 60, y: 0, w: 340, h: 70, text: Loop iteration, kind: term, at: 212.3 }
+            - { id: if, x: 100, y: 124, w: 260, h: 180, text: "`if` condition", kind: dec, at: 216.4 }
+            - { id: br, x: 110, y: 374, w: 240, h: 72, text: "`break`", kind: stop, at: 225.9 }
+            - { id: ex, x: 80, y: 524, w: 300, h: 72, text: Exit the loop, kind: ok, at: 228.0 }
+          edges:
+            - { from: it, to: if, at: 216.3 }
+            - { from: if, to: br, at: 221.5, tone: green, label: "True" }
+            - { from: br, to: ex, at: 228.0, tone: green }
+          walk: [{ node: it, at: 236.4 }, { node: if, at: 239.3 }, { node: br, at: 249.4 }, { node: ex, at: 265.7 }]
+
+  - id: example1
+    range: [279.1, 473.88]
+    scenes:
+      - header: { label: Example 1, title: "Stop the loop when *i* reaches *6*", at: 279.2, until: 468.5 }
+      - code-card:
+          id: ex1
+          title: example1.py
+          lines: ["for i in range(1, 11):", "    if i == 6:", "        break", "    print(i)"]
+          box: { x: 96, y: 236, w: 720 }
+          fs: 36
+          at: 279.3
+          until: 468.5
+          type: [{ line: 1, at: "@For i in range", cps: 15 }, { line: 2, at: "@if i equal to", cps: 15 }, { line: 3, at: 285.6 }, { line: 4, at: 286.6 }]
+          caret_off: 288.0
+          active: [{ line: 2, at: 305.4 }, { line: 4, at: 329.8 }, { line: 3, at: 431.9 }]
+          highlights: [{ line: 2, cols: [4, 13], at: 305.4, until: 329.8 }, { line: 4, cols: [4, 11], at: 329.8, until: 343.4, tone: green }, { line: 3, cols: [8, 12], at: 431.9, until: 468.5, tone: red }]
+      - tiles: { id: t1, label: "`range(1, 11)` gives", values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], box: { x: 860, y: 600 }, size: 80, gap: 92, cols: 5, at: 290.7, until: 468.5, note: { text: "11 is **not** included", at: 291.6, until: 297.0 } }
+      - trace:
+          { var: i, cond: "== 6", box: { x: 860, y: 236, w: 460 }, at: 295.0, until: 438.6, tiles: t1,
+            iterations: [{ v: 1, val: 298.5, res: 312.2, out: 338.8 }, { v: 2, val: 343.7, res: 348.6, out: 363.6 }, { v: 3, val: 367.6, res: 373.1, out: 377.9 },
+                         { v: 4, val: 383.4, res: 388.3, out: 394.4 }, { v: 5, val: 400.5, res: 406.6, out: 415.2 }, { v: 6, val: 420.8, res: 428.6, result: true, hit: 439.0 }] }
+      - terminal: { id: out1, box: { x: 96, y: 600, w: 720, h: 400 }, at: 296.0, until: 468.5,
+                    exec: { code: ex1, times: [338.8, 363.6, 377.9, 394.4, 415.2], tone: ok } }     # real output (rule E7), each line as the trace reaches its print
+      - note: { nt: "`break`", text: "runs → the loop **exits**", box: { x: 860, y: 236, w: 460 }, target: { code: ex1, line: 3 }, at: 438.9, until: 468.5 }
+
+  - id: example2
+    range: [473.88, 669.38]
+    scenes:
+      - header: { label: Example 2, title: "Print *1 → n*, stop at *11*", at: 474.0, until: 531.7 }
+      - problem: { text: "Write a Python program to print numbers from 1 to n. Stop printing when the number becomes 11, using the break statement.", highlights: [{ text: 1 to n, at: 477.3 }, { text: becomes 11, at: 480.4, tone: danger }, { text: break statement, at: 482.4, tone: danger }], at: 474.2, until: 531.7 }
+      - agenda: { box: { x: 96, y: 470, w: 800 }, row_h: 76, gap: 14, until: 531.7, items: [{ text: "Generate *1 → n*", icon: loop, at: 484.6 }, { text: "Check: is it *11*?", icon: question, at: 487.7 }, { text: "Yes → `break`", icon: stop, tone: red, at: 497.3 }] }
+      - header: { label: "Example 2 · Code", title: "Stop at *11*", at: 535.4, until: 661.9 }
+      - code-card: { id: ex2, lines: ["n = int(input())", "for i in range(1,n+1):", "    if i == 11:", "        break", "    print(i)"], box: { x: 96, y: 236, w: 900 }, fs: 38, at: 535.5, until: 661.9,
+                     # code and typing times copied from the screen recording's keyframes (rec1)
+                     type: [{ line: 1, parts: [[0, 551.0], [15, 555.4]], cps: 10 }, { line: 2, parts: [[15, 589.5], [17, 600.0], [20, 602.6], [21, 605.4]], cps: 8 },
+                            { line: 3, parts: [[13, 620.5], [14, 625.0]], cps: 6 }, { line: 4, parts: [[12, 628.0]], cps: 10 }, { line: 5, parts: [[9, 635.5], [11, 638.0]], cps: 8 }],
+                     caret_off: 639.0, run: 640.0 }
+      - note: { nt: "`int(input())`", text: "reads n as a **number**", box: { x: 1060, y: 280, w: 460 }, target: { code: ex2, line: 1 }, at: 556.8, until: 574.0 }
+      - note: { nt: "`break`", text: "exits the loop **immediately**", box: { x: 1060, y: 440, w: 460 }, target: { code: ex2, line: 4 }, at: 627.4, until: 639.4 }
+      - terminal: { id: out2, box: { x: 1060, y: 236, w: 520, h: 560 }, lh: 42, at: 640.0, until: 661.9,
+                    exec: { code: ex2, stdin: ["20"], times: [643.0, 654.5], pace: 0.05 } }   # she types 20 at 643.0; the output prints at 654.5
+
+  - id: example3
+    range: [669.38, 883.22]
+    scenes:
+      - header: { label: Example 3, title: "Find the *lucky number* 8", at: 669.5, until: 734.2 }
+      - problem: { text: "Write a Python program to print numbers from 1 to n. If the number becomes 8, print \"Lucky number found\" and stop the loop using the break statement.", highlights: [{ text: 1 to n, at: 673.1 }, { text: becomes 8, at: 675.3, tone: warning }, { text: stop the loop, at: 678.8, tone: danger }], at: 669.6, until: 709.6, size: 36 }
+      - tiles: { id: t3, values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], box: { x: 96, y: 300 }, size: 70, gap: 80, at: 710.3, until: 734.2,
+                 states: [{ i: 0, state: ok, at: 714.5 }, { i: 1, state: ok, at: 719.9 }, { i: 2, state: ok, at: 720.5 }, { i: 3, state: ok, at: 721.9 }, { i: 4, state: ok, at: 723.0 }, { i: 5, state: ok, at: 723.3 }, { i: 6, state: ok, at: 724.0 }, { i: 7, state: skip, at: 726.5 }, { i: 8, state: dim, at: 732.9 }, { i: 9, state: dim, at: 732.9 }],
+                 note: { text: "8 → **Lucky number found**, then `break`: 9 and 10 never print", at: 730.4 } }
+      - header: { label: "Example 3 · Code", title: "The *lucky number* program", at: 739.0, until: 875.8 }
+      - code-card:
+          id: lucky
+          title: lucky.py
+          lines: ["n = int(input())", "for i in range(1, n+1):", "    if i == 8:", "        print(\"Lucky number found\")", "        break", "    print(i)"]
+          box: { x: 96, y: 236, w: 980 }
+          at: 739.3
+          until: 875.8
+          type:
+            - { line: 1, parts: [[0, 749.9], [2, 750.4], [7, 751.1], [15, 752.0]] }
+            - { line: 2, parts: [[2, 780.8], [4, 782.4], [7, 783.7], [14, 784.3], [15, 786.1], [16, 787.8], [18, 788.2], [19, 789.7], [22, 790.0]] }
+            - { line: 3, parts: [[5, 796.0], [7, 797.4], [10, 798.5], [13, 798.8]] }
+            - { line: 4, parts: [[13, 805.6], [34, 806.3]], cps: 30 }
+            - { line: 5, parts: [[12, 823.8]] }
+            - { line: 6, parts: [[11, 831.0]] }
+          caret_off: 832.5
+          run: 838.4
+          highlights: [{ line: 3, cols: [4, 13], at: 799.8, until: 810.2 }, { line: 5, cols: [8, 12], at: 824.3, until: 830.6, tone: red }]
+      - note: { nt: "`if i == 8:`", text: "the **lucky number** check", box: { x: 1110, y: 420, w: 380 }, target: { code: lucky, line: 3 }, at: 799.9, until: 810.2 }
+      - note: { nt: "`break`", text: "stops right **after** the message", box: { x: 1110, y: 520, w: 380 }, target: { code: lucky, line: 5 }, at: 824.4, until: 830.6 }
+      - terminal: { id: out3, box: { x: 1110, y: 236, w: 460, h: 600 }, lh: 42, at: 838.6, until: 875.8,
+                    exec: { code: lucky, stdin: ["10"], times: [842.7, 846.8, 848.2, 848.8, 849.4, 850.3, 850.9, 851.6, 857.4], tones: { 8: warn } } }
+      - note: { nt: "8 → `break`", text: "**9 and 10 never print**", box: { x: 560, y: 760, w: 470 }, target: { point: [1104, 653] }, at: 859.9, until: 875.8 }
+
+  - id: summary
+    range: [883.22, 899.32]
+    scenes:
+      - header: { label: Summary, title: "What we *covered*", at: 883.3 }
+      - summary:
+          rows:
+            - { icon: loop, text: "Loop control statements and their types", at: 883.4, chips: [{ text: break, tone: danger, at: 887.3 }, { text: continue, tone: warning, at: 888.1 }, { text: pass, tone: purple, at: 889.1 }] }
+            - { icon: stop, tone: red, text: "The `break` statement: where and how", at: 890.3 }
+            - { icon: sparkle, tone: amber, text: "Real-world examples and three programs", at: 894.1 }
+
+studio:                                  # rule L4: every studio shot carries a light studio-layer graphic
+  - studio-tag: { label: Today, text: "Loop control: the *break* statement", at: 18.9, until: 21.9 }
+  - studio-tag: { label: Up next, text: "Where do we use *break*?", at: 35.4, until: 38.5 }
+  - studio-tag: { label: Like the police, text: "Programs also act on a *condition*", at: 83.0, until: 96.9 }
+  - studio-tag: { label: Loop control, text: "Changes the loop's *normal flow*", at: 103.8, until: 114.6 }
+  - studio-tag: { label: Next, text: "Where *break* is used in real life", at: 133.1, until: 140.6 }
+  - studio-tag: { label: In programming, text: "*break* stops a running loop", at: 168.3, until: 183.3 }
+  - studio-tag: { label: The break statement, text: "Exit the loop *immediately*", at: 190.9, until: 205.8 }
+  - studio-tag: { label: Next, text: "Let's run an *example*", at: 269.6, until: 278.9 }
+  - studio-tag: { label: Example 1, text: "Trace the loop *value by value*", at: 468.7, until: 473.7 }
+  - studio-tag: { label: Example 2, text: "To the *code playground*", at: 532.0, until: 535.1 }
+  - studio-tag: { label: Example 3, text: "Find the *lucky number*", at: 662.1, until: 669.2 }
+  - studio-tag: { label: Code, text: "To the *code playground*", at: 734.5, until: 738.8 }
+  - studio-tag: { label: Summary, text: "Let's *recap*", at: 876.0, until: 883.0 }

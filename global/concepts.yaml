@@ -1,0 +1,53 @@
+# Concept moments (rule V3). When the instructor names one of these, the screen should SHOW it with one of the listed templates,
+# starting on the word (design §7.3). `fzv plan` lists every moment found in the transcript; `fzv validate` reports moments
+# without a matching animation as advice. Phrases are matched in the English-mode transcript (romanised Telugu is common), so
+# keep them specific. The team may add concepts freely.
+concepts:
+  - id: type-conversion
+    phrases: ["type conversion", "type convert", "typecast", "type cast", "convert it into", "converted into", "int of input", "string to int", "string to integer"]
+    templates: [type-convert]
+    show: "the value with its type badge going through int()/str()/float() and coming out converted"
+  - id: generate-sequence
+    phrases: ["1 to n", "one to n", "range 1", "range of", "generate numbers", "generates numbers", "numbers from 1", "1 to 10", "1 to 11", "n plus 1"]
+    templates: [range-gen, tiles, trace]
+    show: "range() emitting the numbers one by one into slots; n+1 excluded; stop at a break value"
+  - id: iteration
+    phrases: ["first iteration", "next iteration", "each iteration", "every iteration", "iteration lo"]
+    templates: [trace, tiles, range-gen]
+    show: "the loop variable taking each value, the condition checked per round"
+  - id: collect-store
+    phrases: ["store the data", "stored in the database", "store in the database", "stores data", "save the data", "collecting data", "collect all", "data organize", "records are stored"]
+    templates: [data-flow, db-tables]
+    show: "the items flying into the database / table as they are named; the container filling"
+  - id: process-data
+    phrases: ["processed data", "process the data", "arrange", "meaningful", "into information"]
+    templates: [process-flow]
+    show: "raw items -> process -> the meaningful output sentence"
+  - id: request-response
+    phrases: ["request", "response", "sends a request", "fetch", "bridge", "back end", "backend"]
+    templates: [request-flow, blocks]
+    show: "a packet travelling from the user to the system and the result coming back"
+  - id: search
+    phrases: ["search", "find out", "look for", "searching", "how long"]
+    templates: [icon-grid, table]
+    show: "a magnifier scanning many records; the found one lighting up"
+  - id: many-items
+    phrases: ["10,000", "10000", "thousands", "lakhs", "thousand students", "1000s"]
+    templates: [icon-grid, counter, data-flow]
+    show: "a grid of icons with the number counting up"
+  - id: crud
+    phrases: ["create, retrieve", "create retrieve", "update and delete", "insert", "retrieve"]
+    templates: [hub, table, data-flow]
+    show: "the system with its operations appearing around it, or the operation applied to a table row"
+  - id: app-usage
+    phrases: ["log in", "login", "portal", "click on", "open the app", "website", "screen"]
+    templates: [mockup]
+    show: "the app or site screen being used: typing, pressing, loading, the result"
+  - id: condition
+    phrases: ["equal to equal to", "condition is true", "condition is false", "condition true", "condition false", "condition check"]
+    templates: [trace, flowchart, code-card]
+    show: "the condition evaluating to True/False with the branch it takes"
+  - id: compare
+    phrases: ["difference between", "versus", " vs ", "compared to"]
+    templates: [contrast, table]
+    show: "the two side by side"

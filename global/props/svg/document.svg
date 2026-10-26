@@ -1,0 +1,2 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 180"><path d="M20 10 H96 L124 38 V170 H20 Z" fill="#FFFFFF" stroke="var(--fz-line)" stroke-width="4"/><path d="M96 10 V38 H124" fill="var(--fz-tint)" stroke="var(--fz-line)" stroke-width="4"/>
+<rect x="38" y="62" width="68" height="8" rx="4" fill="var(--fz-action)"/><rect x="38" y="84" width="68" height="8" rx="4" fill="var(--fz-line)"/><rect x="38" y="106" width="52" height="8" rx="4" fill="var(--fz-line)"/><rect x="38" y="128" width="60" height="8" rx="4" fill="var(--fz-line)"/></svg>

@@ -1,0 +1,4 @@
+# The team's SFX library (rule A5). fzv uses these before its synthesised sounds. Add with `fzv sfx add <file|folder> --source … --licence …`.
+# Categories: whoosh (scene change), swish, pop, blip, tick (element entrances), click (button press), ding / good / bad (results),
+# thud, impact (big reveal), chime, type (typing). Several files per category rotate deterministically.
+sounds: []
