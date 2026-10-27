@@ -42,5 +42,21 @@ def probe(settings: dict) -> dict:
     return info
 
 
+def library() -> dict:
+    """What the shared library holds (it ships with the repo; bin/setup checks it is complete)."""
+    import re
+    import yaml
+    from .config import GLOBAL, RUNTIME
+    y = lambda f, k: len((yaml.safe_load((GLOBAL / f).read_text()) or {}).get(k) or []) if (GLOBAL / f).exists() else 0
+    cat = GLOBAL / "templates" / "catalogue.json"
+    return {"templates": len(json.loads(cat.read_text())) if cat.exists() else 0,
+            "registry animations": y("registry/manifest.yaml", "items"),
+            "icons": len(re.findall(r"<symbol ", (RUNTIME / "icons.svg").read_text())),
+            "props & characters": y("props/manifest.yaml", "assets"),
+            "music tracks": y("music/manifest.yaml", "tracks"),
+            "sound effects": y("sfx/manifest.yaml", "sounds"),
+            "brand kits": len([d for d in (GLOBAL / "brand").iterdir() if (d / "brand.yaml").exists()])}
+
+
 def report(info: dict) -> str:
     return json.dumps(info, indent=1)

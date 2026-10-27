@@ -1,4 +1,586 @@
 # The team's SFX library (rule A5). fzv uses these before its synthesised sounds. Add with `fzv sfx add <file|folder> --source … --licence …`.
 # Categories: whoosh (scene change), swish, pop, blip, tick (element entrances), click (button press), ding / good / bad (results),
 # thud, impact (big reveal), chime, type (typing). Several files per category rotate deterministically.
-sounds: []
+sounds:
+- id: chime-bong_001
+  category: chime
+  file: chime/bong_001.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: click-click_001
+  category: click
+  file: click/click_001.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: click-click_002
+  category: click
+  file: click/click_002.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: click-click_003
+  category: click
+  file: click/click_003.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: click-click_004
+  category: click
+  file: click/click_004.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: click-click_005
+  category: click
+  file: click/click_005.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-close_001
+  category: swish
+  file: swish/close_001.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-close_002
+  category: swish
+  file: swish/close_002.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-close_003
+  category: swish
+  file: swish/close_003.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-close_004
+  category: swish
+  file: swish/close_004.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: good-confirmation_001
+  category: good
+  file: good/confirmation_001.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: good-confirmation_002
+  category: good
+  file: good/confirmation_002.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: good-confirmation_003
+  category: good
+  file: good/confirmation_003.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: good-confirmation_004
+  category: good
+  file: good/confirmation_004.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: pop-drop_001
+  category: pop
+  file: pop/drop_001.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: pop-drop_002
+  category: pop
+  file: pop/drop_002.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: pop-drop_003
+  category: pop
+  file: pop/drop_003.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: pop-drop_004
+  category: pop
+  file: pop/drop_004.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: bad-error_001
+  category: bad
+  file: bad/error_001.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: bad-error_002
+  category: bad
+  file: bad/error_002.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: bad-error_003
+  category: bad
+  file: bad/error_003.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: bad-error_004
+  category: bad
+  file: bad/error_004.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: bad-error_005
+  category: bad
+  file: bad/error_005.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: bad-error_006
+  category: bad
+  file: bad/error_006.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: bad-error_007
+  category: bad
+  file: bad/error_007.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: bad-error_008
+  category: bad
+  file: bad/error_008.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: ding-glass_001
+  category: ding
+  file: ding/glass_001.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: ding-glass_002
+  category: ding
+  file: ding/glass_002.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: ding-glass_003
+  category: ding
+  file: ding/glass_003.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: ding-glass_004
+  category: ding
+  file: ding/glass_004.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: ding-glass_005
+  category: ding
+  file: ding/glass_005.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: ding-glass_006
+  category: ding
+  file: ding/glass_006.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-maximize_001
+  category: swish
+  file: swish/maximize_001.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-maximize_002
+  category: swish
+  file: swish/maximize_002.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-maximize_003
+  category: swish
+  file: swish/maximize_003.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-maximize_004
+  category: swish
+  file: swish/maximize_004.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-maximize_005
+  category: swish
+  file: swish/maximize_005.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-maximize_006
+  category: swish
+  file: swish/maximize_006.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-maximize_007
+  category: swish
+  file: swish/maximize_007.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-maximize_008
+  category: swish
+  file: swish/maximize_008.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-maximize_009
+  category: swish
+  file: swish/maximize_009.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-minimize_001
+  category: swish
+  file: swish/minimize_001.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-minimize_002
+  category: swish
+  file: swish/minimize_002.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-minimize_003
+  category: swish
+  file: swish/minimize_003.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-minimize_004
+  category: swish
+  file: swish/minimize_004.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-minimize_005
+  category: swish
+  file: swish/minimize_005.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-minimize_006
+  category: swish
+  file: swish/minimize_006.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-minimize_007
+  category: swish
+  file: swish/minimize_007.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-minimize_008
+  category: swish
+  file: swish/minimize_008.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-minimize_009
+  category: swish
+  file: swish/minimize_009.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-open_001
+  category: swish
+  file: swish/open_001.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-open_002
+  category: swish
+  file: swish/open_002.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-open_003
+  category: swish
+  file: swish/open_003.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: swish-open_004
+  category: swish
+  file: swish/open_004.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: pop-pluck_001
+  category: pop
+  file: pop/pluck_001.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: pop-pluck_002
+  category: pop
+  file: pop/pluck_002.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: blip-select_001
+  category: blip
+  file: blip/select_001.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: blip-select_002
+  category: blip
+  file: blip/select_002.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: blip-select_003
+  category: blip
+  file: blip/select_003.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: blip-select_004
+  category: blip
+  file: blip/select_004.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: blip-select_005
+  category: blip
+  file: blip/select_005.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: blip-select_006
+  category: blip
+  file: blip/select_006.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: blip-select_007
+  category: blip
+  file: blip/select_007.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: blip-select_008
+  category: blip
+  file: blip/select_008.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: tick-tick_001
+  category: tick
+  file: tick/tick_001.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: tick-tick_002
+  category: tick
+  file: tick/tick_002.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: tick-tick_004
+  category: tick
+  file: tick/tick_004.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: pop-toggle_001
+  category: pop
+  file: pop/toggle_001.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: pop-toggle_002
+  category: pop
+  file: pop/toggle_002.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: pop-toggle_003
+  category: pop
+  file: pop/toggle_003.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: pop-toggle_004
+  category: pop
+  file: pop/toggle_004.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: CC0 1.0 (Kenney, Interface Sounds)
+- id: click-mouseclick1
+  category: click
+  file: click/mouseclick1.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: blip-rollover1
+  category: blip
+  file: blip/rollover1.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: blip-rollover2
+  category: blip
+  file: blip/rollover2.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: blip-rollover3
+  category: blip
+  file: blip/rollover3.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: blip-rollover4
+  category: blip
+  file: blip/rollover4.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: blip-rollover5
+  category: blip
+  file: blip/rollover5.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: blip-rollover6
+  category: blip
+  file: blip/rollover6.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: type-switch1
+  category: type
+  file: type/switch1.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: type-switch10
+  category: type
+  file: type/switch10.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: type-switch11
+  category: type
+  file: type/switch11.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: type-switch12
+  category: type
+  file: type/switch12.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: type-switch2
+  category: type
+  file: type/switch2.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: type-switch3
+  category: type
+  file: type/switch3.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: type-switch4
+  category: type
+  file: type/switch4.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: type-switch5
+  category: type
+  file: type/switch5.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: type-switch6
+  category: type
+  file: type/switch6.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: type-switch7
+  category: type
+  file: type/switch7.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: type-switch8
+  category: type
+  file: type/switch8.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: type-switch9
+  category: type
+  file: type/switch9.ogg
+  gain_db: 0.0
+  source: https://kenney.nl/assets/ui-audio
+  licence: CC0 1.0 (Kenney, UI Audio)
+- id: whoosh-whoosh-soft-digital-71852
+  category: whoosh
+  file: whoosh/whoosh-soft-digital-71852.mp3
+  gain_db: 0.0
+  source: https://freesound.org/s/71852/
+  licence: 'CC0 1.0 (Freesound: ludvique)'
+- id: whoosh-whoosh-kinoton-1-427823
+  category: whoosh
+  file: whoosh/whoosh-kinoton-1-427823.mp3
+  gain_db: 0.0
+  source: https://freesound.org/s/427823/
+  licence: 'CC0 1.0 (Freesound: Kinoton)'
+- id: whoosh-whoosh-lloyd-332003
+  category: whoosh
+  file: whoosh/whoosh-lloyd-332003.mp3
+  gain_db: 0.0
+  source: https://freesound.org/s/332003/
+  licence: 'CC0 1.0 (Freesound: LloydEvans09)'
+- id: whoosh-whoosh-transition-632763
+  category: whoosh
+  file: whoosh/whoosh-transition-632763.mp3
+  gain_db: 0.0
+  source: https://freesound.org/s/632763/
+  licence: 'CC0 1.0 (Freesound: adh.dreaming)'
+- id: whoosh-whoosh-slow-swosh-60027
+  category: whoosh
+  file: whoosh/whoosh-slow-swosh-60027.mp3
+  gain_db: 0.0
+  source: https://freesound.org/s/60027/
+  licence: 'CC0 1.0 (Freesound: qubodup)'
+- id: whoosh-whoosh-windy-60002
+  category: whoosh
+  file: whoosh/whoosh-windy-60002.mp3
+  gain_db: 0.0
+  source: https://freesound.org/s/60002/
+  licence: 'CC0 1.0 (Freesound: qubodup)'
+- id: whoosh-whoosh-wipe-179779
+  category: whoosh
+  file: whoosh/whoosh-wipe-179779.mp3
+  gain_db: 0.0
+  source: https://freesound.org/s/179779/
+  licence: 'CC0 1.0 (Freesound: Sclolex)'

@@ -298,3 +298,95 @@ def test_prompt_music_sfx_presenter_fields(tmp_path):
     (tmp_path / "prompt.md").write_text("# T\nMusic: calm-piano, low\nSFX: minimal\nPresenter box: off\n")
     s = Project(tmp_path).settings()
     assert s["music"]["enabled"] and s["music"]["rel_lufs"] == -22 and s["sfx"]["minor"] is False and s["presenter"]["corner_box"] is False
+
+
+# ---------- beat sheet, approvals, review gates (design §9f) ----------
+def seg_tx(tmp_path, segs):
+    """Transcript with one segment per (start, words…); words 0.4 s apart."""
+    f = tmp_path / "transcript.jsonl"
+    rows = []
+    for start, text in segs:
+        ws = text.split()
+        rows.append(json.dumps({"start": start, "end": start + 0.4 * len(ws), "text": text, "words": [{"w": w, "s": round(start + 0.4 * i, 2)} for i, w in enumerate(ws)]}))
+    f.write_text("\n".join(rows) + "\n")
+    return f
+
+
+def test_beats_draft_contiguous_shots_and_no_tiny_beats(tmp_path):
+    from fzv import beats as B
+    segs = [(t, "we talk about loops and how they repeat work") for t in range(0, 60, 5)] + [(60.5, "So,")] + [(63, "the studio part starts here now")]
+    tx = seg_tx(tmp_path, segs)
+    cuts = [{"kind": "corner", "start": 0, "end": 62.0}, {"kind": "studio", "start": 62.0, "end": 70.0}]
+    moments = [{"t": 30.0, "phrase": "database", "templates": ["data-flow"], "show": ""}]
+    rows = B.draft(tx, cuts, 70.0, moments)
+    assert rows[0]["start"] == 0 and rows[-1]["end"] == 70.0
+    assert all(abs(a["end"] - b["start"]) < 1e-6 for a, b in zip(rows, rows[1:]))
+    assert all(r["end"] - r["start"] >= 4 for r in rows)                      # "So," joined a neighbour
+    assert any(r["start"] == 62.0 for r in rows) and rows[-1]["shot"] == "studio"   # the studio shot starts its own beat
+    assert any(r["start"] <= 30 < r["end"] and r["concepts"] for r in rows)
+    assert all(r["end"] - r["start"] <= 25 for r in rows)
+
+
+def test_beats_check_states_and_gates(tmp_path):
+    import yaml
+    from fzv import beats as B
+    from fzv.project import Project
+    tx_f = seg_tx(tmp_path, [(0, "data goes into the database here"), (10, "and the records are stored safely now")])
+    proj = Project(tmp_path)
+    proj.save({"raw": "r.mp4", "duration": 20.0})
+    (proj.edit / "transcript.jsonl").write_text(tx_f.read_text())
+    doc = {"beats": [{"id": "b01", "start": 0, "end": 10, "idea": "", "show": "", "templates": [], "sync": []},
+                     {"id": "b02", "start": 10, "end": 20, "idea": "stored", "show": "rows land", "templates": ["data-flow", "nope"], "sync": ["@zebra"]}]}
+    B.write(proj.p("beats.yaml"), doc)
+    tx = Transcript(proj.p("transcript.jsonl"))
+    errs, _, _ = B.check(doc, tx, 20.0, {"data-flow", "card"}, set(), [], set())
+    assert any("fill" in e for e in errs) and any("'nope'" in e for e in errs) and any("zebra" in e for e in errs)
+    assert B.beats_state(proj) == "draft" and B.gate_build(proj, proj.settings())
+    doc["beats"][0].update(idea="data is stored", show="chips fly into a database", templates=["data-flow"], sync=["@database"])
+    doc["beats"][1].update(templates=["data-flow"], sync=["@records"])
+    B.write(proj.p("beats.yaml"), doc)
+    errs, warns, res = B.check(doc, tx, 20.0, {"data-flow", "card"}, set(), [], set())
+    assert not errs and res["b01"]["sync"] == [1.6] and 0.5 <= res["b01"]["key"] <= 9.7
+    assert B.beats_state(proj) == "proposed"
+    B.record_approval(proj, "beats", B.beats_fingerprint(B.load(proj.p("beats.yaml"))), "looks good")
+    assert B.beats_state(proj) == "approved" and B.gate_build(proj, proj.settings()) is None
+    assert "looks good" in proj.p("approvals.md").read_text()
+    doc["beats"][1]["show"] = "rows land one by one"
+    B.write(proj.p("beats.yaml"), doc)
+    assert B.beats_state(proj) == "changed" and "changed" in B.gate_build(proj, proj.settings())
+    assert B.gate_render(proj, proj.settings())                                # no storyboard yet
+    (tmp_path / "prompt.md").write_text("# T\nReview: off\n")
+    assert B.gate_build(proj, proj.settings()) is None and B.gate_render(proj, proj.settings()) is None
+
+
+def test_legacy_edit_without_beats_skips_gates(tmp_path):
+    from fzv import beats as B
+    from fzv.project import Project
+    proj = Project(tmp_path)
+    assert B.gate_build(proj, proj.settings())                                # a new edit needs its beat sheet
+    (proj.edit / "built" / "clips.json").write_text("[]")
+    assert B.legacy(proj) and B.gate_build(proj, proj.settings()) is None and B.gate_render(proj, proj.settings()) is None
+
+
+def test_beat_refs_become_times():
+    from fzv import beats as B
+    doc = {"beats": [{"id": "b01", "start": 0, "end": 10}, {"id": "b02", "start": 83.0, "end": 98}]}
+    out = B.expand_refs("beat 2: use a car; b01 bigger text; 7:41 slower", doc)
+    assert [round(t, 1) for t, _ in revise.parse(out)] == [83.5, 0.5, 461.0]
+    assert revise.parse(out)[0][1] == "use a car"
+
+
+def test_prompt_review_field(tmp_path):
+    from fzv.project import Project
+    assert Project(tmp_path).settings()["review"] == {"beats": "required", "storyboard": "required"}
+    (tmp_path / "prompt.md").write_text("# T\nReview: beats only\n")
+    assert Project(tmp_path).settings()["review"] == {"beats": "required", "storyboard": "off"}
+
+
+def test_v4_scene_in():
+    from fzv.validate import scene_in
+    sp = {"sections": [{"range": [0, 30], "scenes": [{"data-flow": {"at": 5.0, "until": 12.0}}, {"hf": {"item": "count-up", "at": 20.0}}]}],
+          "studio": [{"studio-tag": {"at": 40.0, "until": 44.0}}]}
+    assert scene_in(sp, "data-flow", 10, 20) and not scene_in(sp, "data-flow", 14, 20)
+    assert scene_in(sp, "hf:count-up", 25, 29) and not scene_in(sp, "hf:chart-story", 0, 30)
+    assert scene_in(sp, "studio-tag", 41, 43)

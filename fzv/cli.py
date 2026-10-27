@@ -2,14 +2,18 @@
 
   fzv doctor                              machine check: workers, transcription backend, encoder
   fzv ingest   <folder>                   identify files, audio, shots + safe zones, recordings, transcript
-  fzv plan     <folder> [--check]         write edit/plan_brief.md for Claude; --check validates edit/edit.yaml
+  fzv plan     <folder> [--check]         write edit/plan_brief.md for Claude and draft edit/beats.yaml; --check validates edit/edit.yaml
+  fzv beats    <folder> [--redraft]       check the beat sheet, write beat_sheet.md and the review page (drafts it if missing)
+  fzv approve  <folder> beats|storyboard  record the editor's approval (build waits for the beat sheet, render for the storyboard)
   fzv build    <folder>                   resolve anchors, compile clips (edit/built/)
   fzv preview  <folder> <clip> <t,t,...>  contact sheet of a clip over the real footage
   fzv validate <folder>                   rule checks before rendering
+  fzv storyboard <folder> [--all]         one frame per beat over the real footage, before rendering (only changed frames redone)
+  fzv review   <folder> [--open]          the review page: beat sheet -> storyboard -> final, change requests (edit/review/index.html)
   fzv render   <folder> [--only ids]      render changed clips (parallel, cached)
   fzv finish   <folder>                   SFX + music + mix, composite, encode, final MP4 (+ .srt if subtitles)
   fzv verify   <folder>                   final checks and a verification sheet
-  fzv edit     <folder> [--prompt TEXT]   all of the above in order (stops after plan if edit.yaml is missing)
+  fzv edit     <folder> [--prompt TEXT]   all of the above in order; stops where Claude or the editor has to act
   fzv revise   <folder> "7:41 change…"    map timestamps to scenes and log the request
   fzv templates [--refresh]               template catalogue and cards
   fzv props list | add <svg> --id ID --kind character|prop --tags "…" [--recolor] --source URL --licence L
@@ -25,6 +29,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -118,6 +123,11 @@ def cmd_ingest(a) -> int:
     if not a.no_transcribe and not transcript_complete(proj):
         wait_transcript(proj, log)
         log(f"ingest: transcript {'done' if transcript_complete(proj) else 'FAILED (see edit/transcribe.log)'}")
+    try:
+        from .review import footage
+        footage(proj, log=log)
+    except Exception as e:                                       # the footage sheet is a convenience; never fail ingest on it
+        log(f"ingest: footage sheet skipped ({e})")
     log(f"ingest: done; mode {mode}. Next: `fzv plan {proj.folder}`")
     return 0
 
@@ -216,10 +226,133 @@ def cmd_plan(a) -> int:
             log(f"  {e}")
         log(f"plan --check: {'OK' if not errs else str(len(errs)) + ' problem(s)'}")
         return 0 if not errs else 1
+    from . import beats as B
     from .plan import brief
     wait_transcript(proj, log)
     f = brief(proj, proj.settings())
-    log(f"plan: wrote {f}\nNext: write {proj.spec_path} (Claude reads the brief), then `fzv build {proj.folder}`")
+    log(f"plan: wrote {f}")
+    if not proj.p("beats.yaml").exists() and not B.legacy(proj):
+        n = draft_beats(proj)
+        log(f"plan: drafted {proj.p('beats.yaml')} ({n} beats from pauses, shots and concept moments)")
+    log(f"Next: fill edit/beats.yaml (idea, show, templates, sync), run `fzv beats {proj.folder}` and show the editor the review page; "
+        f"once approved, write {proj.spec_path} from it")
+    return 0
+
+
+# ---------------------------------------------------------------- beat sheet, storyboard, review (design §9f)
+def draft_beats(proj: Project) -> int:
+    from . import beats as B
+    from .concepts import moments
+    pdata = proj.load()
+    tx = proj.p("transcript.jsonl")
+    cuts = json.loads(proj.p("cuts.json").read_text()) if proj.p("cuts.json").exists() else [{"kind": "plate", "start": 0, "end": pdata["duration"]}]
+    rows = B.draft(tx, cuts, pdata["duration"], moments(tx))
+    B.write(proj.p("beats.yaml"), {"title": proj.prompt_fields().get("title") or proj.folder.name, "beats": rows})
+    return len(rows)
+
+
+def check_beats(proj: Project, settings: dict):
+    from . import beats as B
+    from .anchors import Transcript
+    from .concepts import moments
+    from .plan import catalogue
+    from .registry import manifest
+    from .validate import TEXT_ONLY
+    doc = B.load(proj.p("beats.yaml"))
+    return B.check(doc, Transcript(proj.p("transcript.jsonl")), proj.load()["duration"], set(catalogue()), {x["name"] for x in manifest()},
+                   moments(proj.p("transcript.jsonl")), TEXT_ONLY, settings.get("visuals", {}).get("max_text_only_s", 15))
+
+
+BEAT_STATUS = {"missing": "no beat sheet", "draft": "draft (Claude is filling it)", "proposed": "waiting for the editor's approval",
+               "approved": "approved", "changed": "changed after approval: needs the editor's approval again"}
+
+
+def write_beat_sheet(proj: Project) -> None:
+    from . import beats as B
+    from .review import title_of
+    st = B.beats_state(proj)
+    a = B.approval(proj, "beats") if st == "approved" else None
+    status = BEAT_STATUS[st] + (f" ({a['at']}{': ' + a['note'] if a.get('note') else ''})" if a else "")
+    proj.p("beat_sheet.md").write_text(B.markdown(B.load(proj.p("beats.yaml")), title_of(proj), status), encoding="utf-8")
+
+
+def cmd_beats(a) -> int:
+    from . import beats as B
+    from .review import page
+    proj = Project(a.folder)
+    f = proj.p("beats.yaml")
+    if a.redraft and f.exists():
+        shutil.move(str(f), str(proj.edit / "_prev" / f"beats ({time.strftime('%Y%m%d-%H%M%S')}).yaml"))
+        log("beats: previous beat sheet moved to edit/_prev/")
+    if not f.exists():
+        wait_transcript(proj, log)
+        log(f"beats: drafted {f} ({draft_beats(proj)} beats). Fill idea, show, templates and sync, then run `fzv beats` again")
+        return 0
+    errs, warns, _ = check_beats(proj, proj.settings())
+    write_beat_sheet(proj)
+    out = page(proj, log=log)
+    doc = B.load(f)
+    log(f"beats: {len(doc.get('beats') or [])} beats; {len(errs)} problem(s), {len(warns)} note(s); status: {BEAT_STATUS[B.beats_state(proj)]}")
+    for e in errs:
+        log(f"  [problem] {e}")
+    for w in warns:
+        log(f"  [note] {w}")
+    log(f"beats: {proj.p('beat_sheet.md')}\nreview page: {out}")
+    return 1 if errs else 0
+
+
+def cmd_approve(a) -> int:
+    from . import beats as B
+    from .review import page
+    proj = Project(a.folder)
+    if a.what == "beats":
+        if not proj.p("beats.yaml").exists():
+            log("approve: there is no beat sheet yet"); return 1
+        errs, _, _ = check_beats(proj, proj.settings())
+        if errs:
+            log(f"approve: the beat sheet has {len(errs)} problem(s); fix them first:")
+            for e in errs:
+                log(f"  {e}")
+            return 1
+        B.record_approval(proj, "beats", B.beats_fingerprint(B.load(proj.p("beats.yaml"))), a.note or "")
+        write_beat_sheet(proj)
+        log("approve: beat sheet approved. Next: write edit/edit.yaml from it, build, validate, `fzv storyboard`")
+    else:
+        st = B.storyboard_state(proj)
+        if st in ("missing", "stale"):
+            log("approve: make the storyboard of the current build first (`fzv storyboard`)"); return 1
+        B.record_approval(proj, "storyboard", B.build_signature(proj), a.note or "")
+        log("approve: storyboard approved. Next: render, finish, verify")
+    page(proj, log=log)
+    return 0
+
+
+def cmd_storyboard(a) -> int:
+    from .machine import probe
+    from .review import page, storyboard
+    proj = Project(a.folder)
+    if not proj.p("beats.yaml").exists():
+        log("storyboard: needs a beat sheet (edit/beats.yaml)"); return 1
+    if not (proj.edit / "built" / "clips.json").exists():
+        log("storyboard: build the edit first (`fzv build`)"); return 1
+    storyboard(proj, workers=max(1, min(3, probe(proj.settings())["render_workers"])), redo_all=a.all, log=log)
+    log(f"review page: {page(proj, log=log)}")
+    return 0
+
+
+def cmd_review(a) -> int:
+    from . import beats as B
+    from .review import page
+    proj = Project(a.folder)
+    if not proj.load().get("raw"):
+        log("review: ingest the video first"); return 1
+    out = page(proj, log=log)
+    title = (B.load(proj.spec_path).get("title") if proj.spec_path.exists() else None) or proj.prompt_fields().get("title") or proj.folder.name
+    log(f"review: beat sheet {B.beats_state(proj)} · storyboard {B.storyboard_state(proj)} · final {'yes' if proj.output_path(title).exists() else 'not yet'}")
+    log(f"review: {out}")
+    if a.open:
+        import webbrowser
+        webbrowser.open(out.as_uri())
     return 0
 
 
@@ -282,8 +415,12 @@ def add_corner_box(proj: Project, pdata: dict, settings: dict, res: dict, clips:
 def cmd_build(a) -> int:
     from . import spec as S
     from .build import build
+    from .beats import gate_build
     proj = Project(a.folder)
     settings, pdata, sp, cuts, tx = load_all(proj)
+    why = gate_build(proj, settings)
+    if why:
+        log(f"build: waiting: {why}"); return 1
     if (sp.get("mode") or pdata.get("mode")) == "compose":
         from .compose import build_compose
         return build_compose(proj, settings, pdata, sp, cuts, tx, log)
@@ -345,9 +482,13 @@ def cmd_validate(a) -> int:
 
 
 def cmd_render(a) -> int:
+    from .beats import gate_render
     from .machine import probe
     from .render import render
     proj = Project(a.folder)
+    why = gate_render(proj, proj.settings())
+    if why:
+        log(f"render: waiting: {why}"); return 1
     man, _ = built(proj)
     m = probe(proj.settings())
     workers = a.workers or m["render_workers"]
@@ -389,27 +530,44 @@ def cmd_verify(a) -> int:
     title = sp.get("title") or proj.prompt_fields().get("title") or proj.folder.name
     rep = verify(proj, proj.output_path(title), media.probe(proj.folder / pdata["raw"]), cuts, log)
     log(f"verify: sheet {rep['sheet']}")
+    from .review import page
+    log(f"review page: {page(proj, settings, log=log)}")
     return 0 if rep["ok"] else 1
 
 
 def cmd_edit(a) -> int:
+    """Everything in order. Stops where someone has to act: Claude fills the beat sheet and writes edit.yaml, the editor approves
+    the beat sheet and the storyboard (settings `review.*`)."""
+    from . import beats as B
     proj = Project(a.folder)
     if a.prompt:
         (proj.folder / "prompt.md").write_text(a.prompt.strip() + "\n", encoding="utf-8")
     if not proj.load().get("stages", {}).get("ingest"):
         if cmd_ingest(argparse.Namespace(folder=a.folder, raw=None, no_transcribe=False, force=False, rekey=False)):
             return 1
-    if not proj.spec_path.exists():
+    settings = proj.settings()
+    if not proj.p("plan_brief.md").exists() or (not proj.p("beats.yaml").exists() and not B.legacy(proj)):
         cmd_plan(argparse.Namespace(folder=a.folder, check=False))
-        log("edit: stopping here; write edit/edit.yaml from edit/plan_brief.md, then run `fzv edit` again")
-        return 0
+    why = B.gate_build(proj, settings)
+    if why:
+        log(f"edit: waiting: {why}"); return 0
+    if not proj.spec_path.exists():
+        log("edit: stopping here; write edit/edit.yaml " + ("from the approved beat sheet" if proj.p("beats.yaml").exists() else "from edit/plan_brief.md")
+            + ", then run `fzv edit` again"); return 0
     for step in (cmd_build, cmd_validate):
         if step(argparse.Namespace(folder=a.folder)):
             if step is cmd_validate and not a.force:
                 log("edit: validation found problems; fix edit.yaml or rerun with --force"); return 1
             elif step is cmd_build:
                 return 1
-    cmd_render(argparse.Namespace(folder=a.folder, workers=None, only=None))
+    if B.gate_mode(settings, "storyboard") != "off" and proj.p("beats.yaml").exists():
+        if cmd_storyboard(argparse.Namespace(folder=a.folder, all=False)):
+            return 1
+        why = B.gate_render(proj, settings)
+        if why:
+            log(f"edit: waiting: {why}"); return 0
+    if cmd_render(argparse.Namespace(folder=a.folder, workers=None, only=None)):
+        return 1
     cmd_finish(argparse.Namespace(folder=a.folder))
     return cmd_verify(argparse.Namespace(folder=a.folder))
 
@@ -420,8 +578,12 @@ def cmd_revise(a) -> int:
     proj = Project(a.folder)
     settings, pdata, sp, cuts, tx = load_all(proj)
     res, _ = S.resolve(sp, tx, pdata["duration"])
+    request = a.request
+    if proj.p("beats.yaml").exists():                            # "beat 7: …" means the beat's time
+        from .beats import expand_refs, load as load_beats
+        request = expand_refs(request, load_beats(proj.p("beats.yaml")))
     items = []
-    for t, what in Rv.parse(a.request):
+    for t, what in Rv.parse(request):
         ctx = Rv.context(res, t, tx)
         ctx["request"] = what
         items.append(ctx)
@@ -429,6 +591,8 @@ def cmd_revise(a) -> int:
         for s in ctx["scenes"]:
             log(f"  scene: {s['section']} #{s['scene']} {s['template']} ({s['at']}–{s['until']})")
         log(f"  speech: {ctx['speech'][:300]}")
+    if not items:
+        log("revise: no time or beat number found; write requests like \"7:41 make the note larger\" or \"beat 7: use a car\""); return 1
     Rv.log_request(proj, a.request, items)
     log("\nrevise: logged in edit/revisions.md. Change those scenes in edit.yaml, then run build, validate, render, finish, verify (only changed clips and chunks are redone).")
     return 0
@@ -497,6 +661,14 @@ def cmd_music(a) -> int:
 def cmd_sfx(a) -> int:
     from .assets import SFX_CATEGORIES, add_sfx, attribution_warning, licence_problem
     from .audio import sfx_library
+    if a.action == "remove":
+        from .assets import remove_sfx
+        log(f"sfx remove: {', '.join(remove_sfx([a.path] + (a.more or []))) or 'nothing matched'}")
+        return 0
+    if a.action == "audition":
+        from .assets import sfx_audition
+        sfx_audition(log=log)
+        return 0
     if a.action == "list":
         lib = sfx_library()
         for cat in SFX_CATEGORIES:
@@ -539,8 +711,9 @@ def cmd_brands(a) -> int:
 
 
 def cmd_doctor(a) -> int:
-    from .machine import probe, report
+    from .machine import library, probe, report
     log(report(probe(defaults())))
+    log("library: " + ", ".join(f"{v} {k}" for k, v in library().items()))
     return 0
 
 
@@ -593,6 +766,10 @@ def main(argv=None):
     p.add_argument("--rekey", action="store_true", help="compose mode: key the instructor again (e.g. after changing `key:` options)")
     add("_transcribe", cmd__transcribe)
     p = add("plan", cmd_plan); p.add_argument("--check", action="store_true")
+    p = add("beats", cmd_beats); p.add_argument("--redraft", action="store_true", help="start a new draft (the old sheet goes to edit/_prev/)")
+    p = add("approve", cmd_approve); p.add_argument("what", choices=["beats", "storyboard"]); p.add_argument("--note", help="the editor's words")
+    p = add("storyboard", cmd_storyboard); p.add_argument("--all", action="store_true", help="redo every frame")
+    p = add("review", cmd_review); p.add_argument("--open", action="store_true", help="open the page in the browser")
     add("build", cmd_build)
     p = add("preview", cmd_preview); p.add_argument("clip"); p.add_argument("times")
     add("validate", cmd_validate)
@@ -608,7 +785,8 @@ def main(argv=None):
     p.add_argument("--recolor", action="store_true", help="map the SVG's fixed colours to the nearest brand variables")
     p = add("icons", cmd_icons, folder=False); p.add_argument("action", choices=["add"]); p.add_argument("svg"); p.add_argument("--id", required=True)
     p.add_argument("--source", required=True); p.add_argument("--licence", required=True)
-    p = add("sfx", cmd_sfx, folder=False); p.add_argument("action", choices=["list", "add"]); p.add_argument("path", nargs="?")
+    p = add("sfx", cmd_sfx, folder=False); p.add_argument("action", choices=["list", "add", "audition", "remove"]); p.add_argument("path", nargs="?")
+    p.add_argument("more", nargs="*", help="remove: more files or category:number from the audition list")
     p.add_argument("--category", help="whoosh, swish, pop, blip, tick, click, ding, good, bad, thud, impact, chime, type (guessed from file names if omitted)")
     p.add_argument("--source"); p.add_argument("--licence", default=""); p.add_argument("--gain", type=float, default=0.0)
     p = add("registry", cmd_registry, folder=False, help="HyperFrames registry items: search, add, list")

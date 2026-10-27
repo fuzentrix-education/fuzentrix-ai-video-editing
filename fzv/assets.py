@@ -9,6 +9,7 @@ from __future__ import annotations
 import colorsys
 import re
 import shutil
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -207,6 +208,50 @@ def add_sfx(src: Path, category: str | None, source: str, licence: str, gain_db:
     header = "".join(l + "\n" for l in text.splitlines() if l.startswith("#"))
     man_f.write_text(header + yaml.safe_dump({"sounds": sounds}, sort_keys=False, allow_unicode=True, width=200), encoding="utf-8")
     return added
+
+
+def remove_sfx(names: list[str]) -> list[str]:
+    """Drop sounds from the library by file (e.g. swish/close_002.ogg) or by audition number (e.g. swish:2)."""
+    man_f = GLOBAL / "sfx" / "manifest.yaml"
+    text = man_f.read_text(encoding="utf-8")
+    sounds = (yaml.safe_load(text) or {}).get("sounds") or []
+    drop = set()
+    for n in names:
+        if ":" in n and n.split(":")[1].isdigit():
+            cat, k = n.split(":")
+            same = [s for s in sounds if s["category"] == cat]
+            if 1 <= int(k) <= len(same):
+                drop.add(same[int(k) - 1]["file"])
+        else:
+            drop.add(n)
+    keep = [s for s in sounds if s["file"] not in drop]
+    for s in sounds:
+        if s["file"] in drop:
+            (GLOBAL / "sfx" / s["file"]).unlink(missing_ok=True)
+    header = "".join(l + "\n" for l in text.splitlines() if l.startswith("#"))
+    man_f.write_text(header + yaml.safe_dump({"sounds": keep}, sort_keys=False, allow_unicode=True, width=200), encoding="utf-8")
+    return sorted(drop)
+
+
+def sfx_audition(log=print) -> Path:
+    """One MP3 per category with every library sound in order (0.7 s apart) and a list, for the team to listen and prune."""
+    from .audio import sfx_library
+    out = GLOBAL / "sfx" / "_audition"
+    out.mkdir(parents=True, exist_ok=True)
+    lines = []
+    for cat, sounds in sorted(sfx_library().items()):
+        lst = out / f"{cat}.txt"
+        inputs, fc = [], []
+        for i, s in enumerate(sounds):
+            inputs += ["-i", str(GLOBAL / "sfx" / s["file"])]
+            fc.append(f"[{i}:a]aformat=sample_rates=48000:channel_layouts=stereo,apad=pad_dur=0.7[a{i}]")
+        fc.append("".join(f"[a{i}]" for i in range(len(sounds))) + f"concat=n={len(sounds)}:v=0:a=1[o]")
+        subprocess.run(["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", ";".join(fc), "-map", "[o]", "-c:a", "libmp3lame", "-q:a", "3", str(out / f"{cat}.mp3")], check=True)
+        lst.write_text("\n".join(f"{i + 1:2d}. {s['file']}" for i, s in enumerate(sounds)) + "\n")
+        lines.append(f"{cat}: {len(sounds)} sound(s) -> {out / (cat + '.mp3')}")
+    for l in lines:
+        log(l)
+    return out
 
 
 def add_music(src: Path, track_id: str, mood: str, bpm: int | None, source: str, licence: str) -> dict:

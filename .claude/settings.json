@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bin/fzv *)",
+      "Bash(bin/setup)",
+      "Bash(.venv/bin/python -m pytest)",
+      "Bash(.venv/bin/python -m pytest *)",
+      "Bash(mkdir -p videos/*)",
+      "Bash(cp * videos/*)",
+      "Edit(videos/**)"
+    ]
+  }
+}

@@ -36,6 +36,22 @@ def text_only_stretches(sec: dict, end_default: float) -> list[tuple[float, floa
 CONTENT = BLOCKS | {"text", "cutaway", "part"}
 
 
+def scene_in(spec: dict, want: str, lo: float, hi: float) -> bool:
+    """A scene of template `want` (or `hf:<item>`) is on screen at some point between lo and hi (1 s tolerance)."""
+    item = want[3:] if want.startswith("hf:") else None
+    name = "hf" if item else want
+    groups = [(s, sec["range"][1]) for sec in spec.get("sections") or [] for s in sec.get("scenes") or []]
+    groups += [(s, None) for s in spec.get("studio") or []]
+    for s, end in groups:
+        (n, p), = s.items()
+        if n != name or not isinstance(p, dict) or not isinstance(p.get("at"), (int, float)) or (item and p.get("item") != item):
+            continue
+        until = p["until"] if isinstance(p.get("until"), (int, float)) else (end if end is not None else p["at"] + 5)
+        if p["at"] <= hi + 1 and until >= lo - 1:
+            return True
+    return False
+
+
 def sample(html: Path, local_times: list[float]) -> dict:
     p = subprocess.run(["node", str(REPO / "node" / "sample.mjs"), "sample", str(html), ",".join(f"{t:.2f}" for t in local_times)],
                        capture_output=True, text=True, cwd=REPO)
@@ -222,6 +238,15 @@ def validate(proj, spec: dict, clips: list[dict], manifest: list[dict], cuts: li
     from .concepts import covered, moments
     advice = [{"rule": "V3", "t": m["t"], "msg": f"“{m['phrase']}” is said here; show it with {' / '.join(m['templates'])} ({m['show']})"}
               for m in moments(proj.p("transcript.jsonl")) if not covered(m, spec)]
+    # V4: every beat of the beat sheet is built as approved (design §9f)
+    if proj.p("beats.yaml").exists():
+        from . import beats as B
+        for b in B.load(proj.p("beats.yaml")).get("beats") or []:
+            if not B.filled(b) or not isinstance(b.get("start"), (int, float)):
+                continue
+            for want in [str(t) for t in b.get("templates") or []]:
+                if not scene_in(spec, want, b["start"], b["end"]):
+                    flag("V4", b["start"], f"beat {b['id']} ({B.span(b)}) was approved with {want}, but edit.yaml has no {want} there")
     # L5: compose mode, instructor moves at most twice
     if spec.get("mode") == "compose":
         poses = (spec.get("presenter") or {}).get("poses") or []

@@ -30,6 +30,11 @@ These are the defaults for every video. A video's prompt may override any of the
 - Every step lands on the word that names it. A new visual roughly every 8–12 s; never more than 15 s of words-only screen.
 - Cover the concept moments `fzv plan` lists (`global/concepts.yaml`), or say why not. Guide: `global/styles/explainer/STYLE.md`.
 
+**Plan and approve before rendering**
+- Plan per idea in the beat sheet (`edit/beats.yaml`): what each beat shows and on which words. The editor approves it before the
+  edit is built, and approves the storyboard (one frame per beat) before it is rendered. Any later change needs a new approval.
+- Build every beat with the templates it was approved with (V4). Prompt `Review: off` skips the approvals (quick tests only).
+
 **Type and motion**
 - Brand fonts and sizes only. Text no smaller than 26 px; code no smaller than 30 px. Code ligatures off.
 - Motion timings come from the brand kit; animate only transform and opacity.

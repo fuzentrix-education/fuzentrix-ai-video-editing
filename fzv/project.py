@@ -63,7 +63,7 @@ class Project:
         """Simple `Key: value` lines from prompt.md (Brand, Style, Subtitles, Music, Mode, Recording, Title)."""
         out = {}
         for ln in self.prompt().splitlines():
-            m = re.match(r"^\s*(?:screen[\s-]+)?(brand|style|subtitles|music|sfx|mode|title|recordings?|presenter box|instructor box)\s*:\s*(.+?)\s*(#.*)?$", ln, re.I)
+            m = re.match(r"^\s*(?:screen[\s-]+)?(brand|style|subtitles|music|sfx|mode|title|recordings?|presenter box|instructor box|review)\s*:\s*(.+?)\s*(#.*)?$", ln, re.I)
             if m:
                 out[m.group(1).lower().rstrip("s") if m.group(1).lower().startswith("record") else m.group(1).lower()] = m.group(2).strip()
         t = re.search(r"^#\s+(.+)$", self.prompt(), re.M)
@@ -104,6 +104,16 @@ class Project:
         pb = f.get("presenter box") or f.get("instructor box")
         if pb:
             over["presenter"] = {"corner_box": not any(w in pb.lower() for w in ("off", "no", "none", "false"))}
+        if "review" in f:                                       # Review: on | off | beats (beat sheet only) | storyboard (storyboard only)
+            v = f["review"].lower()
+            if v.startswith(("off", "no", "none", "skip")):
+                over["review"] = {"beats": "off", "storyboard": "off"}
+            elif "beat" in v and "storyboard" not in v:
+                over["review"] = {"beats": "required", "storyboard": "off"}
+            elif "storyboard" in v and "beat" not in v:
+                over["review"] = {"beats": "off", "storyboard": "required"}
+            else:
+                over["review"] = {"beats": "required", "storyboard": "required"}
         rec = f.get("recording") or f.get("recordings")
         if rec:
             v = rec.lower()

@@ -101,6 +101,9 @@ def build_compose(proj, settings, pdata, sp, cuts, tx, log) -> int:
         c["opaque"] = True
     man = build_clips(proj, res, clips, settings)
     proj.p("clips.json").write_text(json.dumps(clips, indent=1))
+    from .cli import write_decisions
+    write_decisions(proj, sp, settings, res)
+    proj.stage_done("build", clips=len(man), mode="compose")
     log(f"build (compose): {len(man)} clip(s)")
     return 0
 

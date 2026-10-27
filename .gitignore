@@ -10,3 +10,9 @@ tests/_work/
 *.lufs
 global/registry/catalog.json
 .hyperframes/
+global/sfx/_audition/
+*.egg-info/
+# editors' videos and personal Claude Code settings stay local
+videos/*
+!videos/README.md
+.claude/settings.local.json

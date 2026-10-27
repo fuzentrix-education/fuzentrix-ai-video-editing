@@ -122,6 +122,12 @@ def brief(proj, settings: dict) -> Path:
         "Every studio shot needs a `studio` scene (rule L4). Plate/corner shots must never sit empty for more than "
         f"{settings['empty']['max_gap_s']}s. Clutter budget: {settings['clutter']}.",
         *concept_notes(proj),
+        "## Beat sheet first (edit/beats.yaml, rule R1)",
+        "`fzv plan` drafted one row per beat (an idea the instructor explains, 8–20 s) from the pauses, shot changes and concept moments. "
+        "Before writing edit.yaml, fill every row: `idea` (one plain sentence), `show` (what appears, in plain words for a non-technical editor), "
+        "`templates` and `sync` (the words each step lands on). Merge or split rows freely; they must stay contiguous. Then run `fzv beats` and show "
+        "the editor the review page; edit.yaml is written only from the approved sheet, scene by scene (rule V4). "
+        "The footage every 10 s and at each shot change: `edit/out/footage.jpg`.",
         "## Templates by family", "\n".join(f"- **{f}**: {', '.join(sorted(ns))}" for f, ns in sorted(fam.items())),
         "Full parameters: global/templates/catalogue.json (or the cards in global/templates/<family>/).",
         "## Props library (template `prop`, `prop-move`, `prop-scene`; asset ids)",

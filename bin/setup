@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# One-time setup for a new machine. Run once from the repo folder:   bin/setup
+#
+# The shared library (57 templates, 31 registry animations, 114 icons, 120 props & characters, music, 97 sound effects, brand
+# kits) ships inside the repo, so nothing is downloaded per video. This script installs the tools around it, downloads the
+# renderer's browser and the transcription model once, and checks everything works. Safe to run again.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+say()  { printf '\n\033[1m%s\033[0m\n' "$1"; }
+fail() { printf '\n\033[31m%s\033[0m\n' "$1"; exit 1; }
+need() { command -v "$1" >/dev/null 2>&1 || fail "Missing $1. Install it with: $2   (then run bin/setup again)"; }
+
+say "1/7  Checking tools"
+need ffmpeg "brew install ffmpeg"
+need node   "brew install node"
+need uv     "brew install uv"
+node -e 'process.exit(parseInt(process.versions.node) >= 20 ? 0 : 1)' || fail "Node 20 or newer is needed (brew upgrade node)."
+ffmpeg -hide_banner -encoders 2>/dev/null | grep -q libvpx-vp9 || fail "This ffmpeg has no VP9 encoder (brew reinstall ffmpeg)."
+echo "ffmpeg, node $(node -v), uv: ok"
+
+say "2/7  Python environment"
+[ -x .venv/bin/python ] || uv venv --python 3.12 .venv
+uv pip install --quiet --python .venv/bin/python -e ".[dev]"
+if [ "$(uname -s)" = "Darwin" ] && [ "$(uname -m)" = "arm64" ]; then
+  uv pip install --quiet --python .venv/bin/python mlx-whisper; WHISPER=mlx
+else
+  uv pip install --quiet --python .venv/bin/python faster-whisper; WHISPER=faster
+fi
+echo "python packages: ok (transcription: $WHISPER)"
+
+say "3/7  Renderer (HyperFrames) and its browser"
+npm install --silent
+HYPERFRAMES_NO_TELEMETRY=1 HYPERFRAMES_SKIP_SKILLS=1 node_modules/.bin/hyperframes browser ensure >/dev/null
+echo "hyperframes + chrome: ok"
+
+say "4/7  Transcription model (about 1.6 GB, downloaded once)"
+.venv/bin/python - <<'PY'
+import numpy as np
+from fzv.transcribe import backend
+be = backend()
+if be == "mlx":
+    import mlx_whisper
+    mlx_whisper.transcribe(np.zeros(16000, np.float32), path_or_hf_repo="mlx-community/whisper-large-v3-turbo", language="en")
+elif be == "faster":
+    from faster_whisper import WhisperModel
+    WhisperModel("large-v3-turbo", compute_type="auto")
+print(f"model ready ({be})")
+PY
+
+say "5/7  Shared library"
+bin/fzv templates --refresh >/dev/null
+.venv/bin/python - <<'PY'
+from fzv.machine import library
+lib = library()
+need = {"templates": 57, "registry animations": 31, "icons": 114, "props & characters": 120, "music tracks": 2, "sound effects": 90, "brand kits": 2}
+short = [f"{k}: {lib.get(k, 0)} (expected {v}+)" for k, v in need.items() if lib.get(k, 0) < v]
+print(", ".join(f"{v} {k}" for k, v in lib.items()))
+if short:
+    raise SystemExit("library incomplete: " + "; ".join(short) + "  (git pull, or restore global/ from the repo)")
+PY
+
+say "6/7  Machine check"
+bin/fzv doctor | tail -3
+
+say "7/7  Tests"
+.venv/bin/python -m pytest -q 2>&1 | tail -1
+
+say "Ready. Open this folder in VS Code and ask Claude Code, for example:  Edit the video in videos/<name>"

@@ -55,6 +55,8 @@ The document also records the decisions behind the design and the lessons from t
 | D26 | **Bottom-right instructor in a box, in both modes.** Raw footage: the cut-out is clipped to a rounded brand box. Rough cuts: the same frame is drawn around the instructor's corner area and the strips outside it are covered with the exact plate image the editor used, so the instructor looks cut by the box. A setting (`presenter.corner_box`, prompt `Presenter box: off`). | The user's rule, "can modify anytime"; the earlier DBMS edit they preferred framed the instructor this way. |
 | D27 | **Music is audible.** When the prompt asks for music, the bed sits a fixed loudness below the voice (−18 LU; "low" −22, "high" −14), measured per track, with gentle ducking. | The first music test was effectively silent (−28 dB plus hard ducking). |
 | D28 | **Animations from the HyperFrames registry.** 448 open-source (Apache-2.0) blocks and components; `fzv registry add` vendors them into `global/registry/` and the `hf` template mounts them in a box with their variables and word-anchored cues (§7.4). | The user: "get the animation templates also, or take from web". |
+| D29 | **Editors work by chatting in Claude Code (VS Code); the CLI is Claude's toolset.** Project skills (`/edit-video`, `/change`, `/review`, `/approve`) in `.claude/skills/`, safe steps pre-approved in `.claude/settings.json`, a one-page [editor guide](EDITOR-GUIDE.md), one-time `bin/setup`. | The editors are not technical; the user: "make things easy for editing for editors", "currently I am using Claude Code UI in VS Code". |
+| D30 | **Two approvals before the slow steps: the beat sheet and the storyboard (§9f).** `build` runs only from an approved beat sheet, `render` only after the storyboard of the current build is approved (rules R1/R2, setting `review.*`, prompt `Review: off`). Approvals carry a fingerprint, so any later change needs a new one. Edits made before beat sheets keep working without them. | Plans per idea give better edits than scene-by-scene specs; mistakes are cheapest before rendering; editors need to see and steer the edit. |
 | D21 | **Output on screen is the program's real output.** The build runs the code shown on screen and prints exactly what a terminal shows (rule E7). | The user's instruction: outputs printed exactly how the code outputs them. |
 
 ## 3. Organisation: global files and video folders
@@ -397,6 +399,14 @@ These are the global defaults. A video's prompt may override any of them (D9); o
 | V1 | Every section of 30 s or more has at least one animated explanation (a template that shows a process, not only words). | auto |
 | V2 | At most 15 s of plate time where only text templates are on screen (`visuals.max_text_only_s`). | auto |
 | V3 | Every concept moment in the transcript (`global/concepts.yaml`) is shown with a matching template around its word, or `decisions` says why not. | advice |
+| V4 | Every beat of the beat sheet is built with the templates it was approved with, inside its time (±1 s). | auto |
+
+### 8.2b Review gates (D30)
+
+| ID | Rule | Check |
+|---|---|---|
+| R1 | `edit.yaml` is built only from a beat sheet the editor approved; a beat sheet changed after approval needs a new approval. | gate (`review.beats`) |
+| R2 | Rendering starts only after the editor approved the storyboard of the current build (and the beat sheet is still approved). | gate (`review.storyboard`) |
 
 ### 8.3 Typography and motion
 
@@ -509,9 +519,42 @@ Mode is enforced per template: templates for the instructor area (`presenter`, h
 
 ### 9e. Sound effects (rule A5)
 
+- **Included (one-time, in the repo):** 97 CC0 sounds: Kenney Interface Sounds + UI Audio (90, mapped click / tick / blip / pop / good / bad / ding / chime / swish / type) and 7 soft Freesound whooshes; `fzv sfx audition` builds one listening clip per category, `fzv sfx remove` prunes. Thud and impact fall back to synthesis.
 - **The team's library:** `global/sfx/<category>/` with `manifest.yaml`, added with `fzv sfx add <file|folder> --source … --licence …` (category guessed from file names, or `--category`). Categories: `whoosh` (scene change), `swish`, `pop`, `blip`, `tick` (entrances), `click` (button press), `ding`, `good`, `bad` (results), `thud`, `impact` (big reveal), `chime`, `type` (typing). Several files per category rotate; each file is RMS-normalised, then placed at the category level.
 - **Fallback:** categories missing from the library use fzv's synthesised sounds (`sfx.fallback: synth`) or stay silent (`none`, prompt `SFX: library only`).
 - **Variety:** templates record a cue for every event and every cue keeps its sound; library files rotate per category and synthesised fallbacks differ per take, so the same sound never repeats back to back. Optional density settings (`minor_gap_s`, `whoosh_gap_s`, `max_per_min`) stay available in `defaults.yaml`.
+
+### 9f. Beat sheet, storyboard and review page (D30)
+
+**Beat sheet** (`edit/beats.yaml`). One row per beat: an idea the instructor explains, usually 8–20 s. `fzv plan` drafts the rows
+from the transcript's segments (already split at pauses): a beat closes at a pause once it is 14 s long, before a concept moment once
+it is 8 s long, and avoids running past 20 s; shot changes start a new beat when both shots last 4 s or more; a beat under 4 s joins a
+neighbour in the same shot. Each row carries `start`/`end`, `shot`, `says` (transcript) and `concepts`; Claude fills `idea`, `show`
+(plain words for the editor), `templates` (`hf:<item>` for registry animations), `sync` (word anchors searched only inside the beat,
+±1.5 s) and optionally `key`. `fzv beats` checks coverage (contiguous, 0 to the end), filled rows, known templates and sync words, and
+notes words-only beats, beats without sync words, beats over 25 s and concept moments without a matching template. It writes
+`beat_sheet.md`. The editor's requests per beat go into `feedback`.
+
+**Approvals** live in `project.yaml` (`approvals.beats|storyboard: {fingerprint, at, note}`) and `edit/approvals.md`. The beat-sheet
+fingerprint hashes the rows; the storyboard fingerprint hashes the built clips (`built/clips.json` ids and content hashes), so a
+rebuild that changes any clip needs a new storyboard approval. `fzv approve` refuses a beat sheet with problems or a storyboard older
+than the build. States: beats `missing → draft → proposed → approved` (or `changed`); storyboard `missing → ready → approved` (or `stale`).
+
+**Storyboard.** For each beat, the key moment is its `key`, else 1.5 s after its last sync word, kept inside the beat (else the
+middle). The clip on screen then (the studio clip during studio shots, else the plate clip) is snapshotted at all its beats' times in
+one HyperFrames call, clips in parallel (up to 3), and composited over the raw-cut frame (compose clips are opaque). A frame is
+redone only when its clip's content hash or its time changes, so after a revision only the touched beats are taken again
+(`storyboard_changed.jpg`). The 15-minute Loop Control edit: 62 frames from 20 clips (plate and studio) in about 1.5 minutes; an 11-frame update in 43 s.
+
+**Footage sheet.** At ingest (and lazily later): a 320 px frame every 10 s and at every shot change (`edit/review/footage/`,
+`edit/out/footage.jpg`), with the transcript line on the review page.
+
+**Review page** (`edit/review/index.html`, `fzv review --open`). A static local page (nothing uploaded): the three stages and what to
+do now; the final video with its checks; the "to confirm" list from `decisions.md`; one card per beat with the footage, storyboard and
+final frames at its key moment, what is said, the idea, what we show and the sync words (times seek the video); change boxes per beat
+and "add at the paused time" for the final. **Copy for Claude** puts `/change <folder> beat 7 (1:23): …; 7:41: …` on the clipboard,
+**Copy approval** puts `/approve <folder> beats|storyboard`; the editor pastes either into Claude Code. Drafts persist in the browser
+(localStorage, best effort). `fzv beats`, `storyboard`, `approve` and `verify` refresh it.
 
 ### 9c. Characters and props
 
@@ -595,6 +638,8 @@ sections:
 |---|---|---|
 | plan | Reads the prompt, transcript and cut summary; splits the video into sections; picks style families and templates; writes on-screen text from what was said; sets anchors; writes `decisions.md` | Write coordinates, colours or animation code |
 | revise | Turns timestamped requests into `edit.yaml` changes for the affected scenes only | Touch other sections or generated HTML |
+| beat sheet | Fills every beat (idea, what we show, templates, sync words); changes rows on the editor's requests | Approve it for the editor; build before approval |
+| storyboard | Looks at the storyboard first and fixes problems; shows it to the editor | Render before the editor approves |
 | review | Reads preview and verification sheets and reports problems | Approve output without showing the sheets |
 
 **Context hygiene** (the first run used about 24 M input tokens):
@@ -703,6 +748,8 @@ Speed depends on the machine, so the design targets **how work scales** rather t
 | 5f. Second feedback round | Rough-cut corner box (plate patches + frame), SFX variety instead of thinning, HyperFrames registry (31 items, `hf`), end-to-end guide (docs/WORKFLOW.md), stable ids on media elements | **done** |
 | 5e. Feedback round | Explainer family (14 templates), rules V1–V3 + concept lexicon, SFX library + density (A5), audible music, boxed corner pose; compose-mode edge layer fixed | **done** (gallery checked; videos not re-edited yet, by request) |
 | 5d. Workflow test | Loop Control (overlay, `Recording: reference`, two revisions) and DBMS (green screen, compose, music) from raw files to verified finals; 16 problems found and fixed ([report](test-reports/2026-10-26-workflow-test.md)) | **done** |
+| 7. Editor experience, stages 1–2 (2026-10-27) | Project skills + pre-approved steps + editor guide (D29); footage sheet, beat sheet (`fzv beats`), approvals and gates (R1/R2), V4, storyboard (`fzv storyboard`), review page (`fzv review`) (D30, §9f) | **done** (tested on a copy of the Loop Control edit; end-to-end test covers storyboard and page) |
+| 8. Studio view, round-trip | HyperFrames Studio as the review screen, then timing/position/text edits synced back into `edit.yaml` | not started (needs approval) |
 | 6. Packaging (optional) | Wrap `fzv` as a Claude skill or fold into the content kit | open |
 
 **Regression set:** `loop-control` (overlay, 15 min), `durga-trail` (compose + recording), `dbms-trail` (green screen). Every release rebuilds all three and compares frames at fixed times.

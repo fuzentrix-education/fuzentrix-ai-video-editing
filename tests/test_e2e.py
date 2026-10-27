@@ -24,6 +24,7 @@ def test_end_to_end(tmp_path):
            "color=c=#F8F8F8:s=1920x1080:d=5:r=50[pl];[pl]drawbox=x=1500:y=760:w=380:h=320:color=#202830:t=fill[b];[a][b]concat=n=2:v=1:a=0[v]")
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-filter_complex", src, "-f", "lavfi", "-i", "sine=f=220:d=8", "-map", "[v]", "-map", "0:a",
                     "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", raw], check=True)
+    (v / "prompt.md").write_text("# E2E\nReview: off\n")        # no editor here to approve; the gates are tested in test_core
     fzv("ingest", v, "--no-transcribe")
     cuts = json.loads((v / "edit" / "cuts.json").read_text())
     assert [c["kind"] for c in cuts] == ["studio", "corner"]
@@ -41,7 +42,15 @@ studio:
     fzv("build", v)
     out = fzv("validate", v)
     assert "OK" in out, out
+    (v / "edit" / "beats.yaml").write_text("""beats:
+  - {id: b01, start: 0, end: 3.0, shot: studio, idea: Intro, show: A studio tag, templates: [studio-tag], sync: [0.4]}
+  - {id: b02, start: 3.0, end: 8.0, shot: corner, idea: The topic, show: A header and a card, templates: [header, card], sync: [3.2, 3.6]}
+""")
+    fzv("storyboard", v)
+    assert (v / "edit" / "review" / "storyboard" / "b02.jpg").exists() and (v / "edit" / "out" / "storyboard.jpg").exists()
     fzv("render", v)
     fzv("finish", v)
     out = fzv("verify", v)
     assert (v / "E2E - Edited.mp4").exists() and "OK" in out
+    page = (v / "edit" / "review" / "index.html").read_text()
+    assert "E2E - Edited.mp4" in page and (v / "edit" / "review" / "final" / "b02.jpg").exists()

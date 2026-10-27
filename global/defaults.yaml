@@ -33,6 +33,9 @@ cutaways: { max_each_s: 12, max_total_pct: 10 }
 clutter:  { max_blocks: 4, max_words: 40, max_code_lines: 12, max_focus: 1, studio_max_blocks: 1, studio_max_words: 12 }
 empty:    { max_gap_s: 2.0 }        # never a plain-instructor stretch (rule L4)
 visuals:  { max_text_only_s: 15, min_section_s: 30 }   # rules V1/V2: show the process; at most 15 s of words-only screen
+review:                             # the editor sees and approves before the slow steps (design §9f); prompt "Review: off" for none
+  beats: required                   # required | off: edit.yaml is written and built only from a beat sheet the editor approved
+  storyboard: required              # required | off: render waits until the editor approves the storyboard (one frame per beat)
 
 graphics_fps: 25                    # graphics render at 25 fps; delivery keeps the source frame rate
 layout:                             # 1920x1080 slots; ingest trims them so they never touch the instructor's safe zone

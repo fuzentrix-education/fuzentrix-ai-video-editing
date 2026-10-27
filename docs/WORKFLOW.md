@@ -1,13 +1,25 @@
 # Editing a video with fzv, end to end
 
 This is the day-to-day procedure: from an editor's files to a delivered, verified video, and changes after delivery.
+**Editors** only need the one-page [editor guide](EDITOR-GUIDE.md): they chat with Claude Code and Claude runs every step below.
 Details of every command and setting are in the [README](../README.md); the reasoning and the rules are in
 [SYSTEM_DESIGN.md](SYSTEM_DESIGN.md).
 
 ```
- editor's files ─► video folder ─► fzv edit (ingest + plan) ─► Claude writes edit.yaml ─► build · validate · preview
-        ─► render · finish · verify ─► review the final + "to confirm" ─► deliver ─► fzv revise "m:ss …" (as often as needed)
+ editor's files ─► video folder ─► ingest + plan ─► Claude fills the BEAT SHEET ─► editor approves (review page)
+        ─► Claude writes edit.yaml ─► build · validate ─► STORYBOARD ─► editor approves ─► render · finish · verify
+        ─► final + "to confirm" on the review page ─► changes by beat or time (as often as needed)
 ```
+
+| Editor types in Claude Code | Claude does |
+|---|---|
+| `/edit-video <folder or file> [notes]` | §2–§6 below, stopping twice for the editor's approval |
+| `/review <folder>` | refreshes and opens the review page, says what is waiting |
+| `/change <folder> beat 7: …; 7:41: …` | §7 below |
+| `/approve <folder> beats\|storyboard` | records the approval and carries on |
+
+The skills live in `.claude/skills/`; the safe steps are pre-approved in `.claude/settings.json`, so Claude Code doesn't ask
+"Allow?" at every step.
 
 ---
 
@@ -15,18 +27,19 @@ Details of every command and setting are in the [README](../README.md); the reas
 
 ```bash
 git clone <repo> fuzentrix-video-editing-automations && cd fuzentrix-video-editing-automations
-uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -e ".[dev]"
-uv pip install --python .venv/bin/python mlx-whisper          # Apple Silicon (elsewhere: faster-whisper)
-npm install && npx hyperframes render --help >/dev/null       # renderer + its headless Chrome
-bin/fzv doctor                                                # workers, transcription backend, encoder
-.venv/bin/python -m pytest                                    # should pass
+brew install ffmpeg node uv        # if missing
+bin/setup                          # everything else: Python env, renderer + browser, transcription model, library check, tests
 ```
 
-Before long runs, close heavy apps (VMs, many browser tabs): `fzv` slows down sharply when the machine is short of memory.
+Then install VS Code and the Claude Code extension and open **this folder itself** (File → Open Folder), so the project skills
+and pre-approved steps load. Before long runs, close heavy apps (VMs, many browser
+tabs): `fzv` slows down sharply when the machine is short of memory.
 
-## 1. Once per team: shared assets
+## 1. Shared assets (already included)
 
-Everything in `global/` is shared by every video. Add to it whenever you like; each import records its source and licence.
+Everything a video needs ships in `global/`: 57 templates, 31 registry animations, 114 icons, 120 props and characters, 2 music
+tracks, 97 sound effects and the brand kits. Nothing is fetched per video. Adding more is optional; each import records its source
+and licence. To review the sound effects once: `bin/fzv sfx audition`, listen, then `bin/fzv sfx remove <category:number>…`.
 
 | Asset | How to add | Notes |
 |---|---|---|
@@ -43,7 +56,7 @@ non-commercial and no-derivatives licences.
 
 ## 2. Per video: the folder and the prompt
 
-1. Make a folder for the video, e.g. `videos/loop-control/`.
+1. Make a folder for the video, e.g. `videos/loop-control/` (`videos/` is git-ignored except its README; `/edit-video` makes it for you).
 2. Put in the editor's **raw cut** (rough cut, or raw / green-screen footage) and any **screen recording** as a separate file.
 3. Write `prompt.md` (or pass `--prompt` in step 3). A good prompt:
 
@@ -54,6 +67,7 @@ Music: calm-piano, low            # optional; off unless asked
 SFX: on                           # minimal | off | library only
 Presenter box: on                 # bottom-right instructor in a rounded brand box (rough cuts and raw footage)
 Recording: reference              # only if the screen recording isn't good enough to show
+Review: on                        # default: the editor approves the beat sheet and the storyboard; off | beats | storyboard
 - Make the three example programs the highlight.
 - Show data going into the database when she talks about storing data.
 - A car and a traffic police officer for the traffic analogy.
@@ -68,44 +82,63 @@ bin/fzv edit "videos/loop-control"
 ```
 
 This picks the raw cut and recordings, extracts audio, transcribes (Telugu + English), finds every shot change, measures where
-the instructor is, aligns recordings and saves their keyframes, then writes **`edit/plan_brief.md`** and stops.
+the instructor is, aligns recordings and saves their keyframes, saves the **footage sheet** (`edit/out/footage.jpg`: a frame every
+10 s and at every shot change), writes **`edit/plan_brief.md`**, drafts **`edit/beats.yaml`** and stops.
 
 Check the mode it detected (`ingest: mode overlay|compose`). An editor's rough cut is *overlay* (graphics go in the empty space),
 raw or green-screen footage is *compose* (the instructor is keyed and placed). If it is wrong, add `Mode: overlay` or
 `Mode: compose` to the prompt and run `bin/fzv ingest` again.
 
-## 4. Claude writes the edit
+## 4. The beat sheet (plan), approved by the editor
 
-Open the repo in **Claude Code** and ask:
+A **beat** is one idea the instructor explains, usually 8–20 s. The draft has one row per beat, cut at pauses, shot changes and
+concept moments, with what the instructor says. Claude fills each row (following CLAUDE.md):
 
-> Edit the video in `videos/loop-control` (follow CLAUDE.md).
+| Field | Example |
+|---|---|
+| `idea` | Data is collected and stored in a database |
+| `show` | Chips with Name, Branch and Year fly into a database cylinder; the count rolls up to 10,000 |
+| `templates` | `data-flow`, `hf:count-up` |
+| `sync` | `"@database"`, `"@records"` (each step lands on its word) |
 
-Claude reads only the plan brief, then:
-1. **Plans the visuals first**: for every stretch where the instructor explains something, it picks an animation that *shows* it
-   (data flying into a database, `"20"` converting to `20`, `range` emitting 1…n, a request travelling…), each step anchored to
-   the word that names it. It covers the **concept moments** the brief lists.
-2. Writes `edit/edit.yaml` (sections, scenes, timings, decisions, things to confirm).
-3. Runs `bin/fzv build` and `bin/fzv validate`, and fixes everything validate reports (instructor overlap, clutter, text-only
-   stretches, overflow, fake output…).
-4. Previews tricky moments (`bin/fzv preview <folder> <clip> <t1,t2>`), looks at them and adjusts.
+`bin/fzv beats <folder>` checks the sheet (contiguous rows, known templates, sync words found in the beat) and gives notes:
+words-only stretches, concept moments without a matching animation, steps without sync words. It writes `edit/beat_sheet.md`
+and refreshes the **review page** (`edit/review/index.html`; `bin/fzv review <folder> --open`).
 
-In compose mode it also checks the cut-out's edges and, if a desk or laptop travels with the instructor, adds `key:` options and
+The editor reads the page (footage frame, what is said, what we show, on which words) and either approves or writes changes
+under any beat → **Copy for Claude** → pastes into the chat. Claude edits the rows (their words go into `feedback`) and asks again.
+On approval, Claude runs `bin/fzv approve <folder> beats --note "<their words>"` (logged in `edit/approvals.md`).
+**`fzv build` refuses to run until the current beat sheet is approved** (rule R1); any later change needs a new approval.
+
+## 5. Claude writes the edit; the storyboard, approved by the editor
+
+1. Claude writes `edit/edit.yaml` from the approved beat sheet, beat by beat, then runs `bin/fzv build` and `bin/fzv validate`
+   and fixes everything validate reports (instructor overlap, clutter, text-only stretches, overflow, fake output, **V4**: a beat
+   not built with the templates it was approved with…).
+2. `bin/fzv storyboard <folder>` takes one frame per beat at its key moment (just after its last sync word), graphics over the real
+   footage, in about a minute: `edit/review/storyboard/` and the sheet `edit/out/storyboard.jpg`. Claude checks it first.
+3. The editor approves on the review page or asks for changes the same way as for the beat sheet. Changed scenes are rebuilt and
+   only their frames are taken again (`edit/out/storyboard_changed.jpg`). On approval: `bin/fzv approve <folder> storyboard`.
+   **`fzv render` refuses to run until the storyboard of the current build is approved** (rule R2).
+
+In compose mode Claude also checks the cut-out's edges and, if a desk or laptop travels with the instructor, adds `key:` options and
 re-keys (`bin/fzv ingest <folder> --rekey`).
 
-## 5. Render, finish, verify
+## 6. Render, finish, verify
 
 ```bash
 bin/fzv edit "videos/loop-control"        # or: bin/fzv render … && bin/fzv finish … && bin/fzv verify …
 ```
 
+`fzv edit` runs every step that is ready and stops at the first one still waiting for Claude or the editor.
+
 - **render**: graphics clips, in parallel, cached (only changed clips re-render).
 - **finish**: sound effects from the team's library, music if asked, mix to −14 LUFS, composite over the untouched footage,
   encode → **`videos/loop-control/Loop Control Statements - Edited.mp4`** (the previous final moves to `edit/_prev/`).
-- **verify**: duration, frame rate, size and loudness, plus `edit/out/verify.jpg` (frames at every cut).
+- **verify**: duration, frame rate, size and loudness, plus `edit/out/verify.jpg` (frames at every cut). It refreshes the review
+  page, which now plays the final and shows a frame of it per beat beside the storyboard frame.
 
-## 6. Review before delivery
-
-Watch the final and read `edit/decisions.md`. Check:
+Before delivery, Claude (and the editor, on the review page) check:
 
 - [ ] **To confirm:** code rebuilt from dictation, corrections made to a screen recording, names heard indistinctly, illustrative details.
 - [ ] **Show the process:** every explanation is animated in sync; no long stretches of text alone.
@@ -114,19 +147,22 @@ Watch the final and read `edit/decisions.md`. Check:
 - [ ] **Program output** matches what the program really prints (it is generated by running the code).
 - [ ] **Sound:** effects on the visual events, no identical sound repeated back to back; music audible but under the voice.
 
-## 7. Changes after delivery
+## 7. Changes (before or after delivery)
 
-```bash
-bin/fzv revise "videos/loop-control" "7:41 make the break note larger; 10:05 show the output one line at a time"
+On the review page the editor writes a change under a beat, or pauses the final video and adds a change at that time, then
+**Copy for Claude** → paste. Typed by hand it looks like:
+
+```
+/change videos/loop-control beat 7 (1:23): use a car; 7:41: make the break note larger
 ```
 
-`revise` maps each timestamp to the scenes on screen, prints what the instructor says there and logs the request in
-`edit/revisions.md`. Then ask Claude Code:
+Claude runs `bin/fzv revise <folder> "<requests>"` (beat numbers become the beat's time; each time is mapped to the scenes on
+screen, with what the instructor says there; logged in `edit/revisions.md`), edits only those scenes (and the beat's row; the
+request approves it), rebuilds, takes the changed storyboard frames, asks "render?" (unless the editor already said so), then
+renders, finishes and verifies. Only changed clips and encode chunks are redone; a one-scene change takes a few minutes. Each
+request's **Status** in `edit/revisions.md` says what changed.
 
-> Apply the pending revisions in `videos/loop-control` (follow CLAUDE.md).
-
-Claude edits only those scenes, re-runs build → validate → render → finish → verify (only changed clips and encode chunks are
-redone; a one-scene change takes a few minutes) and marks each request done in `edit/revisions.md`.
+Edits made before beat sheets existed (no `edit/beats.yaml`) keep working without the approval steps.
 
 ## 8. What the folder holds afterwards
 
@@ -136,7 +172,9 @@ videos/loop-control/
   screen recording .mp4                 recording (untouched)
   prompt.md                             the prompt
   Loop Control Statements - Edited.mp4  the final
-  edit/                                 transcript, shots, plan brief, edit.yaml, decisions.md, revisions.md, renders, previews
+  edit/                                 transcript, shots, plan brief, beats.yaml + beat_sheet.md, edit.yaml, decisions.md,
+                                        approvals.md, revisions.md, renders, previews
+  edit/review/index.html                the review page (local; open it in any browser)
 ```
 
 Keep the whole folder: re-runs and revisions reuse its caches.
@@ -151,3 +189,4 @@ Keep the whole folder: re-runs and revisions reuse its caches.
 | Show the screen recording / rebuild it | prompt `Recording: show` (default) / `Recording: reference` (`, exact` = no corrections) |
 | Stricter or looser "show the process" | `visuals.max_text_only_s` in `global/defaults.yaml` |
 | More concept triggers | `global/concepts.yaml` |
+| Skip the approvals for one video (tests) | prompt `Review: off` (`beats` / `storyboard` keeps one); house default `review.*` in `global/defaults.yaml` |
