@@ -26,13 +26,18 @@ refresh the page (`bin/fzv review "<folder>" --open`), show only the changed row
 2. Change only those scenes in `edit/edit.yaml` (CLAUDE.md "Revising after delivery"). When what a beat shows changes, update its row
    in `edit/beats.yaml` too (`show`, `templates`, `sync`) and add the editor's words to `feedback`. Their request is their approval
    of the rows it touches: `bin/fzv approve "<folder>" beats --note "change request: <their words>"`.
-3. Run `bin/fzv build`, `bin/fzv validate` (fix everything), then `bin/fzv storyboard "<folder>"`; only the changed frames are redone.
-   Look at `edit/out/storyboard_changed.jpg` yourself and fix anything wrong.
-4. Refresh the page (`bin/fzv review "<folder>" --open`), say what changed, and ask "Render the new version?" If their message already
+3. Run `bin/fzv build`, `bin/fzv validate` (fix everything), then `bin/fzv storyboard "<folder>"` (only changed frames are redone) and,
+   if they want to see it move, the live preview (`bin/fzv studio "<folder>"`). Look at `edit/out/storyboard_changed.jpg` yourself and fix anything wrong.
+4. Refresh the page (`bin/fzv review "<folder>" --open`), say what changed (the preview video shows it in motion), and ask "Render the new version?" If their message already
    said to go ahead and render, don't ask: approve with their words as the note.
 5. Once approved: `bin/fzv approve "<folder>" storyboard --note "<their words>"`, then `bin/fzv edit "<folder>"` in the background (only
    changed clips and encode chunks are redone: minutes, not the whole video). Set each request's **Status** in `edit/revisions.md`
    to what changed, refresh the page and tell them it's ready.
+
+## Music requests
+"music: off", "music: keep <track>, level high", "music: add <track>, level low" (from the review page's music switch, or in their words):
+run `bin/fzv mix "<folder>" off|on|<track> --level low|normal|high`. Only the sound is re-mixed (a minute or two); no approval is needed
+for it. Tell them when the new version is ready.
 
 ## When a request can't be done as asked
 Say so plainly and offer the closest option (for example, a prop that isn't in the library: offer one that is, and add it to

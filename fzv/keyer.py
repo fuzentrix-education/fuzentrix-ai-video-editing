@@ -84,6 +84,20 @@ def region_mask(h: int, w: int, opts: dict | None) -> np.ndarray | None:
     return m
 
 
+def main_shape(a: np.ndarray) -> np.ndarray:
+    """1 around the largest opaque shape (the instructor) and big pieces touching it (a raised hand); 0 over stray bits."""
+    lab, n = ndi.label(a > 0.5)
+    if n <= 1:
+        return np.ones_like(a)
+    sizes = ndi.sum(np.ones_like(a), lab, range(1, n + 1))
+    big = int(np.argmax(sizes)) + 1
+    grow = lambda m, r: ndi.maximum_filter(m.astype(np.uint8), size=2 * r + 1) > 0     # one separable pass, not r dilations
+    cand = [i + 1 for i, s in enumerate(sizes) if s >= 1500 and i + 1 != big]
+    near = grow(lab == big, 12) if cand else None
+    keep = np.isin(lab, [big] + [c for c in cand if near[lab == c].any()])
+    return grow(keep, 6).astype(a.dtype)
+
+
 def matte(rgb: np.ndarray, plate: np.ndarray, mode: str, region: np.ndarray | None = None) -> np.ndarray:
     """rgb uint8 HxWx3 → RGBA uint8."""
     c = rgb.astype(np.float32)
@@ -94,6 +108,7 @@ def matte(rgb: np.ndarray, plate: np.ndarray, mode: str, region: np.ndarray | No
         a = ndi.median_filter(a, 3)
         if region is not None:
             a *= region
+        a *= main_shape(a)                                       # drop stray bits (a desk edge, a light stand) away from her
     else:
         d = np.abs(c - plate).max(-1)
         a = np.clip((d - T0) / (T1 - T0), 0, 1)
@@ -103,13 +118,7 @@ def matte(rgb: np.ndarray, plate: np.ndarray, mode: str, region: np.ndarray | No
         hard = ndi.binary_opening(d > TH, iterations=1)
         filled = ndi.binary_fill_holes(hard)
         a = np.maximum(a, (filled & ~hard).astype(np.float32))
-        lab, n = ndi.label(a > 0.5)
-        if n:
-            sizes = ndi.sum(np.ones_like(a), lab, range(1, n + 1))
-            big = int(np.argmax(sizes)) + 1
-            keep = np.isin(lab, [big] + [i + 1 for i, s in enumerate(sizes) if s >= 1500 and i + 1 != big
-                                         and ndi.binary_dilation(lab == big, iterations=12)[lab == i + 1].any()])
-            a *= ndi.binary_dilation(keep, iterations=6)
+        a *= main_shape(a)
         ac = a[..., None]
         f = np.where(ac > 0.04, (c - (1 - ac) * plate) / np.maximum(ac, 0.04), c)
     return np.dstack([np.clip(f, 0, 255), a[..., None] * 255]).astype(np.uint8)

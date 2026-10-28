@@ -14,7 +14,8 @@ logs into the chat. The `bin/fzv` steps are pre-approved in `.claude/settings.js
 
 ## Editing a video
 
-The editor approves twice before the slow render: the **beat sheet** (plan) and the **storyboard** (one frame per beat).
+The editor approves twice before the slow render: the **beat sheet** (plan) and the **storyboard with its preview video** (one frame per
+beat, plus a quick low-frame-rate render of the whole edit with the real sound).
 `fzv build` waits for the first and `fzv render` for the second (rules R1/R2; prompt `Review: off` turns them off).
 
 1. Run `bin/fzv ingest "<folder>"`, then `bin/fzv plan "<folder>"`. Plan writes the brief and drafts `edit/beats.yaml`.
@@ -27,7 +28,8 @@ The editor approves twice before the slow render: the **beat sheet** (plan) and 
 
    Look up full template parameters in `global/templates/catalogue.json` when needed.
 3. **Plan the visuals in the beat sheet** (rules V1–V3, `global/styles/explainer/STYLE.md`). Fill every row of `edit/beats.yaml`:
-   `idea` (one sentence), `show` (plain words an editor understands), `templates`, `sync` (the words each step lands on). Merge or
+   `idea` (one sentence), `show` (plain words an editor understands), `templates`, `sync` (the words each step lands on). When the
+   English-mode transcript garbles Telugu speech, rewrite `says` as a clean English gist of what is really said (editors read it). Merge or
    split rows freely; they must stay contiguous. For every stretch where the instructor explains how something works, pick the
    template that **shows** it happening, not a card that names it:
    - data being stored / collected → `data-flow`; processed into information → `process-flow`; `int(input())` → `type-convert`;
@@ -58,8 +60,12 @@ The editor approves twice before the slow render: the **beat sheet** (plan) and 
      `key: {exclude: [[x, y, w, h]], exclude_poly: [[[x, y], …]], cut_below: y}` (find coordinates with `fzv look "<folder>" raw t-t`),
      run `fzv ingest "<folder>" --rekey`, and rebuild. Keep graphics clear of the instructor's poses (validate checks the real silhouette, rule L2).
 8. Run `bin/fzv storyboard "<folder>"` and look at `edit/out/storyboard.jpg` yourself; fix wrong visuals, overlaps and empty or cluttered
-   frames first. Then `bin/fzv review "<folder>" --open` and ask the editor to approve. **Wait.** On approval:
-   `bin/fzv approve "<folder>" storyboard --note "<their words>"`.
+   frames first. Then the **preview** of the whole edit (`review.preview`): `browser` (default) → `bin/fzv studio "<folder>"` opens the
+   **live preview** in HyperFrames Studio (no rendering, real sound; view-only); `video` → `bin/fzv draft "<folder>"` makes a quick
+   low-frame-rate draft video. Then `bin/fzv review "<folder>" --open` and ask the editor to watch the preview and look through the
+   storyboard grid, then approve. **Wait.** On approval: `bin/fzv approve "<folder>" storyboard --note "<their words>"` (it refuses while the
+   preview of the current build is missing). Open the live preview **only** here or when the editor asks for it (`/preview`), and close it
+   (`bin/fzv studio "<folder>" --stop`) when they're done: it holds memory.
 9. Run `bin/fzv render`, `bin/fzv finish` and `bin/fzv verify` (or `bin/fzv edit`, which stops at any step still waiting). Verify refreshes
    the review page. Tell the editor where the final is and list the "to confirm" items in plain words.
 
@@ -88,9 +94,12 @@ Requests name a time (`7:41 …`) or a beat (`beat 7: …`); the review page's *
 1. Run `bin/fzv revise "<folder>" "<the request>"`. It prints the affected scenes and the speech around each time or beat, and logs the request in `edit/revisions.md`.
 2. Edit only those scenes in `edit.yaml`. When what a beat shows changes, update its row in `edit/beats.yaml` too and add the editor's words to
    `feedback`; their request approves the rows it touches: `bin/fzv approve "<folder>" beats --note "change request: <their words>"`.
-3. Run build, validate and `bin/fzv storyboard` (only changed frames are redone; see `edit/out/storyboard_changed.jpg`). Show the editor and ask
+3. Run build, validate, `bin/fzv storyboard` (only changed frames are redone; see `edit/out/storyboard_changed.jpg`) and the preview
+   (`bin/fzv studio`, or `bin/fzv draft` in video mode: only changed clips are re-drafted). Show the editor and ask
    before rendering, unless their request already said to go ahead; then `bin/fzv approve "<folder>" storyboard --note "<their words>"`.
 4. Run render, finish and verify; only changed clips and chunks are redone. Update the request's **Status** in `edit/revisions.md` to say what changed.
+- **Music requests** ("music: off", "music: keep calm-piano, level high", "music: add focus-piano, level low", from the review page's music
+  switch): `bin/fzv mix "<folder>" off|on|<track> [--level low|normal|high]`. It updates prompt.md and re-mixes only (no graphics re-render).
 
 ## Changing the system itself
 

@@ -106,14 +106,18 @@ class Project:
             over["presenter"] = {"corner_box": not any(w in pb.lower() for w in ("off", "no", "none", "false"))}
         if "review" in f:                                       # Review: on | off | beats (beat sheet only) | storyboard (storyboard only)
             v = f["review"].lower()
-            if v.startswith(("off", "no", "none", "skip")):
-                over["review"] = {"beats": "off", "storyboard": "off"}
+            if "no preview" in v or "preview off" in v:                 # e.g. "Review: on, no preview"
+                over["review"] = {"preview": "off"}
+            elif "preview video" in v or "video preview" in v:          # e.g. "Review: on, preview video"
+                over["review"] = {"preview": "video"}
+            elif v.startswith(("off", "no", "none", "skip")):
+                over["review"] = {"beats": "off", "storyboard": "off", "preview": "off"}
             elif "beat" in v and "storyboard" not in v:
-                over["review"] = {"beats": "required", "storyboard": "off"}
+                over["review"] = {"beats": "required", "storyboard": "off", "preview": "off"}
             elif "storyboard" in v and "beat" not in v:
-                over["review"] = {"beats": "off", "storyboard": "required"}
+                over["review"] = {"beats": "off", "storyboard": "required", "preview": "browser"}
             else:
-                over["review"] = {"beats": "required", "storyboard": "required"}
+                over["review"] = {"beats": "required", "storyboard": "required", "preview": "browser"}
         rec = f.get("recording") or f.get("recordings")
         if rec:
             v = rec.lower()

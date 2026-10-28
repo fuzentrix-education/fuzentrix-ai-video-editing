@@ -1,7 +1,7 @@
 # Fuzentrix Video Workflow: System Design
 
 **Status:** building. **Updated:** 2026-10-25. **Owner:** Fuzentrix content team.
-**Repository:** `Automations/fuzentrix-video-editing-automations/` (this document is `docs/SYSTEM_DESIGN.md`).
+**Repository:** `Automations/fuzentrix-ai-video-editing/` (this document is `docs/SYSTEM_DESIGN.md`).
 **Reference implementations:** `Automations/video-edits/` (`dbms-trail`, `durga-trail`, `loop-control`).
 
 This document describes `fzv`, a standalone tool that turns an instructor's video into a finished, on-brand teaching video with motion graphics.
@@ -28,7 +28,7 @@ The document also records the decisions behind the design and the lessons from t
 
 | # | Decision | Why |
 |---|---|---|
-| D1 | **Standalone tool**, git repo `Automations/fuzentrix-video-editing-automations/`, CLI `fzv`. Not a content-kit skill. | Faster to iterate. It can be packaged as a skill later (§15, phase 6). |
+| D1 | **Standalone tool**, git repo `Automations/fuzentrix-ai-video-editing/`, CLI `fzv`. Not a content-kit skill. | Faster to iterate. It can be packaged as a skill later (§15, phase 6). |
 | D2 | **HyperFrames** (HTML + GSAP), version pinned at **0.8.162**. | Proven on all three videos, including transparent overlays. Content-kit ADR 0006 (Revideo) still governs the content kit; this tool deliberately differs. |
 | D3 | **Brand look:** one shared house style (typography, shapes, motion, sound), with colours and logo per brand. Career Orbit (the LMS, main brand) merges the LMS app's navy ramp with its logo's teal; Fuzentrix Education (the parent) uses its logo and website colours (§6). | Every video feels like one family; only logo and colours change between brands. |
 | D4 | **Audio only.** Content and timing come from the video's own Telugu + English audio. No script, Master Script or PDF. | The user's instruction; the video must match what was actually said. |
@@ -56,6 +56,8 @@ The document also records the decisions behind the design and the lessons from t
 | D27 | **Music is audible.** When the prompt asks for music, the bed sits a fixed loudness below the voice (−18 LU; "low" −22, "high" −14), measured per track, with gentle ducking. | The first music test was effectively silent (−28 dB plus hard ducking). |
 | D28 | **Animations from the HyperFrames registry.** 448 open-source (Apache-2.0) blocks and components; `fzv registry add` vendors them into `global/registry/` and the `hf` template mounts them in a box with their variables and word-anchored cues (§7.4). | The user: "get the animation templates also, or take from web". |
 | D29 | **Editors work by chatting in Claude Code (VS Code); the CLI is Claude's toolset.** Project skills (`/edit-video`, `/change`, `/review`, `/approve`) in `.claude/skills/`, safe steps pre-approved in `.claude/settings.json`, a one-page [editor guide](EDITOR-GUIDE.md), one-time `bin/setup`. | The editors are not technical; the user: "make things easy for editing for editors", "currently I am using Claude Code UI in VS Code". |
+| D32 | **Live preview in HyperFrames Studio, only on request or before the final render (§9g); music on/off from the review page.** `fzv studio` turns the built clips into one Studio project (view-only); `review.preview: browser` makes it the default preview, the draft video stays as `video`. The mix also writes voice+SFX and music stems, so the review page can switch music off live and Studio shows music as its own track; `fzv mix` applies a choice by re-mixing only. | The user: "can we have preview directly in hyperframes studio", "generate browser preview … only when the user asks or before final rendering", "I need control to turn bg music off or on". |
+| D31 | **A preview video before the final render (§9f).** The storyboard approval also waits for a quick low-frame-rate render of the whole edit with the real mix, so motion, timing and sound are checked before the slow render. | The user: "are we not generating a preview before final rendering"; stills can't show timing or sound. |
 | D30 | **Two approvals before the slow steps: the beat sheet and the storyboard (§9f).** `build` runs only from an approved beat sheet, `render` only after the storyboard of the current build is approved (rules R1/R2, setting `review.*`, prompt `Review: off`). Approvals carry a fingerprint, so any later change needs a new one. Edits made before beat sheets keep working without them. | Plans per idea give better edits than scene-by-scene specs; mistakes are cheapest before rendering; editors need to see and steer the edit. |
 | D21 | **Output on screen is the program's real output.** The build runs the code shown on screen and prints exactly what a terminal shows (rule E7). | The user's instruction: outputs printed exactly how the code outputs them. |
 
@@ -66,7 +68,7 @@ The document also records the decisions behind the design and the lessons from t
 Everything global lives in the repo:
 
 ```
-fuzentrix-video-editing-automations/       git repo
+fuzentrix-ai-video-editing/                git repo
   README.md                                setup and everyday commands
   docs/SYSTEM_DESIGN.md  docs/adr/         this document and later decisions
   fzv                                      CLI entry point (wraps `python -m fzv`)
@@ -406,7 +408,7 @@ These are the global defaults. A video's prompt may override any of them (D9); o
 | ID | Rule | Check |
 |---|---|---|
 | R1 | `edit.yaml` is built only from a beat sheet the editor approved; a beat sheet changed after approval needs a new approval. | gate (`review.beats`) |
-| R2 | Rendering starts only after the editor approved the storyboard of the current build (and the beat sheet is still approved). | gate (`review.storyboard`) |
+| R2 | Rendering starts only after the editor approved the storyboard of the current build, having seen its preview video (and the beat sheet is still approved). | gate (`review.storyboard`, `review.preview`) |
 
 ### 8.3 Typography and motion
 
@@ -546,15 +548,35 @@ one HyperFrames call, clips in parallel (up to 3), and composited over the raw-c
 redone only when its clip's content hash or its time changes, so after a revision only the touched beats are taken again
 (`storyboard_changed.jpg`). The 15-minute Loop Control edit: 62 frames from 20 clips (plate and studio) in about 1.5 minutes; an 11-frame update in 43 s.
 
+**Preview video** (`fzv draft`, D31). After the storyboard, every built clip is rendered again at `review.preview_fps` (10 fps) in
+HyperFrames' draft quality (`--quality draft --fps 10`, VP9 `cpu-used 8`) into `edit/draft/` (cached by content hash and rate), composited
+over the footage at 960x540 (overlay: one ffmpeg pass with the same studio-shot `enable` windows as finish; compose: the section clips joined)
+and muxed with the real mix to `edit/review/preview.mp4`; `preview.json` records the build it shows. The renderer can't go below the
+composition's resolution, so the saving comes from the frame rate. `fzv approve … storyboard` refuses while the preview of the current build
+is missing (`review.preview: required | off`).
+
 **Footage sheet.** At ingest (and lazily later): a 320 px frame every 10 s and at every shot change (`edit/review/footage/`,
 `edit/out/footage.jpg`), with the transcript line on the review page.
 
 **Review page** (`edit/review/index.html`, `fzv review --open`). A static local page (nothing uploaded): the three stages and what to
-do now; the final video with its checks; the "to confirm" list from `decisions.md`; one card per beat with the footage, storyboard and
+do now; the final video with its checks; the **storyboard grid** (one frame per beat with its time and what it shows; a click opens it
+large with previous/next and a change box for that beat; Storyboard/Final toggle after rendering; before the storyboard exists it shows the
+footage frames); the "to confirm" list from `decisions.md`; one card per beat with the footage, storyboard and
 final frames at its key moment, what is said, the idea, what we show and the sync words (times seek the video); change boxes per beat
 and "add at the paused time" for the final. **Copy for Claude** puts `/change <folder> beat 7 (1:23): …; 7:41: …` on the clipboard,
 **Copy approval** puts `/approve <folder> beats|storyboard`; the editor pastes either into Claude Code. Drafts persist in the browser
 (localStorage, best effort). `fzv beats`, `storyboard`, `approve` and `verify` refresh it.
+
+### 9g. Live preview in HyperFrames Studio (D32)
+
+`fzv studio` writes `edit/studio/`: `index.html` is the root composition (the footage as a muted `<video>` in rough cuts; one host per
+built clip with `data-composition-src` at the clip's start; registry hosts hoisted from the clips to the root at their global times, because
+Studio does not pass variables two levels down; the icon sprite once; audio as `voice_sfx.m4a` + `music.m4a`, or the mix). Each clip page
+becomes a sub-composition: its body inside `<template>`, its root tagged `data-fz-root` with the clip's own composition id, `FZ.create({root})`
+pointed at it, its timeline registered under that id, media ids made unique. The runtime resolves its root and the five element lookups
+inside the clip first (`api.byId`); dark-scene styles also match `[data-fz-root][data-scene=dark]`. Plate clips are hidden during studio
+shots by the root timeline. `hyperframes preview --background` serves it (state under the repo's `.hyperframes/state`); `--stop` ends it;
+the review page links to the running preview. Made only when the editor asks or as the preview before the final render (rule R2).
 
 ### 9c. Characters and props
 

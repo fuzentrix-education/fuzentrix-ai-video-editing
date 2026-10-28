@@ -18,12 +18,14 @@
   FZ.create = function (cfg) {
     gsap.defaults({ lazy: false });                       // jump-seeks need correct start values
     const tl = gsap.timeline({ paused: true });
-    const root = document.getElementById("root");
+    // the clip's own root: `cfg.root` (a selector) when the clip is mounted with others (the Studio preview), else the page's #root
+    const root = (cfg.root && document.querySelector(cfg.root)) || document.getElementById("root");
     const OFF = cfg.offset, END = cfg.offset + cfg.duration;
     const B = cfg.brand || {}, LAY = cfg.layout || {};
     const M = Object.assign({ enter: [0.55, "power3.out"], exit: [0.35, "power2.in"], pop: [0.5, "back.out(1.8)"], stagger: 0.04, wire: 0.45 }, B.motion || {});
     const T = (g) => Math.max(0, +(g - OFF).toFixed(3));
-    const $ = (s) => (typeof s === "string" ? document.querySelector(s) : s);
+    const $ = (s) => (typeof s === "string" ? root.querySelector(s) || document.querySelector(s) : s);
+    const byId = (id) => root.querySelector("#" + CSS.escape(id)) || document.getElementById(id);   // this clip's element first
     const NS = "http://www.w3.org/2000/svg";
     const REST = { x: 0, y: 0, scale: 1, rotation: 0, xPercent: 0, yPercent: 0, scaleX: 1, scaleY: 1 };
     const UNITLESS = ["opacity", "zIndex", "fontWeight", "lineHeight", "flex", "flexGrow", "flexShrink", "order", "scale"];
@@ -158,7 +160,7 @@
     }
 
     const api = {
-      tl, T, OFF, END, B, LAY, M, root, $, NS, el, px, esc, md, icon, box, inn, out, pop, set, to, show, pulse, sfx,
+      tl, T, OFF, END, B, LAY, M, root, $, byId, NS, el, px, esc, md, icon, box, inn, out, pop, set, to, show, pulse, sfx,
       classify, hlCode, wire, route, edge, group, refs: {},
       // default exit for a scene: its own `until`, else the end of the clip
       until: (p) => (p.until != null ? p.until : END - 0.1),

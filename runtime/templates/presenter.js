@@ -5,7 +5,7 @@
     doc: "Keyed instructor with poses: wide, close, side-right, side-left, corner (bottom right). Added automatically in compose mode from the spec's `presenter.poses`.",
     params: { poses: "[{name, at, x, y, scale (optional custom)}]", crop: "[x, y, w, h] of the cut-out in source pixels (set by ingest)",
               box: "{w, h, margin, radius}: the bottom-right pose sits in a rounded box (setting presenter.corner_box)" } }, (a, p) => {
-    const host = document.getElementById("fz-presenter"); if (!host) throw new Error("presenter markup missing");
+    const host = a.byId("fz-presenter"); if (!host) throw new Error("presenter markup missing");
     host.setAttribute("data-fz", "presenter");      // validate reads its live box: the instructor's safe zone in compose mode (rule L2)
     const [, , w, h] = p.crop;
     const POSE = {

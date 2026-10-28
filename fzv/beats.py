@@ -24,7 +24,7 @@ HEADER = """\
 # Beat sheet: one row per idea the instructor explains. Planned before edit.yaml and approved by the editor (fzv approve).
 #   start, end  seconds of the raw cut; beats follow each other with no gaps and cover the whole video
 #   shot        the shot kinds in this stretch (plate, corner, studio)
-#   says        what the instructor says (transcript)
+#   says        what the instructor says: the transcript; Claude rewrites it as a clean English gist when it is garbled
 #   concepts    concept moments in this stretch: time, phrase -> templates that show it
 #   idea        the idea in one plain sentence                                    <- Claude fills
 #   show        what appears on screen, in plain words for the editor            <- Claude fills

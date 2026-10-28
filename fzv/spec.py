@@ -30,6 +30,31 @@ def load(path) -> dict:
         return yaml.safe_load(f) or {}
 
 
+def nested_times(v) -> list[float]:
+    """Every numeric `at` inside a scene's params (items, cards, nodes, rows, fields…)."""
+    out = []
+    if isinstance(v, dict):
+        for k, x in v.items():
+            if k == "at" and isinstance(x, (int, float)):
+                out.append(float(x))
+            elif isinstance(x, (dict, list)):
+                out += nested_times(x)
+    elif isinstance(v, list):
+        for x in v:
+            out += nested_times(x)
+    return out
+
+
+def scene_span(p, end_default: float | None) -> tuple[float | None, float | None]:
+    """(at, until) of a resolved scene: its own `at`, else the earliest nested `at` (agenda items, type cards, flowchart nodes,
+    callouts…); its own `until`, else `end_default` (the section's end)."""
+    if not isinstance(p, dict):
+        return None, None
+    at = float(p["at"]) if isinstance(p.get("at"), (int, float)) else min(nested_times(p), default=None)
+    until = float(p["until"]) if isinstance(p.get("until"), (int, float)) else end_default
+    return at, until
+
+
 def scene_items(scenes):
     """Scenes are written as one-key mappings {template: params}; yield (template, params)."""
     for s in scenes or []:

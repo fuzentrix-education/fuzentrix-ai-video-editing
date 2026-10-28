@@ -140,10 +140,11 @@ def add(names: list[str], log=print) -> list[dict]:
     return list(items.values())
 
 
-def host_markup(scene_id: str, item: dict, local_at: float, dur: float, box: dict, vars_: dict) -> str:
+def host_markup(scene_id: str, item: dict, local_at: float, dur: float, box: dict, vars_: dict, css: dict | None = None) -> str:
     """Static host element for one mount (HyperFrames mounts the sub-composition into it). Components are elastic and fill the box;
     blocks are fixed-size scenes (usually 1920x1080) scaled into it. The host carries the item's own composition id, because items
-    register their timeline under it (so one mount per item per clip)."""
+    register their timeline under it (so one mount per item per clip). `css` sets the item's own CSS custom properties on the host
+    (e.g. a component whose type is sized in container units, `--gca-font: 30px`, when it sits in a small box)."""
     size = item.get("size") or {}
     if item.get("type") == "block" and size.get("width"):
         k = min(box["w"] / size["width"], box["h"] / size["height"])
@@ -152,7 +153,8 @@ def host_markup(scene_id: str, item: dict, local_at: float, dur: float, box: dic
         geo = f"left:{box['x']}px;top:{box['y']}px;width:{box['w']}px;height:{box['h']}px;"
     style = ("position:absolute;" + geo +
              "--fg:var(--fz-text);--bg:transparent;--accent:var(--fz-accent);--accent-2:var(--fz-action);--brand:var(--fz-action);"
-             "--surface:var(--fz-card);--radius:var(--fz-radius);--font-display:var(--fz-font-display);--font-body:var(--fz-font-body);--font-mono:var(--fz-font-mono)")
+             "--surface:var(--fz-card);--radius:var(--fz-radius);--font-display:var(--fz-font-display);--font-body:var(--fz-font-body);--font-mono:var(--fz-font-mono)"
+             + "".join(f";{k}:{v}" for k, v in (css or {}).items() if re.fullmatch(r"--[a-z0-9-]+", str(k)) and re.fullmatch(r"[\w.%#(), -]+", str(v)) and "url(" not in str(v).lower()))
     vv = json.dumps({k: (",".join(map(str, v)) if isinstance(v, list) else v) for k, v in vars_.items()}).replace("'", "&#39;")
     cid = item.get("comp_id") or item["name"]
     return (f'<div id="{scene_id}" class="fz-hf hide" data-composition-id="{cid}" data-composition-src="compositions/registry/{item["file"]}" '

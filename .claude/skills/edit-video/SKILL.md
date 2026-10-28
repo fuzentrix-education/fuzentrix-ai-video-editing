@@ -41,8 +41,11 @@ placed on a brand background).
    and fix everything it reports (V4: every beat built with the templates it was approved with).
 2. Run `bin/fzv storyboard "<folder>"` (about a minute; one frame per beat over the real footage). Look at
    `edit/out/storyboard.jpg` yourself first and fix wrong visuals, overlaps, empty or cluttered frames before the editor sees it.
-3. Run `bin/fzv review "<folder>" --open`. Tell them the storyboard is ready, point out anything they should look at closely
-   (illustrative details, rebuilt code), and ask them to approve or request changes. **Stop and wait.**
+3. Make the preview of the whole edit. Default (`review.preview: browser`): `bin/fzv studio "<folder>"` opens the **live preview** in
+   HyperFrames Studio in their browser (no rendering, the real sound; music is its own track they can mute). If the prompt says
+   `Review: on, preview video`, run `bin/fzv draft "<folder>"` instead (a quick low-frame-rate video). Then `bin/fzv review "<folder>" --open`.
+   Tell them the preview and the storyboard grid are ready, point out anything to look at closely (illustrative details, rebuilt code), and
+   ask them to approve or request changes. **Stop and wait.** When they approve, close the live preview (`bin/fzv studio "<folder>" --stop`).
 4. Changes: use the `change` skill's "after approval" steps. Approval: `bin/fzv approve "<folder>" storyboard --note "<their words>"`.
 
 ## 4. Render and hand over

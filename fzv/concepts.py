@@ -44,11 +44,11 @@ def moments(transcript: Path, gap_s: float = 12.0) -> list[dict]:
 
 def covered(m: dict, spec: dict, before: float = 3.0, after: float = 10.0) -> bool:
     """A matching template is on screen around the moment."""
+    from .spec import scene_span
     for sec in spec.get("sections") or []:
         for s in sec.get("scenes") or []:
             (name, p), = s.items()
-            if name in m["templates"] and isinstance(p, dict) and isinstance(p.get("at"), (int, float)):
-                end = p["until"] if isinstance(p.get("until"), (int, float)) else sec["range"][1]
-                if p["at"] <= m["t"] + after and end >= m["t"] - before:
-                    return True
+            at, end = scene_span(p, sec["range"][1])
+            if name in m["templates"] and at is not None and at <= m["t"] + after and end >= m["t"] - before:
+                return True
     return False

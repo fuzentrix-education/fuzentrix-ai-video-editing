@@ -112,7 +112,8 @@ code { font-family: var(--fz-font-mono); font-weight: 700; }
 .fz-prop svg { width: 100%; height: 100%; display: block; overflow: visible; }
 
 /* explainer: dark scene (compose mode) — text turns light, cards turn to glass */
-#root[data-scene="dark"] { --fz-text: #FFFFFF; --fz-text2: #A9D6E5; --fz-label: #16BBC8; --fz-card: rgba(255, 255, 255, .08); --fz-line: rgba(255, 255, 255, .18);
-  --fz-tint: rgba(255, 255, 255, .12); --fz-icon: #A9D6E5; --fz-emph: #16BBC8; }
-#root[data-scene="dark"] .fz-card, #root[data-scene="dark"] .fz-chip { backdrop-filter: blur(6px); box-shadow: 0 24px 60px -24px rgba(0, 0, 0, .6); }
+#root[data-scene="dark"], [data-fz-root][data-scene="dark"] { --fz-text: #FFFFFF; --fz-text2: #A9D6E5; --fz-label: #16BBC8; --fz-card: rgba(255, 255, 255, .08); --fz-line: rgba(255, 255, 255, .18);
+  --fz-tint: rgba(255, 255, 255, .12); --fz-icon: #A9D6E5; --fz-emph: #16BBC8;
+  --fz-grad-text: linear-gradient(90deg, #8FEAF0 0%, #16BBC8 100%); --fz-bigword: #5FD4DD; }  /* gradient words stay readable on the dark scene */
+#root[data-scene="dark"] .fz-card, #root[data-scene="dark"] .fz-chip, [data-fz-root][data-scene="dark"] .fz-card, [data-fz-root][data-scene="dark"] .fz-chip { backdrop-filter: blur(6px); box-shadow: 0 24px 60px -24px rgba(0, 0, 0, .6); }
 .fz-dark b, .fz-dark em, .fz-dark strong { color: var(--fz-on-dark-accent); font-style: normal; }

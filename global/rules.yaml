@@ -11,7 +11,7 @@ rules:
   V3:  { check: advice, what: "concept moments (global/concepts.yaml) are shown with a matching template" }
   V4:  { check: auto, what: "every beat of the beat sheet is built with the templates it was approved with, inside its time" }
   R1:  { check: gate, what: "edit.yaml is built only from a beat sheet the editor approved (review.beats; any later change needs a new approval)", from_defaults: review }
-  R2:  { check: gate, what: "rendering starts only after the editor approved the storyboard of the current build (review.storyboard)", from_defaults: review }
+  R2:  { check: gate, what: "rendering starts only after the editor approved the storyboard of the current build, having watched its preview: live in Studio or the draft video (review.storyboard, review.preview)", from_defaults: review }
   A5:  { check: auto, what: "SFX from global/sfx first, rotating files per category; synthesised fallback varies every take; no stacked duplicates", from_defaults: sfx }
   E9:  { check: auto, what: "corrections of a recording never change the program's output silently (logic_fix + confirm); exact mode copies it as typed" }
   L1:  { check: auto, what: "overlay mode: no templates that touch the instructor (presenter, halo, frame); the brand corner box (setting presenter.corner_box) is the only exception", forbidden_in_overlay: [presenter] }

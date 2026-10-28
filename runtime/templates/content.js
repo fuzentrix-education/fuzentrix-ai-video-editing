@@ -12,7 +12,7 @@
     words.forEach((w, i) => {
       const grad = /^\*.*\*[.,!?:]?$/.test(w), clean = w.replace(/\*/g, "");
       const s = a.el(a.esc(clean), "hide", { display: "inline-block", marginRight: "0.25em" }, wrap);
-      if (grad) s.style.cssText += ";background:var(--fz-grad);-webkit-background-clip:text;background-clip:text;color:transparent";
+      if (grad) s.style.cssText += ";background:var(--fz-grad-text, var(--fz-grad));-webkit-background-clip:text;background-clip:text;color:transparent";
       const t = p.times && p.times[i] != null ? p.times[i] : p.at + i * 0.12;
       a.inn(s, t, { yPercent: 60 }, 0.55, "power4.out"); a.out(s, a.until(p), { yPercent: -30 }, 0.3);
     });
@@ -105,12 +105,12 @@
   });
 
   R({ name: "counter", family: "data", layers: ["plate", "studio"], doc: "A number that counts up to its value, with a label.",
-      params: { value: "number", from: "start (default 0)", prefix: "", suffix: "", locale: "digit grouping (default en-IN: 10,000 · 1,00,000)", label: "markdown", at: "", until: "", dur: "count duration (default 1.2)", box: "default: main slot" } }, (a, p) => {
+      params: { value: "number", from: "start (default 0)", prefix: "", suffix: "", locale: "digit grouping (default en-IN: 10,000 · 1,00,000; `plain` for years: 1966)", label: "markdown", at: "", until: "", dur: "count duration (default 1.2)", box: "default: main slot" } }, (a, p) => {
     const bx = a.box(p, "main");
     const c = a.el(`<div class="n" style="font:900 120px/1 var(--fz-font-display);color:var(--fz-emph)">${a.esc(p.prefix || "")}${p.from || 0}${a.esc(p.suffix || "")}</div><div class="fz-body" style="margin-top:12px">${a.md(p.label || "")}</div>`, "abs hide", { left: bx.x, top: bx.y }, a.root, "block");
     a.show(c, p.at, a.until(p), { y: 20 }, 0.5);
     const o = { v: p.from || 0 }, n = c.querySelector(".n");
-    a.tl.to(o, { v: p.value, duration: p.dur || 1.2, ease: "power2.out", onUpdate: () => { n.textContent = `${p.prefix || ""}${Math.round(o.v).toLocaleString(p.locale || "en-IN")}${p.suffix || ""}`; } }, a.T(p.at + 0.2));
+    a.tl.to(o, { v: p.value, duration: p.dur || 1.2, ease: "power2.out", onUpdate: () => { n.textContent = `${p.prefix || ""}${p.locale === "plain" ? String(Math.round(o.v)) : Math.round(o.v).toLocaleString(p.locale || "en-IN")}${p.suffix || ""}`; } }, a.T(p.at + 0.2));
     a.sfx("tick", p.at + 0.2);
   });
 

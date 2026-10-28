@@ -10,7 +10,7 @@ A number that counts up to its value, with a label.
 | `from` | start (default 0) |
 | `prefix` |  |
 | `suffix` |  |
-| `locale` | digit grouping (default en-IN: 10,000 · 1,00,000) |
+| `locale` | digit grouping (default en-IN: 10,000 · 1,00,000; `plain` for years: 1966) |
 | `label` | markdown |
 | `at` |  |
 | `until` |  |

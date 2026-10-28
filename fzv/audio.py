@@ -210,19 +210,22 @@ def mix(proj, raw: Path, duration: float, settings: dict, log=print) -> Path:
     inputs = ["-i", voice, "-i", sfx]
     fmt = "aformat=sample_rates=48000:channel_layouts=stereo"
     # the voice feeds both the mix and (with music) the ducking sidechain; a filter label can be used once, so split it
-    fc = f"[0:a]highpass=f=70,apad=whole_dur={duration},{fmt}" + (",asplit=2[v][vk];" if music else "[v];")
+    fc = f"[0:a]highpass=f=70,apad=whole_dur={duration},{fmt}" + (",asplit=3[v][vk][vn];[1:a]asplit=2[s][sn];" if music else "[v];")
     if music:
         m = settings["music"]
         inputs += ["-stream_loop", "-1", "-i", music]
         mlufs = music_loudness(music)
         gain = (lvl + m.get("rel_lufs", -18)) - mlufs          # the bed sits rel_lufs below the voice, whatever the track's own level
         fc += (f"[2:a]{fmt},atrim=0:{duration},volume={gain:.1f}dB,afade=t=in:d={m.get('fade_s', 2)},afade=t=out:st={max(0, duration - m.get('fade_s', 2))}:d={m.get('fade_s', 2)}[mu];"
-               f"[mu][vk]sidechaincompress=threshold=0.06:ratio=3:attack=40:release=700:makeup=1[duck];"
-               f"[v][1:a][duck]amix=inputs=3:normalize=0:duration=first[m]")
+               f"[mu][vk]sidechaincompress=threshold=0.06:ratio=3:attack=40:release=700:makeup=1,asplit=2[duck][dm];"
+               f"[v][s][duck]amix=inputs=3:normalize=0:duration=first[m];"
+               f"[vn][sn]amix=inputs=2:normalize=0:duration=first[nm]")
     else:
         fc += "[v][1:a]amix=inputs=2:normalize=0:duration=first[m]"
     raw_mix = A / "raw_mix.wav"
-    media.run(["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", fc, "-map", "[m]", "-t", f"{duration:.3f}", "-c:a", "pcm_s24le", raw_mix])
+    stems = [(A / "stem_voice_sfx.raw.wav", "[nm]"), (A / "stem_music.raw.wav", "[dm]")] if music else []
+    media.run(["ffmpeg", "-v", "error", "-y", *inputs, "-filter_complex", fc, "-map", "[m]", "-t", f"{duration:.3f}", "-c:a", "pcm_s24le", raw_mix,
+               *[x for f, lab in stems for x in ("-map", lab, "-t", f"{duration:.3f}", "-c:a", "pcm_s24le", f)]])
     p = media.run(["ffmpeg", "-hide_banner", "-i", raw_mix, "-af", "loudnorm=I=-14:TP=-1.0:LRA=11:print_format=json", "-f", "null", "-"], check=False)
     txt = (p.stderr or b"").decode(errors="replace")
     j = json.loads(txt[txt.rindex("{"):txt.rindex("}") + 1])
@@ -230,5 +233,30 @@ def mix(proj, raw: Path, duration: float, settings: dict, log=print) -> Path:
     media.run(["ffmpeg", "-v", "error", "-y", "-i", raw_mix, "-af",
                f"loudnorm=I=-14:TP=-1.0:LRA=11:measured_I={j['input_i']}:measured_TP={j['input_tp']}:measured_LRA={j['input_lra']}:measured_thresh={j['input_thresh']}:offset={j['target_offset']}:linear=true,aresample={SR}",
                "-c:a", "pcm_s16le", out])
+    # stems at the final mix's gain (loudnorm runs in linear mode: one constant gain), so voice+SFX + music == the mix; the review page
+    # plays the video without music from them, and the Studio preview carries them as two tracks
+    for old in A.glob("stem_*.wav"):
+        if not old.name.endswith(".raw.wav"):
+            old.unlink()
+    if stems:
+        gain = media.loudness(out).get("lufs", -14.0) - media.loudness(raw_mix).get("lufs", -14.0)
+        for f, _ in stems:
+            media.run(["ffmpeg", "-v", "error", "-y", "-i", f, "-af", f"volume={gain:.2f}dB,aresample={SR}", "-c:a", "pcm_s16le", f.with_name(f.name.replace(".raw", ""))])
+            f.unlink()
     log(f"audio: voice {lvl:.1f} LUFS, {len(cues)} SFX cues{', music ' + music.name if music else ''} -> {media.loudness(out)}")
+    return out
+
+
+def export_stems(proj, dest: Path) -> dict:
+    """AAC copies of the stems next to the review page: {"voice_sfx": name, "music": name} (empty without music)."""
+    A, out = proj.edit / "audio", {}
+    for key in ("voice_sfx", "music"):
+        src = A / f"stem_{key}.wav"
+        f = dest / f"{key}.m4a"
+        if src.exists():
+            if not f.exists() or f.stat().st_mtime < src.stat().st_mtime:
+                media.run(["ffmpeg", "-v", "error", "-y", "-i", src, "-c:a", "aac", "-b:a", "128k", f])
+            out[key] = f.name
+        elif f.exists():
+            f.unlink()
     return out

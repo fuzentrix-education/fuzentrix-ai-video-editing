@@ -24,7 +24,7 @@
     const bx = a.box(p, "hero"), [l1, l2] = String(p.title || "").split("\n");
     const lbl = a.el(a.esc(p.label || ""), "fz-label abs hide", { left: bx.x + 4, top: bx.y }, a.root, "chrome");
     const t = a.el(`${a.esc(l1 || "")}${l2 ? `<br/><span class="grad">${a.esc(l2)}</span>` : ""}`, "abs hide", { left: bx.x, top: bx.y + 40, font: "900 92px/1.02 var(--fz-font-display)", color: "var(--fz-text)", letterSpacing: "-.015em" }, a.root, "block");
-    const g = t.querySelector(".grad"); if (g) g.style.cssText = "background:var(--fz-grad);-webkit-background-clip:text;background-clip:text;color:transparent";
+    const g = t.querySelector(".grad"); if (g) g.style.cssText = "background:var(--fz-grad-text, var(--fz-grad));-webkit-background-clip:text;background-clip:text;color:transparent";
     a.show(lbl, p.at - 0.15, p.until, { y: 12 }, 0.45);
     a.tl.fromTo(t, { autoAlpha: 0, clipPath: "inset(0% 100% 0% 0%)" }, { autoAlpha: 1, clipPath: "inset(0% 0% 0% 0%)", duration: 0.9, ease: "power3.out", immediateRender: false }, a.T(p.at));
     a.out(t, p.until, {}, 0.25);

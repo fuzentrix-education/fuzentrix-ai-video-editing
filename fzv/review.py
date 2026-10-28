@@ -216,11 +216,32 @@ def next_step(st: dict, has_final: bool, legacy: bool) -> tuple[str, str | None]
         return "The beat sheet changed after you approved it. Check the changes, then approve it again.", "beats"
     if s in ("missing", "stale"):
         return "Beat sheet approved. Claude is building the storyboard (one frame per beat).", None
+    if s == "ready" and st.get("preview_mode") == "browser":
+        return ("Open the live preview (the whole edit playing in HyperFrames Studio, with the real sound; nothing is rendered yet) and look "
+                "through the storyboard. Write changes under any frame, or approve to render the final video."), "storyboard"
+    if s == "ready" and st.get("preview") in ("missing", "stale") and st.get("preview_on"):
+        return "The storyboard is ready (one frame per beat); the preview video is rendering. You can already look through the frames.", None
     if s == "ready":
+        if st.get("preview_on"):
+            return ("Watch the preview video (the whole edit with its real timing and sound; motion is choppier than the final) and look through "
+                    "the storyboard. Write changes under any frame or at a time in the video, or approve to render the final video."), "storyboard"
         return "Check the storyboard: one frame per beat over the real footage. Write changes under any beat, or approve it to render the final video.", "storyboard"
     if not has_final:
         return "Storyboard approved. The final video is rendering.", None
     return "The final video is ready. Watch it, check the list to confirm, and ask for changes at any time.", None
+
+
+def audio_info(proj, R: Path, settings: dict, has_final: bool) -> dict:
+    """What the music switch needs: the voice+SFX stem (the video without music) and the current music setting."""
+    from .audio import export_stems
+    st = export_stems(proj, R) if has_final or (R / "preview.mp4").exists() else {}
+    m = settings.get("music") or {}
+    from .config import GLOBAL, load_yaml
+    tracks = [t["id"] for t in load_yaml(GLOBAL / "music" / "manifest.yaml").get("tracks") or []]
+    stamp = lambda n: int((R / n).stat().st_mtime) if (R / n).exists() else 0
+    return {"nomusic": f"{st['voice_sfx']}?v={stamp(st['voice_sfx'])}" if st.get("voice_sfx") and st.get("music") else None,
+            "on": bool(m.get("enabled")), "track": m.get("track"), "tracks": tracks,
+            "level": "low" if m.get("rel_lufs", -18) <= -22 else "high" if m.get("rel_lufs", -18) >= -14 else "normal"}
 
 
 def page(proj, settings: dict | None = None, log=print) -> Path:
@@ -253,7 +274,12 @@ def page(proj, settings: dict | None = None, log=print) -> Path:
     with ThreadPoolExecutor(6) as ex:
         list(ex.map(lambda j: grab(j[0], j[1], j[2], 640), jobs))
     cache_f.write_text(json.dumps(cache))
-    st = {"beats": B.beats_state(proj), "storyboard": B.storyboard_state(proj)}
+    from .draft import preview_state
+    from .cli import preview_mode
+    st = {"beats": B.beats_state(proj), "storyboard": B.storyboard_state(proj), "preview": preview_state(proj),
+          "preview_on": preview_mode(settings) != "off", "preview_mode": preview_mode(settings)}
+    sj = proj.edit / "studio" / "studio.json"
+    live = json.loads(sj.read_text()) if sj.exists() else {}
     legacy = B.legacy(proj)
     msg, approve = next_step(st, has_final, legacy)
     sb = json.loads((R / "storyboard.json").read_text()).get("frames", {}) if (R / "storyboard.json").exists() else {}
@@ -281,7 +307,13 @@ def page(proj, settings: dict | None = None, log=print) -> Path:
         "approvals": pdata.get("approvals") or {},
         "final": {"src": "../../" + quote(final.name), "name": final.name, "v": stamp(final),
                   "checks": {k: v.get("ok") for k, v in (ver or {}).get("checks", {}).items()}} if has_final else None,
+        "preview": {"src": f"preview.mp4?v={stamp(R / 'preview.mp4')}", "current": st["preview"] == "ready",
+                    "fps": (json.loads((R / "preview.json").read_text()).get("fps") if (R / "preview.json").exists() else None)}
+                   if (R / "preview.mp4").exists() and not has_final else None,
+        "audio": audio_info(proj, R, settings, has_final),
+        "live": {"url": live.get("url"), "current": live.get("build") == B.build_signature(proj)} if live.get("url") else None,
         "confirm": section(dec, "To confirm"),
+        "sheet": f"../out/storyboard.jpg?v={stamp(proj.edit / 'out' / 'storyboard.jpg')}" if (proj.edit / "out" / "storyboard.jpg").exists() and sb else None,
         "beats": beats,
         "footage": [dict(r, file=f"{r['file']}?v={stamp(R / r['file'])}") for r in rows],
         "revisions": proj.p("revisions.md").read_text(encoding="utf-8") if proj.p("revisions.md").exists() else "",
@@ -308,6 +340,7 @@ h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:28px 0 10px}.sub{color
 .next{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:14px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .next p{margin:0;flex:1 1 320px}
 button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:7px 14px;cursor:pointer}
+a.btn{display:inline-block;border:1px solid var(--accent);color:var(--accent);border-radius:8px;padding:7px 14px;text-decoration:none;font-weight:600}
 button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
 .player{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
 video{width:100%;border-radius:8px;background:#000;display:block}
@@ -321,7 +354,7 @@ ul.confirm{background:var(--card);border:1px solid var(--line);border-radius:10p
 .beat header{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
 .num{font-weight:700;background:var(--accent);color:var(--accent-ink);border-radius:7px;padding:1px 9px}
 a.time{color:var(--accent);cursor:pointer;font-weight:600;text-decoration:none}
-.frames{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:10px}
+.frames{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:10px}
 figure{margin:0}figure img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block;background:var(--bg)}
 figcaption{font-size:12px;color:var(--mute);margin-top:3px}
 dl{display:grid;grid-template-columns:150px 1fr;gap:4px 14px;margin:0 0 10px}dt{color:var(--mute);font-size:13px}dd{margin:0}
@@ -332,10 +365,28 @@ dl{display:grid;grid-template-columns:150px 1fr;gap:4px 14px;margin:0 0 10px}dt{
 details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-top:12px}summary{cursor:pointer;font-weight:600}
 .foot{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-top:10px}.foot div{font-size:12px;color:var(--mute)}
 pre{white-space:pre-wrap;font-size:13px}
+.music{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:14px}.music select{font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.gridhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:28px 0 10px}.gridhead h2{margin:0;flex:1 1 auto}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{border:0;border-radius:0;padding:5px 12px}.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column}
+.tile:hover{border-color:var(--accent)}.tile .im{position:relative}.tile img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--bg)}
+.tile .b{position:absolute;left:8px;top:8px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:12px;border-radius:6px;padding:1px 7px}
+.tile .w{position:absolute;right:8px;top:8px;background:var(--warn);color:#fff;font-size:12px;border-radius:6px;padding:1px 7px}
+.tile .c{padding:8px 10px 10px;font-size:13px;line-height:1.4}.tile .c b{color:var(--accent)}
+.lb{position:fixed;inset:0;background:rgba(8,10,16,.88);display:none;z-index:10;align-items:center;justify-content:center;padding:16px}
+.lb.on{display:flex}.lb .box{max-width:min(1280px,100%);width:100%;color:#e8ebf2}
+.lb img{width:100%;max-height:68vh;object-fit:contain;border-radius:8px;background:#000;display:block}
+.lb .row{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}.lb .row p{margin:0;flex:1 1 300px;font-size:14px}
+.lb textarea{background:#11141b;color:#e8ebf2;border-color:#2a3140;margin-top:8px}
+.lb button{background:#1a1f29;color:#e8ebf2;border-color:#2a3140}
 @media (max-width:640px){dl{grid-template-columns:1fr}dt{margin-top:6px}}
 </style></head><body><main id="app"></main>
 <div class="req" id="req"><div class="in"><span id="reqn"></span><button id="clear">Clear</button><button class="primary" id="copy">Copy for Claude</button></div></div>
 <div class="toast" id="toast"></div>
+<div class="lb" id="lb"><div class="box"><img id="lbimg" alt="">
+  <div class="row"><p id="lbcap"></p><button id="lbprev">← Previous</button><button id="lbnext">Next →</button><button id="lbclose">Close</button></div>
+  <textarea id="lbtext"></textarea></div></div>
 <script>
 const D = __DATA__;
 const $ = (s, el = document) => el.querySelector(s);
@@ -352,7 +403,7 @@ function steps() {
   if (D.legacy) return "";
   const f = D.final ? (Object.values(D.final.checks).every(Boolean) ? "ok" : "warn") : "";
   return `<div class="steps"><span class="step ${cls(D.state.beats)}"><i class="dot"></i>1 · Beat sheet: ${label[D.state.beats]}</span>
-    <span class="step ${cls(D.state.storyboard)}"><i class="dot"></i>2 · Storyboard: ${D.state.beats === "approved" ? label[D.state.storyboard] : "after the beat sheet"}</span>
+    <span class="step ${cls(D.state.storyboard)}"><i class="dot"></i>2 · ${D.state.preview_on ? "Storyboard & preview" : "Storyboard"}: ${D.state.beats === "approved" ? label[D.state.storyboard] : "after the beat sheet"}</span>
     <span class="step ${f}"><i class="dot"></i>3 · Final video: ${D.final ? "ready" : "not rendered yet"}</span></div>`;
 }
 function beatCard(b) {
@@ -369,19 +420,76 @@ function beatCard(b) {
       ${row("Concept moments", esc(b.concepts.join("; ")))}${row("Notes", esc(b.notes))}${row("Your earlier requests", esc(b.feedback))}</dl>
     <textarea data-beat="${b.n}" data-t="${b.start}" placeholder="Anything to change in beat ${b.n}? Write it in plain words.">${esc(store.beats[b.n] || "")}</textarea></article>`;
 }
+let musicOff = false;
+function musicRow() {
+  const A = D.audio || {};
+  const opts = (xs, cur) => xs.map(x => `<option ${x === cur ? "selected" : ""}>${esc(x)}</option>`).join("");
+  if (!A.on) return `<div class="music">🎵 Background music: <b>off</b> in this video. <select id="mtrack">${opts(A.tracks || [], A.tracks && A.tracks[0])}</select>
+      <select id="mlevel">${opts(["low", "normal", "high"], "normal")}</select><button id="mkeep">Ask Claude to add it</button></div>`;
+  const live = A.nomusic ? `<span class="seg"><button data-music="on" class="${musicOff ? "" : "on"}">On</button><button data-music="off" class="${musicOff ? "on" : ""}">Off</button></span>
+      <span class="sub">switch while it plays to hear it with and without</span>` : `<b>on</b> (${esc(A.track || "")})`;
+  return `<div class="music">🎵 Background music: ${live} · level <select id="mlevel">${opts(["low", "normal", "high"], A.level)}</select>
+      <button id="mkeep">Keep this for the final</button><audio id="nomusic" preload="auto" src="${A.nomusic || ""}"></audio></div>`;
+}
+function syncMusic() {
+  const v = $("#video"), a = $("#nomusic"); if (!v) return;
+  v.muted = musicOff && !!a;
+  if (!a) return;
+  if (!musicOff) { a.pause(); return; }
+  if (Math.abs(a.currentTime - v.currentTime) > 0.12) a.currentTime = v.currentTime;
+  a.playbackRate = v.playbackRate;
+  if (v.paused) a.pause(); else if (a.paused) a.play().catch(() => {});
+}
+["play", "pause", "seeked", "ratechange"].forEach(ev => document.addEventListener(ev, e => { if (e.target.id === "video") syncMusic(); }, true));
+setInterval(() => { const v = $("#video"); if (v && musicOff && !v.paused) syncMusic(); }, 500);
+let boardKind = null;
+function boardFrames() {
+  const kinds = ["storyboard", "final"].filter(k => D.beats.some(b => b.frames[k]));
+  if (!boardKind || !kinds.includes(boardKind)) boardKind = kinds.includes("storyboard") ? "storyboard" : (kinds[0] || "footage");
+  return {kinds, list: D.beats.map(b => ({b, src: b.frames[boardKind] || b.frames.footage})).filter(x => x.src)};
+}
+function board() {
+  const {kinds, list} = boardFrames();
+  if (!list.length) return "";
+  const title = boardKind === "footage" ? "Beat sheet at a glance" : boardKind === "final" ? "Final video: one frame per beat" : "Storyboard: one frame per beat";
+  const seg = kinds.length > 1 ? `<span class="seg">${kinds.map(k => `<button data-kind="${k}" class="${k === boardKind ? "on" : ""}">${k === "final" ? "Final" : "Storyboard"}</button>`).join("")}</span>` : "";
+  const sheet = D.sheet && boardKind === "storyboard" ? `<a href="${D.sheet}" target="_blank">Open as one image</a>` : "";
+  return `<div class="gridhead"><h2>${title}</h2>${seg}${sheet}</div>
+    <div class="sub" style="margin-bottom:10px">Click a frame to see it large and write a change for that beat.</div>
+    <div class="board">${list.map(({b, src}, i) => `<div class="tile" data-open="${i}"><div class="im"><img loading="lazy" src="${src}" alt="Beat ${b.n}"><span class="b">${b.n}</span>${(store.beats[b.n] || "").trim() ? '<span class="w">change written</span>' : ""}</div>
+      <div class="c"><b>${mmss(b.start)}–${mmss(b.end)}</b> · ${esc(b.show || b.idea).slice(0, 140)}${(b.show || "").length > 140 ? "…" : ""}</div></div>`).join("")}</div>`;
+}
+let lbIndex = -1;
+function openLb(i) {
+  const {list} = boardFrames(); if (!list.length) return;
+  lbIndex = (i + list.length) % list.length; const {b, src} = list[lbIndex];
+  $("#lbimg").src = src.split("?")[0] + "?" + (src.split("?")[1] || "");
+  $("#lbcap").innerHTML = `<b>Beat ${b.n}</b> · ${mmss(b.start)}–${mmss(b.end)} · ${esc(b.show || b.idea)}<br><span style="opacity:.75">“${esc(b.says)}”</span>`;
+  const t = $("#lbtext"); t.dataset.beat = b.n; t.placeholder = `Anything to change in beat ${b.n}? Write it in plain words.`; t.value = store.beats[b.n] || "";
+  $("#lb").classList.add("on");
+}
+function closeLb() { $("#lb").classList.remove("on"); lbIndex = -1; render(); }
 function render() {
   const app = $("#app");
   let h = `<h1>${esc(D.title)}</h1><div class="sub">${esc(D.folder)} · ${esc(D.mode || "")} · ${mmss(D.duration)} · page made ${esc(D.generated)}</div>`;
   h += steps();
-  h += `<div class="next"><p>${esc(D.next)}</p>${D.approve ? `<button class="primary" id="approve">Copy approval for Claude</button>` : ""}</div>`;
+  h += `<div class="next"><p>${esc(D.next)}</p>${D.live ? `<a class="btn" href="${esc(D.live.url)}" target="_blank">▶ Open the live preview</a>` : ""}${D.approve ? `<button class="primary" id="approve">Copy approval for Claude</button>` : ""}</div>`;
+  if (!D.live && D.state.preview_mode === "browser" && !D.final) h += `<div class="sub" style="margin-top:6px">Live preview not running: ask Claude “open the live preview”.</div>`;
+  const player = (src, extra) => `<div class="player"><video id="video" controls preload="metadata" src="${src}"></video>${extra}${musicRow()}
+      <div class="here"><input id="hereText" placeholder="Pause the video where something should change, write it here…"><button id="hereAdd">Add at <span id="hereT">0:00</span></button></div></div>`;
+  if (!D.final && D.preview) {
+    h += `<h2>Preview video</h2><div class="sub" style="margin-bottom:8px">The whole edit with its real timing, music and sound effects, rendered quickly at ${D.preview.fps || 10} frames a second: motion looks choppier than the final will.${D.preview.current ? "" : " <b>This preview is from an earlier version; a new one is being made.</b>"}</div>`
+      + player(D.preview.src, "");
+  }
   if (D.final) {
     const bad = Object.entries(D.final.checks).filter(([, ok]) => !ok).map(([k]) => k);
-    h += `<h2>Final video</h2><div class="player"><video id="video" controls preload="metadata" src="${D.final.src}?v=${D.final.v}"></video>
+    h += `<h2>Final video</h2><div class="player"><video id="video" controls preload="metadata" src="${D.final.src}?v=${D.final.v}"></video>${musicRow()}
       <div class="checks">${Object.entries(D.final.checks).map(([k, ok]) => `<span class="chip ${ok ? "" : "bad"}">${esc(k)} ${ok ? "ok" : "check"}</span>`).join("")}</div>
       <div class="here"><input id="hereText" placeholder="Pause the video where something should change, write it here…"><button id="hereAdd">Add at <span id="hereT">0:00</span></button></div></div>`;
   }
+  h += board();
   if (D.confirm.length) h += `<h2>To confirm</h2><ul class="confirm">${D.confirm.map(c => `<li>${esc(c)}</li>`).join("")}</ul>`;
-  if (D.beats.length) h += `<h2>Beats (${D.beats.length})</h2>` + D.beats.map(beatCard).join("");
+  if (D.beats.length) h += `<h2>Beat details (${D.beats.length})</h2>` + D.beats.map(beatCard).join("");
   if (store.times.length) h += `<h2>Requests at a time</h2><ul class="confirm" id="times">${store.times.map((r, i) => `<li>${mmss(r.t)} ${esc(r.text)} <a class="time" data-del="${i}">remove</a></li>`).join("")}</ul>`;
   if (D.footage.length) h += `<details><summary>Footage every 10 seconds (${D.footage.length} frames)</summary><div class="foot">${D.footage.map(f =>
       `<div><img loading="lazy" src="${f.file}" style="width:100%;border-radius:6px"><b>${mmss(f.t)}</b> ${esc(f.shot)} · ${esc(f.text).slice(0, 90)}</div>`).join("")}</div></details>`;
@@ -391,6 +499,7 @@ function render() {
 }
 function requests() {
   const out = [];
+  if (store.music) out.push(store.music);
   for (const b of D.beats) { const v = (store.beats[b.n] || "").trim(); if (v) out.push(`beat ${b.n} (${mmss(b.start)}): ${v.replace(/\s*\n\s*/g, " ")}`); }
   for (const r of store.times) out.push(`${mmss(r.t)}: ${r.text}`);
   return out;
@@ -408,14 +517,35 @@ async function copy(text) {
 }
 document.addEventListener("input", e => { if (e.target.dataset.beat) { store.beats[e.target.dataset.beat] = e.target.value; save(); } });
 document.addEventListener("click", e => {
+  const tile = e.target.closest("[data-open]"), kind = e.target.closest("[data-kind]");
+  if (tile) { openLb(+tile.dataset.open); return; }
+  if (kind) { boardKind = kind.dataset.kind; render(); return; }
+  const mb = e.target.closest("[data-music]");
+  if (mb) { musicOff = mb.dataset.music === "off"; document.querySelectorAll("[data-music]").forEach(b => b.classList.toggle("on", b === mb)); syncMusic(); return; }
+  if (e.target.id === "mkeep") {
+    const A = D.audio || {}, lv = ($("#mlevel") || {}).value || "normal";
+    store.music = !A.on ? `music: add ${($("#mtrack") || {}).value || "calm-piano"}, level ${lv}` : musicOff ? "music: off" : `music: keep ${A.track}, level ${lv}`;
+    save(); toast("Added to your requests. Press Copy for Claude to send them."); return;
+  }
+  if (e.target.id === "lb") { closeLb(); return; }
+  if (e.target.id === "lbprev") { openLb(lbIndex - 1); return; }
+  if (e.target.id === "lbnext") { openLb(lbIndex + 1); return; }
+  if (e.target.id === "lbclose") { closeLb(); return; }
   const t = e.target.closest("[data-t]"), del = e.target.closest("[data-del]");
   if (del) { store.times.splice(+del.dataset.del, 1); save(); render(); return; }
   if (t && t.tagName === "A") { const v = $("#video"); if (v) { v.currentTime = +t.dataset.t; v.play(); v.scrollIntoView({behavior: "smooth", block: "center"}); } }
   if (e.target.id === "approve") copy(`/approve ${D.folder} ${D.approve}`);
   if (e.target.closest("#hereAdd")) { const v = $("#video"), x = $("#hereText"); if (x.value.trim()) { store.times.push({t: v.currentTime, text: x.value.trim()}); x.value = ""; save(); render(); } }
 });
+document.addEventListener("keydown", e => {
+  if (lbIndex < 0) return;
+  if (e.key === "Escape") closeLb();
+  else if (e.target.tagName !== "TEXTAREA" && e.key === "ArrowRight") openLb(lbIndex + 1);
+  else if (e.target.tagName !== "TEXTAREA" && e.key === "ArrowLeft") openLb(lbIndex - 1);
+});
 $("#copy").onclick = () => copy(`/change ${D.folder} ${requests().join("; ")}`);
 $("#clear").onclick = () => { if (confirm("Clear the requests written on this page?")) { store = {beats: {}, times: []}; save(); render(); } };
+const _render = render; render = function () { _render(); syncMusic(); };
 render();
 setInterval(() => { const v = $("#video"), s = $("#hereT"); if (v && s) s.textContent = mmss(v.currentTime); }, 300);
 </script></body></html>

@@ -378,9 +378,16 @@ def test_beat_refs_become_times():
 
 def test_prompt_review_field(tmp_path):
     from fzv.project import Project
-    assert Project(tmp_path).settings()["review"] == {"beats": "required", "storyboard": "required"}
+    r = Project(tmp_path).settings()["review"]
+    assert (r["beats"], r["storyboard"], r["preview"], r["preview_fps"]) == ("required", "required", "browser", 10)
     (tmp_path / "prompt.md").write_text("# T\nReview: beats only\n")
-    assert Project(tmp_path).settings()["review"] == {"beats": "required", "storyboard": "off"}
+    r = Project(tmp_path).settings()["review"]
+    assert (r["beats"], r["storyboard"], r["preview"]) == ("required", "off", "off")
+    (tmp_path / "prompt.md").write_text("# T\nReview: on, no preview\n")
+    r = Project(tmp_path).settings()["review"]
+    assert (r["beats"], r["storyboard"], r["preview"]) == ("required", "required", "off")
+    (tmp_path / "prompt.md").write_text("# T\nReview: on, preview video\n")
+    assert Project(tmp_path).settings()["review"]["preview"] == "video"
 
 
 def test_v4_scene_in():
@@ -390,3 +397,46 @@ def test_v4_scene_in():
     assert scene_in(sp, "data-flow", 10, 20) and not scene_in(sp, "data-flow", 14, 20)
     assert scene_in(sp, "hf:count-up", 25, 29) and not scene_in(sp, "hf:chart-story", 0, 30)
     assert scene_in(sp, "studio-tag", 41, 43)
+
+
+def test_scene_span_and_plate_only_text_stretches():
+    from fzv.spec import scene_span
+    from fzv.validate import text_only_stretches
+    assert scene_span({"items": [{"at": 12.0}, {"at": 9.5}], "until": 20.0}, 30.0) == (9.5, 20.0)   # agenda-style scenes
+    assert scene_span({"at": 4.0}, 30.0) == (4.0, 30.0)
+    sec = {"range": [0.0, 40.0], "scenes": [{"type-cards": {"cards": [{"at": 30.0}], "until": 40.0}}, {"header": {"at": 0.0}}]}
+    assert text_only_stretches(sec, 40.0) == [(0.0, 30.0)]
+    # studio shots (plate graphics hidden) and quiet stretches are not words-only plate time
+    assert text_only_stretches(sec, 40.0, [(10.0, 22.0), (0.0, 3.0)]) == [(3.0, 10.0), (22.0, 30.0)]
+
+
+def test_preview_state_follows_the_build(tmp_path):
+    import json
+    from fzv import beats as B
+    from fzv.draft import preview_state
+    from fzv.project import Project
+    proj = Project(tmp_path)
+    assert preview_state(proj) == "missing"
+    (proj.edit / "built" / "clips.json").write_text(json.dumps([{"id": "s1", "hash": "aaa"}]))
+    R = proj.edit / "review"; R.mkdir(exist_ok=True)
+    (R / "preview.mp4").write_bytes(b"x")
+    (R / "preview.json").write_text(json.dumps({"build": B.build_signature(proj)}))
+    assert preview_state(proj) == "ready"
+    (proj.edit / "built" / "clips.json").write_text(json.dumps([{"id": "s1", "hash": "bbb"}]))     # built again: the preview is stale
+    assert preview_state(proj) == "stale"
+
+
+def test_studio_subcomposition_and_registry_hoist():
+    from fzv.studio import subcomposition
+    page = ("<!doctype html><html><head><script src=\"assets/runtime/lib.js\"></script><link rel=\"stylesheet\" href=\"assets/brand.css\" /></head>"
+            "<body>\n<svg width=\"0\" height=\"0\" style=\"position:absolute\"><defs><symbol id=\"i-x\"></symbol></defs></svg>\n"
+            "<div id=\"root\" data-composition-id=\"main\" data-start=\"0\" data-duration=\"10\"><video id=\"fz-presenter-video\"></video>"
+            "<div id=\"hf0-count-up\" class=\"fz-hf hide\" data-composition-id=\"count-up\" data-start=\"1.500\" data-duration=\"2\"></div></div>\n"
+            "<script>const api = FZ.create({ offset: 20, duration: 10 }); api.run([{\"template\": \"hf\", \"params\": {\"_host\": \"hf0-count-up\"}}]);"
+            " window.__timelines[\"main\"] = api.tl;</script></body></html>")
+    sub, hosts = subcomposition(page, "fz-s1", 20.0)
+    assert "<template>" in sub and 'data-composition-id="fz-s1" data-fz-root="fz-s1"' in sub
+    assert "root: '[data-fz-root=\"fz-s1\"]'" in sub and 'window.__timelines["fz-s1"]' in sub
+    assert "<symbol" not in sub and 'id="fz-presenter-video-fz-s1"' in sub              # icons live in the root; media ids unique
+    assert len(hosts) == 1 and 'id="fz-s1-hf0-count-up"' in hosts[0] and 'data-start="21.500"' in hosts[0]
+    assert '"_host":"fz-s1-hf0-count-up"' in sub and "hf0-count-up\" class" not in sub

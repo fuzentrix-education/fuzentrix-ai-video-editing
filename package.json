@@ -1,5 +1,5 @@
 {
-  "name": "fuzentrix-video-editing-automations",
+  "name": "fuzentrix-ai-video-editing",
   "private": true,
   "type": "module",
   "description": "Node side of fzv: HyperFrames renderer (pinned) and headless-Chrome helpers",

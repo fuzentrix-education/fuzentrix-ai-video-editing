@@ -271,7 +271,7 @@
    "from": "start (default 0)",
    "prefix": "",
    "suffix": "",
-   "locale": "digit grouping (default en-IN: 10,000 \u00b7 1,00,000)",
+   "locale": "digit grouping (default en-IN: 10,000 \u00b7 1,00,000; `plain` for years: 1966)",
    "label": "markdown",
    "at": "",
    "until": "",
@@ -860,7 +860,8 @@
    "until": "",
    "box": "x, y, w, h",
    "vars": "{variable: value} (see fzv registry list)",
-   "cues": "[times] for items with a `cues` variable (one per step)"
+   "cues": "[times] for items with a `cues` variable (one per step)",
+   "css": "{--custom-prop: value} the item's own CSS variables (e.g. text sizes of a component in a small box)"
   }
  },
  "sketch-board": {

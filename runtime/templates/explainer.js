@@ -142,7 +142,7 @@
     vals.forEach((v, i) => {
       const x = bx.x + (i % cols) * gap, y = bx.y + 110 + Math.floor(i / cols) * gap;
       const slot = a.el("", "abs hide", { left: x, top: y, width: sz, height: sz, borderRadius: 18, border: "2px dashed var(--fz-line)" }, a.root, "part");
-      a.inn(slot, p.at + 0.2 + i * 0.03, {}, 0.3); parts.push(slot);
+      a.inn(slot, p.at + 0.2 + i * 0.03, {}, 0.3); a.out(slot, U); parts.push(slot);
       const g = (p.times && p.times[i] != null) ? p.times[i] : emit + (i < 4 ? i * pace : 4 * pace + (i - 4) * pace * 0.5);
       const stopHere = p.stop_value != null && v === p.stop_value;
       const tile = a.el(a.esc(v), "fz-tile hide", { left: x, top: y, width: sz, height: sz, fontSize: Math.round(sz * (String(v).length > 2 ? 0.32 : 0.42)), borderRadius: 18 }, a.root, "part");
@@ -371,7 +371,7 @@
       params: { text: "the word", sub: "expansion or tagline (markdown), e.g. '*D*atabase *M*anagement *S*ystem'", sub_at: "", at: "", until: "", box: "x, y, w (default hero slot)", size: "px (default 170)" } }, (a, p) => {
     const bx = a.box(p, "hero"), U = a.until(p), size = p.size || Math.min(170, Math.floor(bx.w / (0.66 * Math.max(3, String(p.text).length))));
     const w = a.el([...String(p.text)].map((ch) => `<span class="ch" style="display:inline-block">${a.esc(ch)}</span>`).join(""), "abs hide",
-      { left: bx.x, top: bx.y, font: `900 ${size}px/1 var(--fz-font-display)`, letterSpacing: "-.02em", color: "var(--fz-action)", whiteSpace: "nowrap" }, a.root, "block");
+      { left: bx.x, top: bx.y, font: `900 ${size}px/1 var(--fz-font-display)`, letterSpacing: "-.02em", color: "var(--fz-bigword, var(--fz-action))", whiteSpace: "nowrap" }, a.root, "block");
     a.set(w, p.at, { autoAlpha: 1 });
     a.tl.fromTo(w.querySelectorAll(".ch"), { yPercent: 60, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.5, ease: "back.out(1.6)", stagger: 0.06, immediateRender: false }, a.T(p.at));
     a.out(w, U); a.sfx("whoosh", p.at);
@@ -382,7 +382,7 @@
   R({ name: "scene", family: "explainer", layers: ["plate"], static: false,
       doc: "Compose mode only: switch the background behind the instructor to a dark brand scene for a big moment (the hero reveal, a fun fact); text turns light for its duration.",
       params: { kind: "dark", at: "", until: "" } }, (a, p) => {
-    const bg = document.getElementById("fz-bg");
+    const bg = a.byId("fz-bg");
     if (!bg) throw new Error("scene needs compose mode (no background layer behind the instructor in a rough cut)");
     const U = a.until(p);
     const d = a.el(`<div style="position:absolute;inset:0;background:radial-gradient(circle at 70% 40%, rgba(22,187,200,.25), transparent 55%),repeating-conic-gradient(from 0deg at 70% 40%, rgba(255,255,255,.035) 0 6deg, transparent 6deg 14deg)"></div>`,

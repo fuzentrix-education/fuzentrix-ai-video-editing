@@ -26,7 +26,7 @@ The skills live in `.claude/skills/`; the safe steps are pre-approved in `.claud
 ## 0. Once per machine
 
 ```bash
-git clone <repo> fuzentrix-video-editing-automations && cd fuzentrix-video-editing-automations
+git clone <repo> fuzentrix-ai-video-editing && cd fuzentrix-ai-video-editing
 brew install ffmpeg node uv        # if missing
 bin/setup                          # everything else: Python env, renderer + browser, transcription model, library check, tests
 ```
@@ -117,9 +117,20 @@ On approval, Claude runs `bin/fzv approve <folder> beats --note "<their words>"`
    not built with the templates it was approved with…).
 2. `bin/fzv storyboard <folder>` takes one frame per beat at its key moment (just after its last sync word), graphics over the real
    footage, in about a minute: `edit/review/storyboard/` and the sheet `edit/out/storyboard.jpg`. Claude checks it first.
-3. The editor approves on the review page or asks for changes the same way as for the beat sheet. Changed scenes are rebuilt and
+3. The **preview** of the whole edit, per `review.preview`:
+   - `browser` (default): `bin/fzv studio <folder>` writes `edit/studio/` (the whole edit as one HyperFrames project: the footage, each
+     built clip as a sub-composition at its time, the sound as two tracks) and opens it in **HyperFrames Studio**: live playback, no
+     rendering, view-only. Made only here or when the editor asks (`/preview`); `--stop` closes it.
+   - `video`: `bin/fzv draft <folder>` makes the **preview video** (`edit/review/preview.mp4`): every clip rendered at `review.preview_fps` (10 fps)
+   in draft quality, composited over the footage at 960x540 with the real mix (voice, music, SFX). Timing and sound are the final's;
+   only the motion is choppier. It takes a fraction of the final render (about 4 minutes for DBMS, 20–25 for the 15-minute Loop Control
+   on an 8 GB Mac), and a revision re-drafts only the clips it changed.
+4. The review page shows the preview video, then the storyboard as a **grid** (one frame per beat, its time and what it shows; click a frame to see it
+   large and write a change for that beat; after rendering the same grid switches to the final video's frames). The editor approves
+   or asks for changes the same way as for the beat sheet. Changed scenes are rebuilt and
    only their frames are taken again (`edit/out/storyboard_changed.jpg`). On approval: `bin/fzv approve <folder> storyboard`.
-   **`fzv render` refuses to run until the storyboard of the current build is approved** (rule R2).
+   **`fzv render` refuses to run until the storyboard of the current build is approved** (rule R2), and the approval waits for the
+   preview video of that build (`review.preview`; prompt `Review: on, no preview` skips it).
 
 In compose mode Claude also checks the cut-out's edges and, if a desk or laptop travels with the instructor, adds `key:` options and
 re-keys (`bin/fzv ingest <folder> --rekey`).
@@ -189,4 +200,7 @@ Keep the whole folder: re-runs and revisions reuse its caches.
 | Show the screen recording / rebuild it | prompt `Recording: show` (default) / `Recording: reference` (`, exact` = no corrections) |
 | Stricter or looser "show the process" | `visuals.max_text_only_s` in `global/defaults.yaml` |
 | More concept triggers | `global/concepts.yaml` |
-| Skip the approvals for one video (tests) | prompt `Review: off` (`beats` / `storyboard` keeps one); house default `review.*` in `global/defaults.yaml` |
+| Skip the approvals for one video (tests) | prompt `Review: off` (`beats` / `storyboard` keeps one; `on, no preview` skips only the preview video); house default `review.*` in `global/defaults.yaml` |
+| Live preview in Studio, or a preview video | prompt `Review: on, preview video` for the draft video; house default `review.preview` (`browser`) |
+| Smoother or faster preview video | `review.preview_fps` in `global/defaults.yaml` (default 10) |
+| Music on or off after the fact | review page music switch → **Keep this for the final**, or `bin/fzv mix <folder> off\|on\|<track> --level …` (re-mixes only) |

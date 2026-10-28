@@ -9,7 +9,10 @@
   fzv preview  <folder> <clip> <t,t,...>  contact sheet of a clip over the real footage
   fzv validate <folder>                   rule checks before rendering
   fzv storyboard <folder> [--all]         one frame per beat over the real footage, before rendering (only changed frames redone)
-  fzv review   <folder> [--open]          the review page: beat sheet -> storyboard -> final, change requests (edit/review/index.html)
+  fzv mix      <folder> off|on|<track> [--level low|normal|high]   background music for this video; re-mixes only
+  fzv studio   <folder> [--stop]          the live preview: the whole edit in HyperFrames Studio (no rendering)
+  fzv draft    <folder>                   the preview video: the whole edit at a low frame rate with the real sound, before the final render
+  fzv review   <folder> [--open]          the review page: beat sheet -> storyboard + preview -> final, change requests (edit/review/index.html)
   fzv render   <folder> [--only ids]      render changed clips (parallel, cached)
   fzv finish   <folder>                   SFX + music + mix, composite, encode, final MP4 (+ .srt if subtitles)
   fzv verify   <folder>                   final checks and a verification sheet
@@ -321,6 +324,9 @@ def cmd_approve(a) -> int:
         st = B.storyboard_state(proj)
         if st in ("missing", "stale"):
             log("approve: make the storyboard of the current build first (`fzv storyboard`)"); return 1
+        why = preview_missing(proj, proj.settings())
+        if why:
+            log(f"approve: {why}"); return 1
         B.record_approval(proj, "storyboard", B.build_signature(proj), a.note or "")
         log("approve: storyboard approved. Next: render, finish, verify")
     page(proj, log=log)
@@ -337,6 +343,105 @@ def cmd_storyboard(a) -> int:
         log("storyboard: build the edit first (`fzv build`)"); return 1
     storyboard(proj, workers=max(1, min(3, probe(proj.settings())["render_workers"])), redo_all=a.all, log=log)
     log(f"review page: {page(proj, log=log)}")
+    return 0
+
+
+def preview_mode(settings: dict) -> str:
+    """browser | video | off (`required`, the earlier name, means video)."""
+    from . import beats as B
+    m = B.gate_mode(settings, "preview")
+    return "video" if m == "required" else m
+
+
+def preview_missing(proj: Project, settings: dict) -> str | None:
+    """Why the storyboard can't be approved yet for want of a preview of the current build (None when it can)."""
+    mode = preview_mode(settings)
+    if mode == "browser":
+        from .studio import state
+        return None if state(proj) == "ready" else "open the live preview of the current build first (`fzv studio`) so the editor can watch it"
+    if mode == "video":
+        from .draft import preview_state
+        return None if preview_state(proj) == "ready" else "make the preview video of the current build first (`fzv draft`) so the editor can watch it"
+    return None
+
+
+def cmd_studio(a) -> int:
+    """The live preview: the whole edit in HyperFrames Studio (no rendering). Made when the editor asks, or before the final render."""
+    from . import studio as St
+    from .review import page
+    proj = Project(a.folder)
+    S = proj.edit / "studio"
+    if a.stop:
+        St.serve(S, stop=True, log=log); page(proj, log=log); return 0
+    if not (proj.edit / "built" / "clips.json").exists():
+        log("studio: build the edit first (`fzv build`)"); return 1
+    if St.state(proj) != "ready":
+        settings, *_ = load_all(proj)
+        St.build(proj, settings, log=log)
+    if not a.build_only:
+        St.serve(S, port=a.port, open_browser=not a.no_open, log=log)
+    log(f"review page: {page(proj, log=log)}")
+    return 0
+
+
+def cmd_draft(a) -> int:
+    from .draft import draft
+    from .machine import probe
+    from .review import page
+    proj = Project(a.folder)
+    if not (proj.edit / "built" / "clips.json").exists():
+        log("draft: build the edit first (`fzv build`)"); return 1
+    if not (proj.edit / "audio" / "cues.json").exists():
+        log("draft: validate the edit first (`fzv validate`): it records the sound-effect cues"); return 1
+    settings, *_ = load_all(proj)
+    m = probe(proj.settings())
+    draft(proj, settings, workers=m["render_workers"], low_memory=m["low_memory"], log=log)
+    log(f"review page: {page(proj, log=log)}")
+    return 0
+
+
+def set_prompt_field(proj: Project, key: str, value: str) -> None:
+    """Replace (or add) a `Key: value` line in the video's prompt.md."""
+    f = proj.folder / "prompt.md"
+    lines = f.read_text(encoding="utf-8").splitlines() if f.exists() else [f"# {proj.folder.name}"]
+    pat = re.compile(rf"^\s*{re.escape(key)}\s*:", re.I)
+    for i, ln in enumerate(lines):
+        if pat.match(ln):
+            lines[i] = f"{key}: {value}"
+            break
+    else:
+        lines.insert(1, f"{key}: {value}")
+    f.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def cmd_mix(a) -> int:
+    """Music on/off, track and level for one video: updates prompt.md and re-mixes only (no graphics are rendered again)."""
+    proj = Project(a.folder)
+    cur = proj.settings()["music"]
+    if a.music == "off":
+        value = "off"
+    else:
+        track = a.music if a.music not in ("on", None) else (cur.get("track") or "calm-piano")
+        value = track + ({"low": ", low", "high": ", high"}.get(a.level or "", ""))
+        from .config import load_yaml
+        known = [t["id"] for t in load_yaml(GLOBAL / "music" / "manifest.yaml").get("tracks") or []]
+        if track not in known:
+            log(f"mix: no music track '{track}' (tracks: {', '.join(known)})"); return 1
+    set_prompt_field(proj, "Music", value)
+    sp = proj.spec_path
+    if sp.exists() and "music" in (yaml.safe_load(sp.read_text()) or {}):
+        log("mix: note: edit.yaml has its own `music:`, which wins over the prompt; remove it to use this setting")
+    log(f"mix: music {value}")
+    title = (yaml.safe_load(sp.read_text()) or {}).get("title") if sp.exists() else None
+    title = title or proj.prompt_fields().get("title") or proj.folder.name
+    if proj.output_path(title).exists():
+        if cmd_finish(argparse.Namespace(folder=a.folder)):
+            return 1
+        return cmd_verify(argparse.Namespace(folder=a.folder))
+    from .draft import preview_state
+    if preview_state(proj) == "ready":
+        return cmd_draft(argparse.Namespace(folder=a.folder))
+    log("mix: saved; it is used when the preview or the final is made")
     return 0
 
 
@@ -519,6 +624,9 @@ def cmd_finish(a) -> int:
         out = finish(proj, raw, info, clips, cuts, mix_wav, proj.output_path(title), settings, log)
     if settings["subtitles"]["enabled"] and proj.p("captions.json").exists():
         write_srt(json.loads(proj.p("captions.json").read_text()), out.with_suffix(".srt"))
+    from .audio import export_stems
+    (proj.edit / "review").mkdir(exist_ok=True)
+    export_stems(proj, proj.edit / "review")                      # the review page's music on/off switch
     proj.stage_done("finish", output=out.name, seconds=round(time.time() - t0))
     return 0
 
@@ -563,6 +671,12 @@ def cmd_edit(a) -> int:
     if B.gate_mode(settings, "storyboard") != "off" and proj.p("beats.yaml").exists():
         if cmd_storyboard(argparse.Namespace(folder=a.folder, all=False)):
             return 1
+        if B.storyboard_state(proj) != "approved" and preview_missing(proj, settings):
+            if preview_mode(settings) == "browser":
+                if cmd_studio(argparse.Namespace(folder=a.folder, stop=False, port=None, no_open=False, build_only=False)):
+                    return 1
+            elif cmd_draft(argparse.Namespace(folder=a.folder)):
+                return 1
         why = B.gate_render(proj, settings)
         if why:
             log(f"edit: waiting: {why}"); return 0
@@ -769,6 +883,12 @@ def main(argv=None):
     p = add("beats", cmd_beats); p.add_argument("--redraft", action="store_true", help="start a new draft (the old sheet goes to edit/_prev/)")
     p = add("approve", cmd_approve); p.add_argument("what", choices=["beats", "storyboard"]); p.add_argument("--note", help="the editor's words")
     p = add("storyboard", cmd_storyboard); p.add_argument("--all", action="store_true", help="redo every frame")
+    p = add("mix", cmd_mix, help="music on/off, track and level; re-mixes the final (or the preview) without rendering graphics again")
+    p.add_argument("music", help="off | on | <track id>"); p.add_argument("--level", choices=["low", "normal", "high"])
+    p = add("studio", cmd_studio, help="the live preview: the whole edit in HyperFrames Studio, no rendering (--stop to close it)")
+    p.add_argument("--stop", action="store_true"); p.add_argument("--port", type=int); p.add_argument("--no-open", action="store_true")
+    p.add_argument("--build-only", action="store_true", help="write edit/studio/ without starting Studio")
+    add("draft", cmd_draft, help="the preview video of the whole edit (low frame rate, real timing and sound) before the final render")
     p = add("review", cmd_review); p.add_argument("--open", action="store_true", help="open the page in the browser")
     add("build", cmd_build)
     p = add("preview", cmd_preview); p.add_argument("clip"); p.add_argument("times")

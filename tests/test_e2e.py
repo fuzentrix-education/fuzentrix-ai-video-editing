@@ -48,6 +48,16 @@ studio:
 """)
     fzv("storyboard", v)
     assert (v / "edit" / "review" / "storyboard" / "b02.jpg").exists() and (v / "edit" / "out" / "storyboard.jpg").exists()
+    fzv("draft", v)                                                   # the preview video: whole edit, low frame rate, real sound
+    pv = v / "edit" / "review" / "preview.mp4"
+    streams = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "stream=codec_type,width,height", "-of", "csv=p=0", pv],
+                             capture_output=True, text=True).stdout.split()
+    assert "video,960,540" in streams and "audio" in streams, streams
+    fzv("studio", v, "--build-only")                                  # the live preview project (Studio itself isn't started here)
+    S = v / "edit" / "studio"
+    snap = subprocess.run([str(REPO / "node_modules" / ".bin" / "hyperframes"), "snapshot", "--at", "1,5", "--no-end", "--describe", "false", "-o", str(tmp_path / "snap")],
+                          cwd=S, capture_output=True, text=True, env=dict(os.environ, HYPERFRAMES_NO_TELEMETRY="1", HYPERFRAMES_SKIP_SKILLS="1"))
+    assert snap.returncode == 0 and len(list((tmp_path / "snap").glob("frame-*.png"))) == 2, snap.stdout[-800:] + snap.stderr[-800:]
     fzv("render", v)
     fzv("finish", v)
     out = fzv("verify", v)

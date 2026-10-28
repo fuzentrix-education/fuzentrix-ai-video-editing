@@ -1,4 +1,4 @@
-# Fuzentrix video editing automations (`fzv`)
+# Fuzentrix AI video editing (`fzv`)
 
 `fzv` turns an instructor's video into a finished, on-brand teaching video with motion graphics: titles, code cards that type
 along with the instructor, the program's real output, diagrams, props and characters, sound effects and (if asked) music.
@@ -52,7 +52,7 @@ Brand: career-orbit
 - Make the three example programs the highlight."
 # -> stops after writing edit/plan_brief.md and a draft edit/beats.yaml
 # -> Claude fills the beat sheet; the editor approves it on edit/review/index.html  (bin/fzv approve … beats)
-# -> Claude writes edit/edit.yaml; build, validate, storyboard; the editor approves  (bin/fzv approve … storyboard)
+# -> Claude writes edit/edit.yaml; build, validate, storyboard, preview video; the editor approves  (bin/fzv approve … storyboard)
 bin/fzv edit "videos/loop-control"
 # -> videos/loop-control/Loop Control Statements - Edited.mp4, edit/out/verify.jpg and the review page
 ```
@@ -118,6 +118,8 @@ videos/loop-control/
 | **validate** | Samples every clip twice a second in headless Chrome and checks the house rules (§7), including V4 (every beat built as approved). Fix what it reports;`fzv edit --force` renders anyway. |
 | **preview**  | (optional)`fzv preview <folder> <clip> <t1,t2>` — a contact sheet over the real footage, before spending time on rendering.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | **storyboard** | One frame per beat at its key moment over the real footage (`edit/out/storyboard.jpg`), about a minute; only changed frames are redone. The editor approves it (`fzv approve <folder> storyboard`); `render` waits for that (rule R2). |
+| **draft** | The preview video (`edit/review/preview.mp4`): the whole edit at 10 fps in draft quality, over the footage at 960x540, with the real mix. The editor watches it with the storyboard before approving; only changed clips are re-drafted. |
+| **studio** | The live preview (default before the final render, or when the editor asks): the whole edit as one HyperFrames project opened in Studio, playing live with the real sound (music as its own track), view-only. |
 | **render**   | Renders changed clips only, in parallel, with retries. Overlay clips are transparent WebM; compose clips are opaque MP4.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **finish**   | Synthesises the SFX, adds music if asked, mixes to −14 LUFS / −1 dBTP, composites over the untouched footage at its own frame rate, encodes in cached chunks, writes the final MP4 (+`.srt` if subtitles are on).                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | **verify**   | Checks duration, frame rate, size and loudness, grabs frames at every cut into`edit/out/verify.jpg`, and refreshes the review page (final video, a frame per beat, to confirm). |
@@ -368,6 +370,9 @@ the clips and encode chunks that changed (content-hash caches), and the request'
 | `fzv preview <folder> <clip> <t,t,…>`                                                  | Contact sheet of a clip over the real footage (`edit/out/preview_<clip>.jpg`)                                                                     |
 | `fzv validate <folder>`                                                                 | House-rule checks (`edit/validate.json`)                                                                                                          |
 | `fzv storyboard <folder> [--all]` | One frame per beat over the real footage (`edit/review/storyboard/`, `edit/out/storyboard.jpg`); only changed frames redone |
+| `fzv draft <folder>` | The preview video before the final render (low frame rate, real timing and sound; `review.preview_fps`) |
+| `fzv studio <folder> [--stop] [--build-only]` | The live preview: the whole edit in HyperFrames Studio (`edit/studio/`), no rendering; only on request or before the final render |
+| `fzv mix <folder> off\|on\|<track> [--level low\|normal\|high]` | Background music for one video: updates the prompt, re-mixes only |
 | `fzv review <folder> [--open]` | The review page `edit/review/index.html`: beats, storyboard, final, to confirm, change requests |
 | `fzv render <folder> [--only ids] [--workers N]`                                        | Render changed clips (parallel, cached, retried)                                                                                                    |
 | `fzv finish <folder>`                                                                   | SFX + music + mix, composite, encode, final MP4 (+`.srt`)                                                                                         |
@@ -397,7 +402,7 @@ the clips and encode chunks that changed (content-hash caches), and the request'
 | `built/`, `sections/`               | Compiled clips and their renders                                                                       |
 | `validate.json`, `validate_cache/`  | Rule-check report; DOM samples per clip (by content hash), so re-validation only samples changed clips |
 | `out/`                                | `verify.jpg`, `footage.jpg`, `storyboard.jpg`, previews, `look_*.jpg`, encode chunks |
-| `review/` | The review page `index.html` with its frames: footage, storyboard, final per beat, and the footage every 10 s |
+| `review/` | The review page `index.html`, the preview video `preview.mp4`, and the frames: footage, storyboard, final per beat, the footage every 10 s |
 | `revisions.md`                        | Change requests after delivery and what was done                                                       |
 | `_prev/`                              | The previous final video                                                                               |
 

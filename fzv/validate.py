@@ -16,15 +16,18 @@ TEXT_ONLY = {"header", "title-hero", "card", "definition", "chips", "term-reveal
              "name-card", "studio-tag", "captions", "contrast", "big-word", "callouts", "checklist", "bug", "scene", "presenter"}
 
 
-def text_only_stretches(sec: dict, end_default: float) -> list[tuple[float, float]]:
-    """Stretches of a section where only text templates are on screen."""
+def text_only_stretches(sec: dict, end_default: float, hidden: list[tuple[float, float]] = ()) -> list[tuple[float, float]]:
+    """Stretches of a section's plate time where only text templates are on screen. `hidden` (studio shots, where plate graphics
+    are not shown, and deliberate quiet stretches) is cut out of them."""
+    from .spec import scene_span
     lo, hi = sec["range"]
     vis = []
     for s in sec.get("scenes") or []:
         (name, p), = s.items()
-        if name in TEXT_ONLY or not isinstance(p, dict) or not isinstance(p.get("at"), (int, float)):
+        a, b = scene_span(p, hi)
+        if name in TEXT_ONLY or a is None:
             continue
-        vis.append((max(lo, p["at"]), min(hi, p["until"] if isinstance(p.get("until"), (int, float)) else hi)))
+        vis.append((max(lo, a), min(hi, b)))
     gaps, t = [], lo
     for a, b in sorted(vis):
         if a > t:
@@ -32,7 +35,13 @@ def text_only_stretches(sec: dict, end_default: float) -> list[tuple[float, floa
         t = max(t, b)
     if t < hi:
         gaps.append((t, hi))
-    return gaps
+    out = []
+    for a, b in gaps:                                   # cut the hidden intervals out of each gap
+        pieces = [(a, b)]
+        for h0, h1 in hidden:
+            pieces = [q for p0, p1 in pieces for q in ((p0, min(p1, h0)), (max(p0, h1), p1)) if q[1] - q[0] > 0.05]
+        out += pieces
+    return out
 CONTENT = BLOCKS | {"text", "cutaway", "part"}
 
 
@@ -42,12 +51,17 @@ def scene_in(spec: dict, want: str, lo: float, hi: float) -> bool:
     name = "hf" if item else want
     groups = [(s, sec["range"][1]) for sec in spec.get("sections") or [] for s in sec.get("scenes") or []]
     groups += [(s, None) for s in spec.get("studio") or []]
+    from .spec import scene_span
     for s, end in groups:
         (n, p), = s.items()
-        if n != name or not isinstance(p, dict) or not isinstance(p.get("at"), (int, float)) or (item and p.get("item") != item):
+        if n != name or (item and isinstance(p, dict) and p.get("item") != item):
             continue
-        until = p["until"] if isinstance(p.get("until"), (int, float)) else (end if end is not None else p["at"] + 5)
-        if p["at"] <= hi + 1 and until >= lo - 1:
+        at, until = scene_span(p, end)
+        if at is None:
+            continue
+        if until is None:
+            until = at + 5
+        if at <= hi + 1 and until >= lo - 1:
             return True
     return False
 
@@ -231,8 +245,9 @@ def validate(proj, spec: dict, clips: list[dict], manifest: list[dict], cuts: li
         names = {next(iter(s)) for s in sec.get("scenes") or []}
         if hi - lo >= vis_cfg.get("min_section_s", 30.0) and not names - TEXT_ONLY:
             flag("V1", lo, f"section {sec.get('id')} ({hi - lo:.0f}s) has no animated explanation: show what is described (data-flow, process-flow, code, diagram, props…)")
-        for a, b in text_only_stretches(sec, hi):
-            if b - a > max_text and not any(q0 <= a and b <= q1 + 0.5 for q0, q1 in quiet):
+        hidden = [(c["start"], c["end"]) for c in cuts if c["kind"] == "studio"] + list(quiet)
+        for a, b in text_only_stretches(sec, hi, hidden):
+            if b - a > max_text:
                 flag("V2", a, f"{b - a:.0f}s of text-only screen in section {sec.get('id')} ({a:.1f}–{b:.1f}s, max {max_text:.0f}s): animate the process being explained")
     # V3 (advice): concept moments without a matching animation
     from .concepts import covered, moments

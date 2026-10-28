@@ -36,6 +36,9 @@ visuals:  { max_text_only_s: 15, min_section_s: 30 }   # rules V1/V2: show the p
 review:                             # the editor sees and approves before the slow steps (design §9f); prompt "Review: off" for none
   beats: required                   # required | off: edit.yaml is written and built only from a beat sheet the editor approved
   storyboard: required              # required | off: render waits until the editor approves the storyboard (one frame per beat)
+  preview: browser                  # before that approval the editor watches the whole edit: browser (live in HyperFrames Studio, no
+                                    # rendering) | video (a quick low-frame-rate draft render, edit/review/preview.mp4) | off
+  preview_fps: 10                   # the draft video's frame rate: lower renders faster, motion looks choppier
 
 graphics_fps: 25                    # graphics render at 25 fps; delivery keeps the source frame rate
 layout:                             # 1920x1080 slots; ingest trims them so they never touch the instructor's safe zone

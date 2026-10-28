@@ -149,7 +149,7 @@ def registry_hosts(clip: dict) -> str:
         box = dict({"x": 96, "y": 230, "w": 1000, "h": 560}, **(p.get("box") or {}))
         hid = f"hf{k}-{p['item']}"
         p["_host"] = hid
-        out.append(host_markup(hid, it, at - clip["start"], max(0.2, end - at), box, vars_))
+        out.append(host_markup(hid, it, at - clip["start"], max(0.2, end - at), box, vars_, p.get("css")))
     return "\n".join(out)
 
 

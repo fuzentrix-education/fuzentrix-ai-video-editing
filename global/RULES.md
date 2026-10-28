@@ -32,7 +32,8 @@ These are the defaults for every video. A video's prompt may override any of the
 
 **Plan and approve before rendering**
 - Plan per idea in the beat sheet (`edit/beats.yaml`): what each beat shows and on which words. The editor approves it before the
-  edit is built, and approves the storyboard (one frame per beat) before it is rendered. Any later change needs a new approval.
+  edit is built, and approves the storyboard (one frame per beat) and its preview (the whole edit playing live in HyperFrames Studio,
+  or a quick draft video) before it is rendered. The live preview is opened only then or when the editor asks. Any later change needs a new approval.
 - Build every beat with the templates it was approved with (V4). Prompt `Review: off` skips the approvals (quick tests only).
 
 **Type and motion**

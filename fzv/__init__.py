@@ -1,2 +1,2 @@
-"""fzv: Fuzentrix video editing automations."""
+"""fzv: Fuzentrix AI video editing."""
 __version__ = "0.1.0"

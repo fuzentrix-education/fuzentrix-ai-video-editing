@@ -189,7 +189,7 @@
       params: { id: "recording id (from recordings)", title: "window title", at: "", until: "", box: "x, y, w[, h] (fits inside; aspect kept)", steps: "[{label, at}]",
                 highlights: "[{name, box: [x, y, w, h] in recording pixels, at, until}]", hide: "[{at, until}] periods to hide the window (e.g. concept scenes)" } }, (a, p) => {
     const rec = (window.FZ_RECORDINGS || {})[p.id]; if (!rec) throw new Error(`recording "${p.id}" not listed`);
-    const win = document.getElementById("rec-" + p.id); if (!win) throw new Error(`static markup for recording "${p.id}" missing`);
+    const win = a.byId("rec-" + p.id); if (!win) throw new Error(`static markup for recording "${p.id}" missing`);
     const bx = a.box(p, "recording"), S = Math.min(bx.w / rec.w, bx.h ? (bx.h - 52) / rec.h : Infinity), viewH = Math.round(rec.h * S);
     bx.w = Math.round(rec.w * S);   // whole recording, scaled to fit the slot's width and height
     Object.assign(win.style, a.px({ left: bx.x, top: bx.y, width: bx.w, height: 52 + viewH }));

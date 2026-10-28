@@ -12,5 +12,6 @@ Mount an installed HyperFrames registry item (fzv registry list) in a box: its v
 | `box` | x, y, w, h |
 | `vars` | {variable: value} (see fzv registry list) |
 | `cues` | [times] for items with a `cues` variable (one per step) |
+| `css` | {--custom-prop: value} the item's own CSS variables (e.g. text sizes of a component in a small box) |
 
 _Generated from runtime/templates; edit the template's meta there._

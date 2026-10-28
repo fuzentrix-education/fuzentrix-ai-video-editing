@@ -7,8 +7,8 @@ approve it at two points before the slow render: the **beat sheet** (the plan) a
 
 Someone technical sets this up once (about 15 minutes; [WORKFLOW.md §0](WORKFLOW.md#0-once-per-machine)):
 1. Install VS Code and the **Claude Code** extension, and sign in with the team's Claude account.
-2. Get the `fuzentrix-video-editing-automations` folder and run `bin/setup` in it once.
-3. In VS Code, choose **File → Open Folder** and pick `fuzentrix-video-editing-automations` itself (not a folder above it), so
+2. Get the `fuzentrix-ai-video-editing` folder and run `bin/setup` in it once.
+3. In VS Code, choose **File → Open Folder** and pick `fuzentrix-ai-video-editing` itself (not a folder above it), so
    Claude finds the team's shortcuts.
 
 ## Each video
@@ -21,12 +21,17 @@ Someone technical sets this up once (about 15 minutes; [WORKFLOW.md §0](WORKFLO
    - Happy with it: click **Copy approval for Claude** and paste it into the chat, or just type "approved".
    - Want changes: write under any beat ("use a car here", "skip this", "make this the highlight"), click **Copy for Claude**
      and paste it into the chat. Or type it directly: "beat 7: use a car".
-3. **Approve the storyboard.** The page now shows one frame per beat, with the graphics over the real footage, before anything
-   is rendered. Approve it or ask for changes the same way.
+3. **Approve the storyboard and the preview.** Claude opens the **live preview** in HyperFrames Studio: the whole edit playing in
+   your browser with its real sound, before anything is rendered (press play, scrub the timeline; the music is its own track you can
+   mute). The review page shows the storyboard: a grid of frames, one per beat, with the graphics over the real footage, and an
+   **Open the live preview** button. You can ask for the live preview at any time ("open the live preview" or `/preview <folder>`). Click a frame to see it large (arrow keys step through) and write a change for that
+   beat right there. Approve it or ask for changes the same way.
 4. **Get the final video.** Claude renders (10–40 minutes) and opens the page again with the video, a frame per beat, and a
    short **To confirm** list (for example code rebuilt from what the instructor dictated). The video is saved as
    `videos/<name>/<Title> - Edited.mp4`.
-5. **Ask for changes at any time.** On the page, pause the video where something should change, type the change, click
+5. **Music on or off.** Under the video on the review page, switch **Background music** On / Off while it plays to hear the
+   difference, pick a level, and press **Keep this for the final**, then **Copy for Claude**. Only the sound is redone (a minute or two).
+6. **Ask for changes at any time.** On the page, pause the video where something should change, type the change, click
    **Add at m:ss**, then **Copy for Claude** and paste. Or type: `/change videos/dbms-trail 7:41 make the note bigger`.
    Only the changed parts are rendered again, so a small change takes minutes.
 
@@ -38,6 +43,7 @@ Someone technical sets this up once (about 15 minutes; [WORKFLOW.md §0](WORKFLO
 | `/review <folder>` | tells you where the video stands and opens its review page |
 | `/change <folder> beat 7: … ; 7:41: …` | changes things, by beat number or by time in the video |
 | `/approve <folder> beats` or `storyboard` | approves the plan or the preview |
+| `/preview <folder>` | opens the live preview in HyperFrames Studio (`/preview <folder> stop` closes it) |
 
 Plain sentences work too: "where is the DBMS video?", "at 3:10 the text is too small".
 
