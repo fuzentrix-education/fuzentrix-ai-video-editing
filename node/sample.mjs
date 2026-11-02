@@ -30,7 +30,9 @@ function chrome() {
 }
 
 async function browser() {
-  return puppeteer.launch({ executablePath: chrome(), headless: "shell", args: ["--allow-file-access-from-files", "--autoplay-policy=no-user-gesture-required"] });
+  return puppeteer.launch({ executablePath: chrome(), headless: "shell", args: ["--allow-file-access-from-files", "--autoplay-policy=no-user-gesture-required",
+    // software WebGL for the 3D templates: the sampler only reads DOM boxes, so SwiftShader is enough and works on any machine
+    "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 }
 
 const [, , cmd, a1, a2, a3, a4] = process.argv;
@@ -52,6 +54,23 @@ if (cmd === "catalogue") {
     const tl = window.__timelines && window.__timelines.main;
     const vis = (el) => { let o = 1; for (let e = el; e && e !== document.body; e = e.parentElement) { const cs = getComputedStyle(e); if (cs.visibility === "hidden" || cs.display === "none") return 0; o *= parseFloat(cs.opacity); } return o; };
     const words = (el) => (el.innerText || "").trim().split(/\s+/).filter(Boolean).length;
+    // the painted part of an element: its own box when it draws something (fill, border, shadow, image), else the union of what
+    // its children paint and the real extent of its text; layout-only containers don't count (rule L12)
+    const painted = (e) => { const cs = getComputedStyle(e);
+      return (cs.backgroundColor !== "rgba(0, 0, 0, 0)" && cs.backgroundColor !== "transparent") || cs.backgroundImage !== "none" ||
+        parseFloat(cs.borderTopWidth) + parseFloat(cs.borderLeftWidth) > 0 || cs.boxShadow !== "none" || /^(IMG|SVG|CANVAS|VIDEO|svg)$/.test(e.tagName); };
+    const pbox = (e, depth = 0) => {
+      if (vis(e) < 0.05) return null;
+      const r = e.getBoundingClientRect(); if (r.width < 1 || r.height < 1) return null;
+      if (painted(e) || depth > 6) return [r.left, r.top, r.right, r.bottom];
+      let u = null;
+      const add = (q) => { if (q) u = u ? [Math.min(u[0], q[0]), Math.min(u[1], q[1]), Math.max(u[2], q[2]), Math.max(u[3], q[3])] : q; };
+      for (const n of e.childNodes) {
+        if (n.nodeType === 3 && n.textContent.trim()) { const g = document.createRange(); g.selectNodeContents(n); const t = g.getBoundingClientRect(); if (t.width > 0) add([t.left, t.top, t.right, t.bottom]); }
+        else if (n.nodeType === 1) add(pbox(n, depth + 1));
+      }
+      return u;
+    };
     const frames = [];
     for (const t of times) {
       if (tl) tl.seek(t, false);
@@ -63,6 +82,7 @@ if (cmd === "catalogue") {
         const it = { role, x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height), o: +o.toFixed(2) };
         if (["block", "note", "text", "caption", "part"].includes(role)) it.words = words(el);
         if (role === "code") it.lines = el.querySelectorAll(".fz-cl").length;
+        if (["block", "code", "term"].includes(role)) { const q = pbox(el); if (q) it.pb = q.map(Math.round); }
         const ov = [el, ...el.querySelectorAll(".fz-body,.nd,.fz-h2")].some((e) => e.scrollWidth > e.clientWidth + 3 && getComputedStyle(e).overflow !== "visible" ? true : e.scrollWidth > e.clientWidth + 3 && e.clientWidth > 0 && getComputedStyle(e).whiteSpace === "nowrap");
         const leafWide = [el, ...el.querySelectorAll("*")].some((e) => e.children.length === 0 && (e.textContent || "").trim() && e.clientWidth > 0 && e.scrollWidth > e.clientWidth + 3);
         if (ov || leafWide) it.overflow = true;

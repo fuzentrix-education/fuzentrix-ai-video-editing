@@ -67,10 +67,10 @@
     const bx = a.box(p, "main"), U = a.until(p);
     if (p.ground === "road") {
       const g = a.el(`<div style="position:absolute;left:0;right:0;top:41px;height:6px;background:repeating-linear-gradient(90deg,#fff 0 42px,transparent 42px 78px);opacity:.75"></div>`, "abs hide",
-        { left: bx.x, top: bx.y + bx.h - 92, width: bx.w, height: 92, borderRadius: 20, background: "linear-gradient(180deg,#53627A,#3E4B60)", boxShadow: "0 24px 50px -24px rgba(13,39,76,.6)" }, a.root, "deco");
+        { left: bx.x, top: bx.y + bx.h - 92, width: bx.w, height: 92, borderRadius: 20, background: "linear-gradient(180deg,var(--fz-text2),var(--fz-text))", boxShadow: "0 24px 50px -24px rgba(16,42,86,.6)" }, a.root, "deco");
       a.show(g, p.at, U, { scaleX: 0.6 }, 0.7);
     } else if (p.ground === "desk") {
-      const g = a.el("", "abs hide", { left: bx.x, top: bx.y + bx.h - 26, width: bx.w, height: 26, borderRadius: 13, background: "linear-gradient(180deg,#B9825B,#9A6844)" }, a.root, "deco");
+      const g = a.el("", "abs hide", { left: bx.x, top: bx.y + bx.h - 26, width: bx.w, height: 26, borderRadius: 13, background: "linear-gradient(180deg,var(--fz-line),var(--fz-mist))" }, a.root, "deco");
       a.show(g, p.at, U, { scaleX: 0.6 }, 0.6);
     }
     const parts = [];

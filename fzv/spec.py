@@ -146,14 +146,47 @@ def resolve(spec: dict, transcript: Transcript, duration: float) -> tuple[dict, 
     return out, r.errors
 
 
-def plan_clips(spec: dict, cuts: list[dict], fps: int, bug_layers: list[str]) -> list[dict]:
-    """Plate clips = sections; studio clips = studio shots (cuts.json) with the studio scenes that start inside them."""
+def chapters(spec: dict) -> list[tuple[float, float, int, str]]:
+    """(start, end, number, name) per section with a `chapter:` name; neighbouring sections with the same name share a number."""
+    out, n, last = [], 0, None
+    for sec in spec.get("sections") or []:
+        name = sec.get("chapter")
+        if not name:
+            last = None
+            continue
+        if name != last:
+            n += 1
+        out.append((sec["range"][0], sec["range"][1], n, name))
+        last = name
+    return out
+
+
+def plan_clips(spec: dict, cuts: list[dict], fps: int, bug_layers: list[str], chrome: dict | None = None, total: float | None = None) -> list[dict]:
+    """Plate clips = sections; studio clips = studio shots (cuts.json) with the studio scenes that start inside them. The chrome
+    (corner logo, progress bar, chapter pill) is added to every clip: it is continuous across clips."""
+    chrome = chrome or {}
+    chap = chapters(spec) if chrome.get("chapters", True) else []
+    lesson = spec.get("title") or ""
+    def chrome_scenes(t0: float, layer: str) -> list[dict]:
+        out = []
+        if chrome.get("progress", False) and total:                        # off by default; prompt "Progress bar: on"
+            out.append({"template": "progress", "params": {"total": total}})
+        cur = next((c for c in chap if c[0] - 0.01 <= t0 < c[1]), None)
+        if cur:
+            prev = next((c for c in reversed(chap) if c[1] <= cur[0] + 0.01 and c[2] != cur[2]), None)
+            adjacent = prev and abs(prev[1] - cur[0]) < 0.05 and layer == "plate"
+            out.append({"template": "chapter", "params": {"n": cur[2], "name": cur[3], "lesson": lesson, "at": cur[0] + (0.4 if adjacent else 0),
+                                                         **({"prev": {"n": prev[2], "name": prev[3]}} if adjacent else {})}})
+        return out
     clips = []
     for sec in spec.get("sections") or []:
         a, b = snap(sec["range"][0], fps), snap(sec["range"][1], fps)
         scenes = [{"template": n, "params": p} for n, p in scene_items(sec["scenes"])]
+        if "plate" not in bug_layers:                       # the setting decides: no logo means none, even where a spec places one
+            scenes = [x for x in scenes if x["template"] != "bug"]
         if "plate" in bug_layers and sec.get("bug", True) and not any(s["template"] == "bug" for s in scenes):
             scenes.insert(0, {"template": "bug", "params": {"at": sec.get("bug_at")}})
+        scenes = chrome_scenes(sec["range"][0], "plate") + scenes
         clips.append({"id": sec.get("id", f"s{len(clips):02d}"), "layer": "plate", "start": a, "end": b, "scenes": scenes})
     studio_scenes = [{"template": n, "params": p} for n, p in scene_items(spec.get("studio"))]
     k = 0
@@ -162,7 +195,9 @@ def plan_clips(spec: dict, cuts: list[dict], fps: int, bug_layers: list[str]) ->
             continue
         a, b = snap(c["start"], fps, "floor"), snap(c["end"], fps, "ceil")
         inside = [s for s in studio_scenes if isinstance(s["params"].get("at"), (int, float)) and c["start"] - 0.5 <= s["params"]["at"] < c["end"]]
-        scenes = ([{"template": "bug", "params": {}}] if "studio" in bug_layers else []) + inside
+        if "studio" not in bug_layers:
+            inside = [x for x in inside if x["template"] != "bug"]
+        scenes = chrome_scenes(c["start"], "studio") + ([{"template": "bug", "params": {}}] if "studio" in bug_layers else []) + inside
         clips.append({"id": f"st{k:02d}", "layer": "studio", "start": a, "end": b, "scenes": scenes, "cut": [c["start"], c["end"]], "has_content": bool(inside)})
         k += 1
     return clips

@@ -3,11 +3,44 @@
   const R = FZ.register;
   const tones = { red: "red", green: "green", amber: "amber", dark: "dark", purple: "purple" };
 
-  R({ name: "bug", family: "core", layers: ["plate", "studio"], doc: "Brand logo, top right, in a white pill. Stays until the clip ends.",
+  R({ name: "bug", family: "core", layers: ["plate", "studio"], doc: "Brand logo, top right, straight on the backdrop (no box); the on-dark version during dark scenes. Stays until the clip ends.",
       params: { at: "appear time (default: clip start)" } }, (a, p) => {
     const b = a.B.bug || {}, L = a.LAY.bug || { right: 56, top: 26 };
-    const e = a.el(`<img src="assets/brand/${b.logo}" style="height:${b.height || 40}px">`, "fz-bug hide", { right: L.right, top: L.top }, a.root, "chrome");
+    const e = a.el(`<img class="lt" src="assets/brand/${b.logo}" style="height:${b.height || 40}px"><img class="dk" src="assets/brand/${b.dark || b.logo}" style="height:${b.height || 40}px">`,
+      "fz-bug hide", { right: L.right, top: L.top }, a.root, "chrome");
     if (p.at == null || p.at <= a.OFF + 0.01) a.set(e, a.OFF, { autoAlpha: 1 }); else { a.inn(e, p.at, { y: -20 }, 0.6); a.sfx("swish", p.at); }
+  });
+
+  R({ name: "progress", family: "core", layers: ["plate", "studio"],
+      doc: "Lesson progress: a thin bar across the very top that fills with the lesson's time. Off by default; prompt `Progress bar: on` adds it to every clip.",
+      params: { total: "the lesson's duration in s (set automatically)" } }, (a, p) => {
+    const total = Math.max(p.total || a.END, a.END), k0 = a.OFF / total, k1 = a.END / total;
+    const track = a.el("", "abs", { left: 0, top: 0, width: 1920, height: 6, background: "rgba(16,42,86,.08)" }, a.root, "chrome");
+    const bar = a.el("", "abs", { left: 0, top: 0, width: 1920, height: 6, background: "linear-gradient(90deg, var(--fz-on-dark-accent), var(--fz-accent))",
+      transformOrigin: "0 50%", borderRadius: "0 3px 3px 0" }, a.root, "chrome");
+    gsap.set(bar, { scaleX: k0 });
+    a.tl.fromTo(bar, { scaleX: k0 }, { scaleX: k1, duration: Math.max(0.01, a.END - a.OFF), ease: "none", immediateRender: false }, 0);
+    void track;
+  });
+
+  R({ name: "chapter", family: "core", layers: ["plate", "studio"],
+      doc: "Chapter pill, top left: number badge, chapter name · lesson name. Added automatically for every section with `chapter:` (setting chrome.chapters); slides to the next chapter when it changes.",
+      params: { n: "chapter number", name: "chapter name (short)", lesson: "lesson name", prev: "{n, name}: the chapter shown before; the pill swaps at `at`", at: "" } }, (a, p) => {
+    const inner = (n, name) => `<span style="width:30px;height:30px;border-radius:50%;background:var(--fz-text);color:#fff;display:grid;place-items:center;font:700 16px/1 var(--fz-font-display);flex:none">${n}</span>`
+      + `<span style="font:700 20px/1 var(--fz-font-body);color:var(--fz-text)">${a.esc(name)}</span>`
+      + (p.lesson ? `<span style="font:500 20px/1 var(--fz-font-body);color:var(--fz-text2)">· ${a.esc(p.lesson)}</span>` : "");
+    const pill = a.el("", "abs hide", { left: 96, top: 20, height: 40, padding: "0 18px 0 5px", borderRadius: 999, background: "rgba(255,255,255,.92)",
+      border: "1px solid var(--fz-line)", boxShadow: "0 8px 22px -12px rgba(16,42,86,.35)", display: "flex", alignItems: "center", gap: 10, overflow: "hidden",
+      whiteSpace: "nowrap" }, a.root, "chrome");
+    const now = a.el(inner(p.n, p.name), "", { display: "flex", alignItems: "center", gap: 10 }, pill);
+    const at = p.at != null ? p.at : a.OFF, swap = p.prev && p.prev.name !== p.name && at > a.OFF + 0.05;
+    if (swap) {
+      const old = a.el(inner(p.prev.n, p.prev.name), "", { display: "flex", alignItems: "center", gap: 10, position: "absolute", left: 5, top: 4 }, pill);
+      a.set(pill, a.OFF, { autoAlpha: 1 }); a.set(now, a.OFF, { autoAlpha: 0 });
+      a.to(old, at, { y: -30, autoAlpha: 0, duration: 0.3, ease: "power2.in" });
+      a.inn(now, at + 0.15, { y: 26 }, 0.4); a.sfx("swish", at);
+    } else if (at <= a.OFF + 0.05) a.set(pill, a.OFF, { autoAlpha: 1 });
+    else { a.inn(pill, at, { y: -16 }, 0.5); a.sfx("swish", at); }
   });
 
   R({ name: "header", family: "core", layers: ["plate"], doc: "Section label and title, top left (the header band).",
@@ -36,7 +69,7 @@
       params: { name: "as said in the audio", role: "default: brand name-card title", at: "", until: "", box: "default: namecard slot" } }, (a, p) => {
     const bx = a.box(p, "namecard");
     const e = a.el(`<div style="font:800 40px/1 var(--fz-font-display);color:#fff">${a.esc(p.name)}</div><div style="font:500 21px/1.2 var(--fz-font-body);color:var(--fz-on-dark-soft);margin-top:8px">${a.esc(p.role || (a.B.nameCard || "Instructor"))}</div>`,
-      "abs hide", { left: bx.x, top: bx.y, padding: "20px 34px 20px 26px", borderRadius: 22, background: "var(--fz-text)", boxShadow: "0 20px 50px -16px rgba(13,39,76,.45)" }, a.root, "block");
+      "abs hide", { left: bx.x, top: bx.y, padding: "20px 34px 20px 26px", borderRadius: 22, background: "var(--fz-text)", boxShadow: "0 20px 50px -16px rgba(16,42,86,.45)" }, a.root, "block");
     a.tl.fromTo(e, { autoAlpha: 0, clipPath: "inset(0% 100% 0% 0% round 22px)" }, { autoAlpha: 1, clipPath: "inset(0% 0% 0% 0% round 22px)", duration: 0.7, ease: "power3.out", immediateRender: false }, a.T(p.at));
     if (p.until != null) a.tl.to(e, { clipPath: "inset(0% 100% 0% 0% round 22px)", duration: 0.45, ease: "power3.in" }, a.T(p.until));
     a.sfx("swish", p.at);
@@ -48,7 +81,7 @@
     if (p.label) { const l = a.el(a.esc(p.label), "fz-label abs hide", { left: bx.x, top: bx.y - 46 }, a.root, "chrome"); a.show(l, items[0].at - 0.1, a.until(p), { y: 12 }, 0.4); }
     const parts = items.map((it, i) => {
       const c = a.el(`<div class="fz-ic ${tones[it.tone] || ""}" style="width:64px;height:64px;font-size:34px">${a.icon(it.icon || "check")}</div>
-        <div style="font:800 40px/1.1 var(--fz-font-display)">${a.md(it.text)}</div><div style="margin-left:auto;font:700 22px/1 var(--fz-font-mono);color:#9AAEC7">${String(i + 1).padStart(2, "0")}</div>`,
+        <div style="font:800 40px/1.1 var(--fz-font-display)">${a.md(it.text)}</div><div style="margin-left:auto;font:700 22px/1 var(--fz-font-mono);color:var(--fz-mist)">${String(i + 1).padStart(2, "0")}</div>`,
         "fz-card hide", { left: bx.x, top: bx.y + i * (h + gap), width: Math.min(bx.w, p.width || 820), height: h, display: "flex", alignItems: "center", gap: 24, padding: "0 30px 0 18px" }, a.root, "block");
       a.show(c, it.at, a.until(p), { x: -40 }, 0.5, "back.out(1.3)"); a.sfx("swish", it.at);
       return c;
@@ -64,7 +97,7 @@
     a.show(c, p.at, a.until(p), { y: 26 }, 0.6); a.sfx("swish", p.at);
     (p.highlights || []).forEach((h, i) => {
       const s = c.querySelector(`.fz-dh[data-i="${i}"]`); if (!s) return;
-      a.to(s, h.at, { color: getComputedStyle(document.documentElement).getPropertyValue("--fz-emph").trim() || "#30809F", duration: 0.3 });
+      a.to(s, h.at, { color: a.cv("emph"), duration: 0.3 });
       const u = a.el("", "abs hide", { left: 0, bottom: -4, width: "100%", height: 6, borderRadius: 3, background: "var(--fz-accent)", transformOrigin: "0 50%" }, s);
       a.inn(u, h.at, { scaleX: 0 }, 0.8, "power2.inOut"); a.sfx("blip", h.at);
     });
@@ -125,7 +158,7 @@
       const cls = n.kind === "term" ? "term" : n.kind === "dec" ? "dec" : "";
       const e = a.el(`<span>${a.md(n.text)}</span>`, `fz-node hide ${cls}`, { left: bx.x + n.x, top: bx.y + n.y, width: n.w || 280, height: n.h || 72 }, a.root, "block");
       if (n.kind === "ok") Object.assign(e.style, { background: "var(--fz-success)", color: "#fff", borderColor: "var(--fz-success)", borderRadius: "999px" });
-      if (n.kind === "stop") e.style.borderColor = "#F8B4B6";
+      if (n.kind === "stop") e.style.borderColor = "var(--fz-danger)";
       N[n.id] = { e, x: bx.x + n.x, y: bx.y + n.y, w: n.w || 280, h: n.h || 72 };
       a.show(e, n.at, U, { scale: 0.8 }, 0.45, "back.out(1.6)"); a.sfx("pop", n.at);
     });
@@ -149,7 +182,7 @@
     }
   });
 
-  R({ name: "cutaway", family: "core", layers: ["plate"], doc: "Full-frame backdrop for a short full-screen moment (rule L3: at most 12 s each, 10% of runtime). Put the scenes that belong to it after it, with box set inside the full frame.",
+  R({ name: "cutaway", family: "core", layers: ["plate"], doc: "Only when the prompt asks (rule L11: the background stays the brand plate). Full-frame backdrop for a short full-screen moment (rule L3: at most 12 s each, 10% of runtime). Put the scenes that belong to it after it, with box set inside the full frame.",
       params: { at: "", until: "required", tone: "light (plate image) | deep (dark brand gradient)" } }, (a, p) => {
     const deep = p.tone === "deep";
     const e = a.el(deep ? "" : `<div style="position:absolute;inset:0;background:url('assets/brand/plate.png') center/cover;opacity:.95"></div>`, "abs hide",

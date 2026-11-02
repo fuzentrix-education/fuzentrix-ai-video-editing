@@ -10,9 +10,14 @@ rules:
   V2:  { check: auto, what: "at most visuals.max_text_only_s (15 s) of words-only screen", from_defaults: visuals }
   V3:  { check: advice, what: "concept moments (global/concepts.yaml) are shown with a matching template" }
   V4:  { check: auto, what: "every beat of the beat sheet is built with the templates it was approved with, inside its time" }
+  V5:  { check: advice, what: "variety: no animation twice in a row, none in more than visuals.max_repeat_share (20%) of the animations", from_defaults: visuals }
+  S1:  { check: auto, what: "on-request styles (3D, sketch) appear only when the video's prompt asks for them (styles.on_request)", from_defaults: styles }
   R1:  { check: gate, what: "edit.yaml is built only from a beat sheet the editor approved (review.beats; any later change needs a new approval)", from_defaults: review }
-  R2:  { check: gate, what: "rendering starts only after the editor approved the storyboard of the current build, having watched its preview: live in Studio or the draft video (review.storyboard, review.preview)", from_defaults: review }
+  R2:  { check: gate, what: "rendering starts only after the editor approved, in order, the storyboard of the current build and then its preview: live in Studio or the draft video (review.storyboard, review.preview)", from_defaults: review }
+  A1:  { check: auto, what: "the voice is never cut, faded or lowered; it is cleaned (denoise, EQ, levelling, de-ess) unless the prompt says Voice: untouched", from_defaults: voice }
+  A2:  { check: auto, what: "SFX on visual events only, 18-26 dB under the voice by kind, dipping 3 dB while she speaks; only the effects are ducked" }
   A5:  { check: auto, what: "SFX from global/sfx first, rotating files per category; synthesised fallback varies every take; no stacked duplicates", from_defaults: sfx }
+  A6:  { check: advisory, what: "listening check after the final mix (measurements, no models): no effect buried (> 32 dB under her voice while she speaks) in more than 15% of cues, none too loud (< 12 dB under her voice), no clipping, voice 25 dB+ above the noise, music 12-30 dB under the voice", from_defaults: listen }
   E9:  { check: auto, what: "corrections of a recording never change the program's output silently (logic_fix + confirm); exact mode copies it as typed" }
   L1:  { check: auto, what: "overlay mode: no templates that touch the instructor (presenter, halo, frame); the brand corner box (setting presenter.corner_box) is the only exception", forbidden_in_overlay: [presenter] }
   L2:  { check: auto, what: "no content block intersects the instructor's safe zone (except during cutaways)", margin_px: 16 }
@@ -22,5 +27,7 @@ rules:
   L7:  { check: auto, what: "recordings are shown whole (recording-window only scales to fit)" }
   L8:  { check: auto, what: "nothing within 40 px of the frame edge (except the cutaway backdrop)", edge_px: 40 }
   L10: { check: auto, what: "clutter budget per moment", from_defaults: clutter }
+  L11: { check: auto, what: "the background stays the brand plate all video: no dark scenes (scene) or full-frame backdrops (cutaway) unless the prompt asks (overrides: {L11: why})" }
+  L12: { check: auto, what: "blocks (cards, code, terminals) never cover each other: place the next block below the previous one's real height" }
   T3:  { check: auto, what: "no text overflowing its card" }
   A3:  { check: auto, what: "final mix -14 LUFS integrated, -1 dBTP", lufs: -14, true_peak: -1 }

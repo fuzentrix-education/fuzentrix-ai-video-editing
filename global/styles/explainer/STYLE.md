@@ -15,8 +15,11 @@ happening*, step by step, on the instructor's words (rules V1–V3).
 - **Sync every step (V3).** Each step of an animation has its own `at`, anchored to the word that names it (`"@type conversion"`).
   When the instructor says "the data goes into the database", the item flies in on "database", not on a timer.
 - **Rhythm.** A new visual roughly every 8–12 s; one idea on screen at a time (clutter budget, L10).
-- **Concept moments.** `fzv plan` lists the places where the transcript names a concept from `global/concepts.yaml`, with the
-  templates that show it; cover each one, or say in `decisions` why not. `fzv validate` reports uncovered moments as advice.
+- **Concept moments.** `fzv plan` lists the places where the transcript names a concept from `global/concepts.yaml` (one
+  collection for every course), with the templates that show it, freshest first. Cover the ones that fit the lesson; skip a match
+  that means something else here, and say why in `decisions`. `fzv validate` reports uncovered moments as advice.
+- **Never repetitive (V5).** Never the same animation twice in a row, and none in more than 20% of the video's animations. When a
+  concept comes back, show it another way: its next template, a diagram, a prop scene, a chart.
 - **Illustrative details** (sample rows, a receipt, a portal screen) make the idea concrete. Use the instructor's own examples
   first (Rahul · 101 · CSE · 85); anything not said goes under `confirm`.
 
@@ -38,7 +41,7 @@ happening*, step by step, on the instructor's words (rules V1–V3).
 | "inside a database: students, faculty, library" | `db-tables` | each table appears with its rows |
 | problems / benefits around the instructor | `callouts` / `checklist` | chips pop at free spots; rows tick off |
 | the term itself, first time | `big-word`, then `definition` | the giant word letter by letter, then the one-line definition |
-| a big moment (the hero reveal, a fun fact) | `scene: dark` (compose mode) + `hub` / a card | the background turns to the dark brand scene behind the instructor |
+| a big moment (the hero reveal, a fun fact) | `big-word` / `term-reveal` / `hub` / a larger card, on the normal background | the graphic itself is the event; **never switch the background** (rule L11: no `scene` or `cutaway` unless the prompt asks) |
 
 ## Look
 
@@ -52,8 +55,10 @@ Templates: see `global/templates/explainer/` (or `fzv templates`).
 ## Ready-made alternatives (Registry family)
 
 Open-source HyperFrames items mounted with `hf` (`fzv registry list` for variables): `constellation-hub` / `radial-surround` (a
-system and its parts, cue per part), `count-up` / `chart-story` / `mk-progress-stat` (numbers), `code-morph` / `code-diff` /
+system and its parts, cue per part; they ignore the brand colours, so use the brand `hub` instead), `count-up` / `chart-story` / `mk-progress-stat` (numbers), `code-morph` / `code-diff` /
 `code-highlight` / `code-terminal-run` (code changing, a line in focus, a command running), `hw-arrow` / `hw-callout-circle` /
 `hw-box-label` / `hw-underline` / `marker-highlight` / `cursor-annotate` (pointing things out), `comparison-split` (before/after),
 `state-chip-rail` (a process moving through states), `chat-message` / `notification-stack` / `browser-device-stage` (app moments).
-Prefer the Explainer templates when the brand look matters most; registry items carry their own styling.
+Prefer the Explainer and Core templates: registry items carry their own styling and don't always follow the brand (`constellation-hub`
+rendered violet in a Career Orbit video, 2026-10-28; use `hub` instead). Use a registry item only when no brand template does the job,
+and check its colours in the storyboard.

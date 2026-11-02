@@ -43,7 +43,7 @@
     roughDefs(a);
     const bx = a.box(p, "main");
     const b = a.el(p.label ? `<div style="position:absolute;left:34px;top:18px;font:700 44px/1 var(--fz-font-hand);color:var(--fz-text)">${a.esc(p.label)}</div>` : "", "abs hide",
-      { left: bx.x, top: bx.y, width: bx.w, height: bx.h, borderRadius: 18, background: "#FFFFFF", border: "2px solid var(--fz-line)", boxShadow: "0 30px 60px -30px rgba(13,39,76,.35)" }, a.root, "deco");
+      { left: bx.x, top: bx.y, width: bx.w, height: bx.h, borderRadius: 18, background: "#FFFFFF", border: "2px solid var(--fz-line)", boxShadow: "0 30px 60px -30px rgba(16,42,86,.35)" }, a.root, "deco");
     a.show(b, p.at, a.until(p), { scale: 0.97 }, 0.5); a.sfx("swish", p.at);
   });
 

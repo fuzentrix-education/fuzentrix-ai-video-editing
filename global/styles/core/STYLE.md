@@ -1,14 +1,15 @@
 # Core Explainer
 
-**Availability:** Always. **Used for:** titles, headers, agenda, definitions, concept and type cards, chips, flowcharts, cutaways, studio tags, summaries.
+**Availability:** Always. **Used for:** titles, headers, agenda, definitions, concept and type cards, chips, flowcharts, studio tags, summaries (cutaways only when the prompt asks: rule L11 keeps the brand background).
 
 All colours, fonts and timings come from the brand kit (CSS variables `--fz-*`), so this family looks the same in every video and adapts to the brand.
 
 ## Look
 
-- White cards (`--fz-card`) with a 1 px `--fz-line` border, brand radius and the brand shadow, on the editors' white plate.
+- White cards (`--fz-card`) with a 1 px `--fz-line` border, brand radius and the brand shadow, on the dotted backdrop.
 - Swiss grid: 96 px left margin, header band at y 78–180, content in the `main` slot, small items in the `side` slot.
-- Outfit 800 for titles (60/44 px), Inter 600 for body (30 px), JetBrains Mono uppercase labels (20 px, 0.2 em tracking).
+- Bricolage Grotesque 800 for titles (60/44 px), Manrope 600 for body (30 px), JetBrains Mono uppercase labels (20 px, 0.2 em tracking).
+- Colour only for meaning: navy and the brand blue everywhere; green (correct), red (error), amber (look here) only when the moment means it. No colour per topic.
 - Emphasis: `*word*` in `--fz-emph` (title sizes only); `**word**` in `--fz-emph2` (any size). At most two per card.
 - Icons: line icons from runtime/icons.svg in a tinted circle (`.fz-ic`); tones red/green/amber/purple only for meaning.
 

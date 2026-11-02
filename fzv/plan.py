@@ -10,7 +10,7 @@ from pathlib import Path
 import yaml
 
 from .anchors import Transcript
-from .config import GLOBAL, REPO, RUNTIME, brand_ids, load_yaml
+from .config import GLOBAL, REPO, RUNTIME, load_yaml
 
 
 def catalogue(refresh: bool = False) -> dict:
@@ -51,14 +51,20 @@ def registry_items() -> list[dict]:
 
 
 def concept_notes(proj) -> list[str]:
-    from .concepts import moments
-    ms = moments(proj.p("transcript.jsonl"))
-    out = ["## Show the process (rules V1–V3)",
+    from .concepts import video_moments
+    settings = proj.settings()
+    vis = settings.get("visuals", {})
+    ms = video_moments(proj, settings)
+    out = ["## Show the process (rules V1–V3, V5)",
            "Every explanation is SHOWN, in step with the words: a new visual roughly every 8–12 s, each step on the word that names it, "
-           f"never more than {proj.settings().get('visuals', {}).get('max_text_only_s', 15)} s of words-only screen. Text cards label; animations explain. "
-           "Concept → template guide: CLAUDE.md and global/styles/explainer/STYLE.md."]
+           f"never more than {vis.get('max_text_only_s', 15)} s of words-only screen. Text cards label; animations explain. "
+           "Concept → template guide: CLAUDE.md and global/styles/explainer/STYLE.md.",
+           f"**Vary (V5):** never the same animation twice in a row, and no animation in more than {vis.get('max_repeat_share', 0.2):.0%} "
+           "of the video's animations. When a concept comes back, show it another way: each moment lists its templates freshest first."]
     if ms:
-        out.append("**Concept moments found in the transcript** (cover each with one of the templates, or say in `decisions` why not):")
+        out.append("**Concept moments found in the transcript** (global/concepts.yaml, one collection for every course). Use the ones "
+                   "that fit this lesson: show each with one of its templates, the first where it fits. Skip a match that means "
+                   "something else here (a word from another subject), with a word in the beat's notes:")
         out.append("\n".join(f"- {m['t']:7.1f}s  “{m['phrase']}” → {', '.join(m['templates'])}: {m['show']}" for m in ms))
     return out
 
@@ -96,11 +102,14 @@ def recording_notes(proj, pdata: dict, settings: dict) -> list[str]:
 
 
 def brief(proj, settings: dict) -> Path:
+    from .beats import gate_mode
     pdata = proj.load()
     cat = catalogue()
     cuts = json.loads(proj.p("cuts.json").read_text()) if proj.p("cuts.json").exists() else []
     tx = proj.p("transcript.jsonl")
     props = load_yaml(GLOBAL / "props" / "manifest.yaml").get("assets", [])
+    from .concepts import blocked_templates
+    off_t = blocked_templates(settings)
     fam = {}
     for n, m in cat.items():
         fam.setdefault(m.get("family"), []).append(n)
@@ -110,7 +119,8 @@ def brief(proj, settings: dict) -> Path:
         "## The video's prompt", proj.prompt().strip() or "(none: use the global defaults)",
         "## Settings (global defaults + prompt)",
         "```yaml\n" + yaml.safe_dump({k: settings[k] for k in ("brand", "mode", "styles", "subtitles", "music", "name_card", "cutaways", "clutter", "empty")}, sort_keys=False) + "```",
-        f"Brand kits available: {', '.join(brand_ids())}",
+        "Brand: the one Career Orbit kit (global/brand/brand.yaml): navy text, one brand blue, and green / red / amber only for "
+        "meaning (correct, error, look here). No per-topic colours; the dotted backdrop stays all video.",
         "## Source",
         f"raw cut: `{pdata.get('raw')}`  duration {pdata.get('duration')}s  fps {pdata.get('fps')}  mode {pdata.get('mode')}",
         "recordings: " + (json.dumps(pdata.get("recordings")) if pdata.get("recordings") else "none"),
@@ -125,10 +135,13 @@ def brief(proj, settings: dict) -> Path:
         "## Beat sheet first (edit/beats.yaml, rule R1)",
         "`fzv plan` drafted one row per beat (an idea the instructor explains, 8–20 s) from the pauses, shot changes and concept moments. "
         "Before writing edit.yaml, fill every row: `idea` (one plain sentence), `show` (what appears, in plain words for a non-technical editor), "
-        "`templates` and `sync` (the words each step lands on). Merge or split rows freely; they must stay contiguous. Then run `fzv beats` and show "
-        "the editor the review page; edit.yaml is written only from the approved sheet, scene by scene (rule V4). "
-        "The footage every 10 s and at each shot change: `edit/out/footage.jpg`.",
-        "## Templates by family", "\n".join(f"- **{f}**: {', '.join(sorted(ns))}" for f, ns in sorted(fam.items())),
+        "`templates` and `sync` (the words each step lands on). Merge or split rows freely; they must stay contiguous. Then run `fzv beats` "
+        + ("and show the editor the review page; edit.yaml is written only from the approved sheet, scene by scene (rule V4). "
+           if gate_mode(settings, "beats") != "off" else
+           "until it reports no problems and write edit.yaml from it, scene by scene (rule V4); the editor's one approval is the storyboard. ")
+        + "The footage every 10 s and at each shot change: `edit/out/footage.jpg`.",
+        "## Templates by family", "\n".join(f"- **{f}**: {', '.join(sorted(ns))}" if not set(ns) <= off_t else f"- **{f}**: off for this video (only when the prompt asks for it)"
+                                            for f, ns in sorted(fam.items())),
         "Full parameters: global/templates/catalogue.json (or the cards in global/templates/<family>/).",
         "## Props library (template `prop`, `prop-move`, `prop-scene`; asset ids)",
         "**characters:** " + ", ".join(a["id"] for a in props if a["kind"] == "character"),
@@ -139,6 +152,8 @@ def brief(proj, settings: dict) -> Path:
                   for x in registry_items()) or "none installed (fzv registry search / add)",
         "## Music tracks (only when the prompt asks)", ", ".join(f"{t['id']} ({t.get('mood', '')}, {t.get('duration', '?')}s)" for t in
                                                                    (load_yaml(GLOBAL / "music" / "manifest.yaml").get("tracks") or [])) or "none",
+        "## House rules (global/RULES.md: the master prompt every edit follows)",
+        re.sub(r"^# .*\n", "", (GLOBAL / "RULES.md").read_text(encoding="utf-8"), count=1).strip().replace("\n## ", "\n### "),
         "## Transcript (timing only; English-mode, may be romanised Telugu)",
         "Anchors: write `at: \"@phrase the instructor says\"` (fuzzy match), `\"@phrase#2\"` for the 2nd occurrence, or seconds.",
         "```\n" + (compact_transcript(tx) if tx.exists() else "(not transcribed yet)") + "\n```",

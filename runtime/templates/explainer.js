@@ -4,7 +4,7 @@
    that names it. Coordinates are relative to `box` unless a param says otherwise. */
 (function () {
   const R = FZ.register;
-  const TONE = { ok: "var(--fz-success)", bad: "var(--fz-danger)", warn: "#C27803", accent: "var(--fz-accent)", action: "var(--fz-action)" };
+  const TONE = { ok: "var(--fz-success)", bad: "var(--fz-danger)", warn: "var(--fz-highlight-text)", accent: "var(--fz-accent)", action: "var(--fz-action)" };
 
   // move an element along a quadratic curve p0 -> p1 (bend = how far the control point lifts, px), shrinking to `endScale`
   function fly(a, e, p0, p1, g, dur = 0.8, bend = -120, endScale = 1) {
@@ -78,7 +78,7 @@
     its.forEach((it, i) => { const e = a.el(a.md(it.text), "abs hide", { left: 26 + (i % 2) * 18, top: 70 + i * Math.min(66, (H - 100) / Math.max(1, its.length)), font: "700 32px/1 var(--fz-font-mono)", color: "var(--fz-text2)" }, inp); a.inn(e, it.at || p.at + 0.3 + i * 0.25, { x: -12 }, 0.3); });
     const pr = p.process || {}, px0 = bx.x + iw + gap;
     const proc = a.el(`<div class="gear" style="font-size:110px;line-height:0;color:#fff">${a.icon(pr.icon || "gear")}</div><div class="fz-label" style="color:var(--fz-on-dark-soft);margin-top:20px">${a.esc(pr.label || "Process")}</div>`,
-      "abs hide", { left: px0, top: bx.y + (H - pw * 1.05) / 2, width: pw, height: pw * 1.05, borderRadius: 30, background: "var(--fz-text)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxShadow: "0 30px 70px -20px rgba(13,39,76,.55)" }, a.root, "part");
+      "abs hide", { left: px0, top: bx.y + (H - pw * 1.05) / 2, width: pw, height: pw * 1.05, borderRadius: 30, background: "var(--fz-text)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxShadow: "0 30px 70px -20px rgba(16,42,86,.55)" }, a.root, "part");
     const run = pr.at != null ? pr.at : p.at + 1;
     a.pop(proc, Math.max(p.at, run - 0.8)); a.out(proc, U);
     a.tl.to(proc.querySelector(".gear"), { rotation: 360, duration: 1.6, ease: "power1.inOut", immediateRender: false }, a.T(run));
@@ -106,10 +106,10 @@
     if (p.label) { const l = a.el(a.md(p.label), "abs hide", { left: bx.x, top: bx.y, width: W, font: "700 28px/1.25 var(--fz-font-display)" }, a.root, "part"); a.show(l, p.at, U, { y: 10 }); parts.push(l); }
     const y0 = bx.y + (p.label ? 70 : 0);
     const chip = (txt, type, tone) => `<div style="font:800 52px/1 var(--fz-font-mono);color:var(--fz-text)">${a.esc(txt)}</div><div style="margin-top:12px;font:700 20px/1 var(--fz-font-mono);letter-spacing:.12em;padding:6px 12px;border-radius:8px;background:${tone};color:#fff;display:inline-block">${a.esc(type)}</div>`;
-    const inC = a.el(chip(`"${p.value}"`, fromT, "#C27803"), "fz-card hide", { left: bx.x, top: y0, width: W * 0.36, padding: "22px 20px", textAlign: "center" }, a.root, "part");
+    const inC = a.el(chip(`"${p.value}"`, fromT, "var(--fz-highlight-text)"), "fz-card hide", { left: bx.x, top: y0, width: W * 0.36, padding: "22px 20px", textAlign: "center" }, a.root, "part");
     a.pop(inC, p.at); parts.push(inC);
     const mach = a.el(`<div style="font:800 40px/1 var(--fz-font-mono);color:#fff">${a.esc(fn)}</div>`, "abs hide",
-      { left: bx.x + W * 0.39, top: y0 + 150, width: W * 0.24, height: 96, borderRadius: 22, background: "var(--fz-text)", display: "grid", placeItems: "center", boxShadow: "0 24px 50px -18px rgba(13,39,76,.55)" }, a.root, "part");
+      { left: bx.x + W * 0.39, top: y0 + 150, width: W * 0.24, height: 96, borderRadius: 22, background: "var(--fz-text)", display: "grid", placeItems: "center", boxShadow: "0 24px 50px -18px rgba(16,42,86,.55)" }, a.root, "part");
     a.pop(mach, Math.max(p.at + 0.3, cv - 0.7)); parts.push(mach);
     const outC = a.el(chip(String(p.value), toT, "var(--fz-success)"), "fz-card hide", { left: bx.x + W * 0.64, top: y0, width: W * 0.36, padding: "22px 20px", textAlign: "center", borderColor: "var(--fz-success)", borderWidth: "3px" }, a.root, "part");
     // the input drops into the machine, the machine pulses, the converted value pops out
@@ -148,7 +148,7 @@
       const tile = a.el(a.esc(v), "fz-tile hide", { left: x, top: y, width: sz, height: sz, fontSize: Math.round(sz * (String(v).length > 2 ? 0.32 : 0.42)), borderRadius: 18 }, a.root, "part");
       a.set(tile, g, { autoAlpha: 1 });
       a.tl.fromTo(tile, { x: bx.x + 60 - x, y: bx.y + 10 - y, scale: 0.4 }, { x: 0, y: 0, scale: 1, duration: 0.45, ease: "back.out(1.6)", immediateRender: false }, a.T(g));
-      if (stopHere) { a.to(tile, p.stop_at || g + 0.6, { backgroundColor: "#FDECEC", borderColor: "var(--fz-danger)", color: "var(--fz-danger)", duration: 0.3 }); a.sfx("bad", p.stop_at || g + 0.6); }
+      if (stopHere) { a.to(tile, p.stop_at || g + 0.6, { backgroundColor: a.cv("danger-soft"), borderColor: a.cv("danger"), color: a.cv("danger"), duration: 0.3 }); a.sfx("bad", p.stop_at || g + 0.6); }
       else if (i < 6) a.sfx("tick", g);
       a.out(tile, U); parts.push(tile);
     });
@@ -180,7 +180,7 @@
     (p.packets || []).forEach((k) => {
       const res = k.kind === "res";
       const e = a.el(`${a.icon(res ? "check" : "arrow")}<span>${a.esc(k.label || (res ? "Result" : "Request"))}</span>`, "abs hide",
-        { left: 0, top: 0, display: "flex", alignItems: "center", gap: 10, padding: "10px 18px", borderRadius: 999, background: res ? "var(--fz-success)" : "var(--fz-action)", color: "#fff", font: "700 24px/1 var(--fz-font-body)", boxShadow: "0 14px 30px -10px rgba(13,39,76,.45)", whiteSpace: "nowrap" }, a.root, "deco");
+        { left: 0, top: 0, display: "flex", alignItems: "center", gap: 10, padding: "10px 18px", borderRadius: 999, background: res ? "var(--fz-success)" : "var(--fz-action)", color: "#fff", font: "700 24px/1 var(--fz-font-body)", boxShadow: "0 14px 30px -10px rgba(16,42,86,.45)", whiteSpace: "nowrap" }, a.root, "deco");
       const [x0, y0] = N[k.from], [x1, y1] = N[k.to], d = k.dur || 1.2;
       a.set(e, k.at, { autoAlpha: 1 }); fly(a, e, [x0, y0 - 120], [x1, y1 - 120], k.at, d, -80); a.set(e, k.at + d + 0.15, { autoAlpha: 0 });
       if (NE[k.to]) a.pulse(NE[k.to], k.at + d, 1.06);
@@ -210,7 +210,7 @@
     }
     const gb = a.el("", "abs hide", { left: bx.x, top: gy, width: cols * (c + 8), height: rows * (c + 8) }, a.root, "part"); a.set(gb, p.at, { autoAlpha: 1 }); a.out(gb, U); parts.push(gb);
     if (p.scan) {
-      const m = a.el("", "abs hide", { left: 0, top: 0, width: 110, height: 110, borderRadius: 55, background: "rgba(255,255,255,.5)", border: "6px solid var(--fz-action)", boxShadow: "0 18px 36px -10px rgba(13,39,76,.4)" }, a.root, "deco");
+      const m = a.el("", "abs hide", { left: 0, top: 0, width: 110, height: 110, borderRadius: 55, background: "rgba(255,255,255,.5)", border: "6px solid var(--fz-action)", boxShadow: "0 18px 36px -10px rgba(16,42,86,.4)" }, a.root, "deco");
       const d = Math.max(1, (p.scan.until || p.scan.at + 4) - p.scan.at), legs = Math.min(rows, 4);
       a.set(m, p.scan.at, { autoAlpha: 1, x: bx.x - 30, y: gy - 30 });
       for (let r = 0; r < legs; r++) {
@@ -293,7 +293,7 @@
     const bx = a.box(p, "main"), U = a.until(p), phone = p.kind === "phone";
     const W = phone ? Math.min(bx.w, 380) : bx.w, H = phone ? W * 2 : Math.min(bx.h, W * 0.66);
     const frame = a.el(phone ? `<div style="height:44px;display:flex;align-items:center;justify-content:center;font:700 18px/1 var(--fz-font-body);color:var(--fz-text2)">${a.esc(p.url || "")}</div>`
-      : `<div style="height:52px;display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid var(--fz-line)"><div style="width:13px;height:13px;border-radius:7px;background:#FF6058"></div><div style="width:13px;height:13px;border-radius:7px;background:#FFBD2E"></div><div style="width:13px;height:13px;border-radius:7px;background:#28CA42"></div><div style="margin-left:18px;padding:7px 18px;border-radius:10px;background:var(--fz-tint);font:500 18px/1 var(--fz-font-mono);color:var(--fz-text2)">${a.esc(p.url || "")}</div></div>`,
+      : `<div style="height:52px;display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid var(--fz-line)"><div style="width:13px;height:13px;border-radius:7px;background:var(--fz-line)"></div><div style="width:13px;height:13px;border-radius:7px;background:var(--fz-line)"></div><div style="width:13px;height:13px;border-radius:7px;background:var(--fz-line)"></div><div style="margin-left:18px;padding:7px 18px;border-radius:10px;background:var(--fz-tint);font:500 18px/1 var(--fz-font-mono);color:var(--fz-text2)">${a.esc(p.url || "")}</div></div>`,
       "fz-card hide", { left: bx.x, top: bx.y, width: W, height: H, overflow: "hidden", borderRadius: phone ? 46 : 22, border: phone ? "10px solid var(--fz-text)" : undefined }, a.root, "block");
     a.show(frame, p.at, U, { y: 30 });
     const screens = p.screens || [];
@@ -326,7 +326,7 @@
     });
     const pts = p.cursor || [];
     if (pts.length) {
-      const cur = a.el(`<svg width="40" height="40" viewBox="0 0 24 24"><path d="M4 2l16 9-7 2-3 7z" fill="#0D274C" stroke="#fff" stroke-width="1.5"/></svg>`, "abs hide", { left: 0, top: 0 }, frame);
+      const cur = a.el(`<svg width="40" height="40" viewBox="0 0 24 24"><path d="M4 2l16 9-7 2-3 7z" style="fill:var(--fz-text)" stroke="#fff" stroke-width="1.5"/></svg>`, "abs hide", { left: 0, top: 0 }, frame);
       a.set(cur, pts[0].at - 0.9, { autoAlpha: 1, x: pts[0].x - 140, y: pts[0].y + 90 });
       pts.forEach((c, i) => {
         const from = i ? pts[i - 1].at + 0.1 : pts[0].at - 0.85;
@@ -380,15 +380,71 @@
 
   // ---------- scene: a dark full-frame scene behind the instructor (compose mode) ----------
   R({ name: "scene", family: "explainer", layers: ["plate"], static: false,
-      doc: "Compose mode only: switch the background behind the instructor to a dark brand scene for a big moment (the hero reveal, a fun fact); text turns light for its duration.",
+      doc: "Only when the prompt asks (rule L11: the background stays the brand plate). Compose mode: switch the background behind the instructor to a dark brand scene; text turns light for its duration.",
       params: { kind: "dark", at: "", until: "" } }, (a, p) => {
     const bg = a.byId("fz-bg");
     if (!bg) throw new Error("scene needs compose mode (no background layer behind the instructor in a rough cut)");
     const U = a.until(p);
     const d = a.el(`<div style="position:absolute;inset:0;background:radial-gradient(circle at 70% 40%, rgba(22,187,200,.25), transparent 55%),repeating-conic-gradient(from 0deg at 70% 40%, rgba(255,255,255,.035) 0 6deg, transparent 6deg 14deg)"></div>`,
-      "abs hide", { left: 0, top: 0, width: 1920, height: 1080, background: "linear-gradient(160deg, #0D274C 0%, #0B1730 100%)" }, bg, "deco");
+      "abs hide", { left: 0, top: 0, width: 1920, height: 1080, background: "var(--fz-deep-grad)" }, bg, "deco");
     a.inn(d, p.at, {}, 0.6, "power2.out"); a.out(d, U, {}, 0.6);
     a.set(a.root, p.at + 0.25, { attr: { "data-scene": "dark" } });      // CSS flips text to light and cards to glass
     a.set(a.root, U + 0.2, { attr: { "data-scene": "" } });
+  });
+
+  R({ name: "venn", family: "explainer", layers: ["plate"],
+      doc: "Two sets as circles that draw on; each value pops into its region as it is said; an operation fills its region (union, intersection, difference, symmetric difference) in the brand blue; amber rings point at values, red strikes skip them; an optional result row.",
+      params: { a: "{label, at}", b: "{label, at}", items: "[{v, in: a | b | both, at}]", op: "{kind: union | intersection | a-b | b-a | symmetric, at, label}",
+                rings: "[{v, at, until}]", strike: "[{v, at}]", result: "{text, at}: a mono row under the circles, e.g. result = {10, 20}", at: "", until: "", box: "default: main slot" } }, (a, p) => {
+    const bx = a.box(p, "main"), U = a.until(p), resH = p.result ? 96 : 0;
+    const H = Math.min(bx.h - resH - 70, bx.w * 0.58), r = H / 2, W = bx.w, cy = 60 + r, cxA = W / 2 - r * 0.58, cxB = W / 2 + r * 0.58;
+    const uid = "vn" + (a.refs.__venn = (a.refs.__venn || 0) + 1), C = 2 * Math.PI * r;
+    const circ = (cx, extra) => `<circle cx="${cx}" cy="${cy}" r="${r}" ${extra}/>`;
+    const box = a.el(`<svg width="${W}" height="${cy + r + 10}" style="position:absolute;left:0;top:0;overflow:visible"><defs>
+        <clipPath id="${uid}-ca">${circ(cxA, "")}</clipPath>
+        <mask id="${uid}-ma"><rect x="-50" y="-50" width="${W + 100}" height="${H + 200}" fill="white"/>${circ(cxB, 'fill="black"')}</mask>
+        <mask id="${uid}-mb"><rect x="-50" y="-50" width="${W + 100}" height="${H + 200}" fill="white"/>${circ(cxA, 'fill="black"')}</mask></defs>
+      ${circ(cxA, `class="bg-a" style="fill:rgba(255,255,255,.6);opacity:0"`)}${circ(cxB, `class="bg-b" style="fill:rgba(255,255,255,.6);opacity:0"`)}
+      ${circ(cxA, `class="f-a" mask="url(#${uid}-ma)" style="fill:var(--fz-accent);opacity:0"`)}
+      ${circ(cxB, `class="f-b" mask="url(#${uid}-mb)" style="fill:var(--fz-accent);opacity:0"`)}
+      ${circ(cxB, `class="f-ab" clip-path="url(#${uid}-ca)" style="fill:var(--fz-accent);opacity:0"`)}
+      ${circ(cxA, `class="o-a" style="fill:none;stroke:var(--fz-text);stroke-width:4;stroke-dasharray:${C};stroke-dashoffset:${C}"`)}
+      ${circ(cxB, `class="o-b" style="fill:none;stroke:var(--fz-text);stroke-width:4;stroke-dasharray:${C};stroke-dashoffset:${C}"`)}</svg>`,
+      "abs hide", { left: bx.x, top: bx.y, width: W, height: cy + r + 10 + resH }, a.root, "block");
+    a.set(box, p.at, { autoAlpha: 1 }); a.out(box, U);
+    const svg = box.querySelector("svg");
+    [["a", cxA, -1], ["b", cxB, 1]].forEach(([k, cx, side]) => {
+      const S = p[k] || {}, g = S.at != null ? S.at : p.at;
+      const o = svg.querySelector(".o-" + k);
+      a.tl.fromTo(o, { strokeDashoffset: C }, { strokeDashoffset: 0, duration: 0.8, ease: "power2.inOut", immediateRender: false }, a.T(g));
+      a.to(svg.querySelector(".bg-" + k), g + 0.3, { opacity: 1, duration: 0.5 });
+      if (S.label) { const l = a.el(a.md(S.label), "abs hide", { left: cx + side * r * 0.55 - 160, top: 0, width: 320, textAlign: "center", font: "700 30px/1 var(--fz-font-mono)", color: "var(--fz-text)" }, box, "part");
+                     a.inn(l, g + 0.2, { y: 12 }, 0.4); }
+      a.sfx("swish", g);
+    });
+    const cols = { a: cxA - r * 0.5, both: (cxA + cxB) / 2, b: cxB + r * 0.5 }, count = { a: 0, both: 0, b: 0 }, total = { a: 0, both: 0, b: 0 };
+    (p.items || []).forEach((it) => { total[it.in || "a"] = (total[it.in || "a"] || 0) + 1; });
+    const chips = {};
+    (p.items || []).forEach((it) => {
+      const reg = it.in || "a", k = count[reg]++, n = total[reg], y = cy + (k - (n - 1) / 2) * 62;
+      const c = a.el(a.esc(String(it.v)), "abs hide", { left: cols[reg] - 70, top: y - 26, width: 140, height: 52, display: "grid", placeItems: "center",
+        font: "700 34px/1 var(--fz-font-mono)", color: "var(--fz-text)" }, box, "part");
+      a.pop(c, it.at); a.sfx("pop", it.at); chips[String(it.v)] = c;
+    });
+    (p.rings || []).forEach((rg) => { const c = chips[String(rg.v)]; if (!c) return;
+      const ring = a.el("", "abs hide", { left: -6, top: -6, right: -6, bottom: -6, borderRadius: 30, border: "4px solid var(--fz-highlight)" }, c);
+      a.inn(ring, rg.at, { scale: 1.4 }, 0.35, "back.out(2)"); if (rg.until != null) a.out(ring, rg.until); a.sfx("blip", rg.at); });
+    (p.strike || []).forEach((st) => { const c = chips[String(st.v)]; if (!c) return;
+      const line = a.el("", "abs", { left: 18, right: 18, top: 24, height: 5, borderRadius: 3, background: "var(--fz-danger)", transformOrigin: "0 50%", transform: "scaleX(0)" }, c);
+      a.to(line, st.at, { scaleX: 1, duration: 0.3, ease: "power2.out" }); a.to(c, st.at + 0.1, { opacity: 0.45, duration: 0.3 }); a.sfx("bad", st.at); });
+    if (p.op) {
+      const fill = { union: ["a", "b", "ab"], intersection: ["ab"], "a-b": ["a"], "b-a": ["b"], symmetric: ["a", "b"] }[p.op.kind] || [];
+      fill.forEach((f) => a.to(svg.querySelector(".f-" + f), p.op.at, { opacity: 0.22, duration: 0.5, ease: "power2.out" }));
+      if (p.op.label) { const l = a.el(a.md(p.op.label), "abs hide", { left: 0, top: cy + r + 18, width: W, textAlign: "center", font: "700 28px/1 var(--fz-font-body)", color: "var(--fz-emph)" }, box, "part");
+                        a.inn(l, p.op.at + 0.2, { y: 10 }, 0.4); }
+      a.sfx("ding", p.op.at);
+    }
+    if (p.result) { const rr = a.el(a.hlCode(p.result.text), "fz-cchip hide", { left: W / 2 - 300, top: cy + r + (p.op && p.op.label ? 62 : 24), width: 600, textAlign: "center", fontSize: 34 }, box, "part");
+                    a.pop(rr, p.result.at); a.sfx("good", p.result.at); }
   });
 })();

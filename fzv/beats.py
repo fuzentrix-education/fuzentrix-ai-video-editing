@@ -171,7 +171,7 @@ def filled(b: dict) -> bool:
 
 
 def check(doc: dict, tx: Transcript, duration: float, templates: set[str], registry: set[str], moments: list[dict],
-          text_only: set[str], max_text_only_s: float = 15.0) -> tuple[list[str], list[str], dict]:
+          text_only: set[str], max_text_only_s: float = 15.0, blocked: set[str] = frozenset()) -> tuple[list[str], list[str], dict]:
     """(errors, warnings, {beat id: {"sync": [t…], "key": t}})."""
     errs, warns, res = [], [], {}
     beats = doc.get("beats") or []
@@ -208,6 +208,8 @@ def check(doc: dict, tx: Transcript, duration: float, templates: set[str], regis
                 errs.append(f"{bid}: say which registry animation, as hf:<item>")
             elif t not in templates:
                 errs.append(f"{bid}: unknown template '{t}'")
+            elif t in blocked:
+                errs.append(f"{bid}: '{t}' is used only when the prompt asks for its style (3D, sketch); use a 2D template or add it to the prompt")
             else:
                 names.append(t)
         times = []
@@ -228,9 +230,20 @@ def check(doc: dict, tx: Transcript, duration: float, templates: set[str], regis
         if b["end"] - b["start"] > 25:
             warns.append(f"{bid} is {b['end'] - b['start']:.0f}s long; split it if it holds more than one idea")
         for m in moments if filled(b) else []:
-            if b["start"] <= m["t"] < b["end"] and not set(m["templates"]) & set(names):
-                warns.append(f"{bid}: “{m['phrase']}” at {mmss(m['t'])} is a concept moment; {' / '.join(m['templates'])} would show it (or say why not in notes)")
+            ok_t = [t for t in m["templates"] if t not in blocked]
+            if b["start"] <= m["t"] < b["end"] and not set(ok_t) & set(names):
+                warns.append(f"{bid}: “{m['phrase']}” at {mmss(m['t'])} is a concept moment; {' / '.join(ok_t)} would show it (or say why not in notes)")
     return errs, warns, res
+
+
+def variety(doc: dict, family: dict, max_share: float = 0.2) -> list[str]:
+    """Rule V5 on the plan: the same animation in back-to-back beats, or one animation in too many of them."""
+    from .concepts import is_animation, repeats
+    seq = []
+    for b in sorted(doc.get("beats") or [], key=lambda b: b["start"]):
+        names = list(dict.fromkeys(str(t).strip() for t in b.get("templates") or []))
+        seq += [(b["start"], t, str(b.get("id"))) for t in names if is_animation(t, family)]
+    return [msg for _, msg in repeats(seq, max_share)]
 
 
 def markdown(doc: dict, title: str, status: str) -> str:
@@ -315,8 +328,40 @@ def storyboard_state(proj) -> str:
     return "approved" if a and a["fingerprint"] == sig else "ready"
 
 
+def preview_mode(settings: dict) -> str:
+    """browser | video | off (`required`, the earlier name, means video)."""
+    m = gate_mode(settings, "preview")
+    return "video" if m == "required" else m
+
+
+def preview_made(proj, settings: dict) -> bool:
+    """Whether the preview of the current build exists (the live preview built, or the draft video made)."""
+    mode = preview_mode(settings)
+    if mode == "browser":
+        from .studio import state
+        return state(proj) == "ready"
+    if mode == "video":
+        from .draft import preview_state
+        return preview_state(proj) == "ready"
+    return True
+
+
+def preview_approval_state(proj, settings: dict) -> str:
+    """off | waiting (the storyboard isn't approved yet) | missing (no preview of this build yet) | ready (waiting for the editor) |
+    approved. The editor approves the storyboard first, then watches the preview and approves it; the render waits for both."""
+    if preview_mode(settings) == "off":
+        return "off"
+    if storyboard_state(proj) != "approved":
+        return "waiting"
+    a = approval(proj, "preview")
+    if a and a["fingerprint"] == build_signature(proj):
+        return "approved"
+    return "ready" if preview_made(proj, settings) else "missing"
+
+
 def gate_mode(settings: dict, what: str) -> str:
-    return str((settings.get("review") or {}).get(what, "required")).lower()
+    v = (settings.get("review") or {}).get(what, "required")
+    return "off" if v is False or str(v).lower() in ("off", "false", "no", "none") else str(v).lower()   # YAML reads a bare off as false
 
 
 def legacy(proj) -> bool:
@@ -344,8 +389,13 @@ def gate_render(proj, settings: dict) -> str | None:
     if why or gate_mode(settings, "storyboard") == "off":
         return why
     st = storyboard_state(proj)
-    if st == "approved":
+    if st != "approved":
+        return {"missing": "there is no storyboard yet: run `fzv storyboard` and show it to the editor",
+                "stale": "the edit was built again after the storyboard: run `fzv storyboard` (only changed frames are redone) and show the editor",
+                "ready": "the editor hasn't approved the storyboard yet; show it and run `fzv approve <folder> storyboard` once they do"}[st]
+    pv = preview_approval_state(proj, settings)
+    if pv in ("off", "approved"):
         return None
-    return {"missing": "there is no storyboard yet: run `fzv storyboard` and show it to the editor",
-            "stale": "the edit was built again after the storyboard: run `fzv storyboard` (only changed frames are redone) and show the editor",
-            "ready": "the editor hasn't approved the storyboard yet; show it and run `fzv approve <folder> storyboard` once they do"}[st]
+    how = "`fzv studio` (the live preview)" if preview_mode(settings) == "browser" else "`fzv draft` (the preview video)"
+    return {"missing": f"the storyboard is approved; now make the preview with {how} and show it to the editor",
+            "ready": "the editor hasn't approved the preview yet; once they do, run `fzv approve <folder> preview`"}[pv]

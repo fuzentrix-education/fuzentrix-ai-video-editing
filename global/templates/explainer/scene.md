@@ -2,7 +2,7 @@
 
 **Family:** explainer · **Layers:** plate
 
-Compose mode only: switch the background behind the instructor to a dark brand scene for a big moment (the hero reveal, a fun fact); text turns light for its duration.
+Only when the prompt asks (rule L11: the background stays the brand plate). Compose mode: switch the background behind the instructor to a dark brand scene; text turns light for its duration.
 
 | Parameter | Meaning |
 |---|---|

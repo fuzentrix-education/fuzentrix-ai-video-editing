@@ -15,7 +15,7 @@ from PIL import Image, ImageDraw
 from scipy import ndimage as ndi
 
 from . import media
-from .config import BRANDS
+from .config import editor_plates
 
 T0, T1, TH = 10.0, 40.0, 28.0
 
@@ -49,7 +49,7 @@ def background(src: Path, info: dict, log=print) -> tuple[str, np.ndarray]:
     h, w = med.shape[:2]
     border = np.zeros((h, w), bool); border[: h // 5] = True; border[:, : w // 6] = True; border[:, -w // 6:] = True
     H, W = info["height"], info["width"]
-    for f in sorted(BRANDS.glob("*/plate/*.png")):
+    for f in editor_plates():
         cand = np.asarray(Image.open(f).convert("RGB").resize((w, h), Image.LANCZOS), np.float32)
         if np.median(np.abs(cand - med).max(-1)[border]) < 8:          # median: robust to a burned-in logo or the instructor's edge
             log(f"keyer: footage sits on the brand plate ({f.name})")

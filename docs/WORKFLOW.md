@@ -6,17 +6,17 @@ Details of every command and setting are in the [README](../README.md); the reas
 [SYSTEM_DESIGN.md](SYSTEM_DESIGN.md).
 
 ```
- editor's files ─► video folder ─► ingest + plan ─► Claude fills the BEAT SHEET ─► editor approves (review page)
-        ─► Claude writes edit.yaml ─► build · validate ─► STORYBOARD ─► editor approves ─► render · finish · verify
+ editor's files ─► video folder ─► ingest + plan ─► Claude fills the BEAT SHEET (the plan; no stop)
+        ─► Claude writes edit.yaml ─► build · validate ─► STORYBOARD + preview ─► editor approves ─► render · finish · verify
         ─► final + "to confirm" on the review page ─► changes by beat or time (as often as needed)
 ```
 
 | Editor types in Claude Code | Claude does |
 |---|---|
-| `/edit-video <folder or file> [notes]` | §2–§6 below, stopping twice for the editor's approval |
+| `/edit-video <folder or file> [notes]` | §2–§6 below, stopping once for the editor's approval (the storyboard) |
 | `/review <folder>` | refreshes and opens the review page, says what is waiting |
 | `/change <folder> beat 7: …; 7:41: …` | §7 below |
-| `/approve <folder> beats\|storyboard` | records the approval and carries on |
+| `/approve <folder> storyboard` | records the approval and carries on (`beats` only with `Review: beats, storyboard`) |
 
 The skills live in `.claude/skills/`; the safe steps are pre-approved in `.claude/settings.json`, so Claude Code doesn't ask
 "Allow?" at every step.
@@ -37,8 +37,8 @@ tabs): `fzv` slows down sharply when the machine is short of memory.
 
 ## 1. Shared assets (already included)
 
-Everything a video needs ships in `global/`: 57 templates, 31 registry animations, 114 icons, 120 props and characters, 2 music
-tracks, 97 sound effects and the brand kits. Nothing is fetched per video. Adding more is optional; each import records its source
+Everything a video needs ships in `global/`: 60 templates (3 of them 3D), 31 registry animations, 114 icons, 120 props and characters, 2 music
+tracks, 97 sound effects and the brand kit. Nothing is fetched per video. Adding more is optional; each import records its source
 and licence. To review the sound effects once: `bin/fzv sfx audition`, listen, then `bin/fzv sfx remove <category:number>…`.
 
 | Asset | How to add | Notes |
@@ -48,7 +48,7 @@ and licence. To review the sound effects once: `bin/fzv sfx audition`, listen, t
 | **Props / characters** | `bin/fzv props add file.svg --id … --recolor --source … --licence …` | recoloured to the brand |
 | **Icons** | `bin/fzv icons add icon.svg --id … --source … --licence …` | 24-grid line icons (Tabler, Lucide) |
 | **Animations from the HyperFrames registry** | `bin/fzv registry search <words>` then `bin/fzv registry add <name…>` | 448 open-source items; 31 are installed; mount with the `hf` template |
-| **Concept phrases** | edit `global/concepts.yaml` | phrases that should trigger an animation (rule V3) |
+| **Concept phrases** | edit `global/concepts.yaml` (one collection for every course; how-to in its header) | phrases that should trigger an animation (rule V3) |
 | **House settings** | edit `global/defaults.yaml` | box around the instructor, SFX density, music level, clutter budget… |
 
 Licences: only CC0, MIT, ISC, Apache-2.0, public domain or paid licences (the videos carry no credits roll). `fzv` refuses
@@ -62,12 +62,11 @@ non-commercial and no-derivatives licences.
 
 ```markdown
 # Loop Control Statements
-Brand: career-orbit
 Music: calm-piano, low            # optional; off unless asked
 SFX: on                           # minimal | off | library only
 Presenter box: on                 # bottom-right instructor in a rounded brand box (rough cuts and raw footage)
 Recording: reference              # only if the screen recording isn't good enough to show
-Review: on                        # default: the editor approves the beat sheet and the storyboard; off | beats | storyboard
+Review: on                        # default: the editor approves the storyboard, then the preview; "beats, storyboard" adds the beat sheet; off
 - Make the three example programs the highlight.
 - Show data going into the database when she talks about storing data.
 - A car and a traffic police officer for the traffic analogy.
@@ -89,7 +88,7 @@ Check the mode it detected (`ingest: mode overlay|compose`). An editor's rough c
 raw or green-screen footage is *compose* (the instructor is keyed and placed). If it is wrong, add `Mode: overlay` or
 `Mode: compose` to the prompt and run `bin/fzv ingest` again.
 
-## 4. The beat sheet (plan), approved by the editor
+## 4. The beat sheet (the plan)
 
 A **beat** is one idea the instructor explains, usually 8–20 s. The draft has one row per beat, cut at pauses, shot changes and
 concept moments, with what the instructor says. Claude fills each row (following CLAUDE.md):
@@ -105,16 +104,18 @@ concept moments, with what the instructor says. Claude fills each row (following
 words-only stretches, concept moments without a matching animation, steps without sync words. It writes `edit/beat_sheet.md`
 and refreshes the **review page** (`edit/review/index.html`; `bin/fzv review <folder> --open`).
 
-The editor reads the page (footage frame, what is said, what we show, on which words) and either approves or writes changes
-under any beat → **Copy for Claude** → pastes into the chat. Claude edits the rows (their words go into `feedback`) and asks again.
-On approval, Claude runs `bin/fzv approve <folder> beats --note "<their words>"` (logged in `edit/approvals.md`).
-**`fzv build` refuses to run until the current beat sheet is approved** (rule R1); any later change needs a new approval.
+By default (`review.beats: off`, since 2026-10-28) Claude goes straight on to §5: the editor judges the plan as the storyboard,
+which is the one approval. Only with `Review: beats, storyboard` in the prompt does the editor approve the beat sheet first: they read
+the page (footage frame, what is said, what we show, on which words) and either approve or write changes under any beat →
+**Copy for Claude** → paste into the chat; Claude edits the rows (their words go into `feedback`) and asks again; on approval it runs
+`bin/fzv approve <folder> beats --note "<their words>"` (logged in `edit/approvals.md`), and **`fzv build` refuses to run until the
+current beat sheet is approved** (rule R1).
 
 ## 5. Claude writes the edit; the storyboard, approved by the editor
 
-1. Claude writes `edit/edit.yaml` from the approved beat sheet, beat by beat, then runs `bin/fzv build` and `bin/fzv validate`
+1. Claude writes `edit/edit.yaml` from the beat sheet, beat by beat, then runs `bin/fzv build` and `bin/fzv validate`
    and fixes everything validate reports (instructor overlap, clutter, text-only stretches, overflow, fake output, **V4**: a beat
-   not built with the templates it was approved with…).
+   not built with the templates its row names…).
 2. `bin/fzv storyboard <folder>` takes one frame per beat at its key moment (just after its last sync word), graphics over the real
    footage, in about a minute: `edit/review/storyboard/` and the sheet `edit/out/storyboard.jpg`. Claude checks it first.
 3. The **preview** of the whole edit, per `review.preview`:
@@ -127,10 +128,10 @@ On approval, Claude runs `bin/fzv approve <folder> beats --note "<their words>"`
    on an 8 GB Mac), and a revision re-drafts only the clips it changed.
 4. The review page shows the preview video, then the storyboard as a **grid** (one frame per beat, its time and what it shows; click a frame to see it
    large and write a change for that beat; after rendering the same grid switches to the final video's frames). The editor approves
-   or asks for changes the same way as for the beat sheet. Changed scenes are rebuilt and
+   (**Copy approval for Claude**, or "approved") or writes changes under any frame → **Copy for Claude**. Changed scenes are rebuilt and
    only their frames are taken again (`edit/out/storyboard_changed.jpg`). On approval: `bin/fzv approve <folder> storyboard`.
-   **`fzv render` refuses to run until the storyboard of the current build is approved** (rule R2), and the approval waits for the
-   preview video of that build (`review.preview`; prompt `Review: on, no preview` skips it).
+   Then the preview of that build (`review.preview`: the live preview, or the draft video; prompt `Review: on, no preview` skips it); on
+   approval: `bin/fzv approve <folder> preview`. **`fzv render` refuses to run until both are approved for the current build** (rule R2).
 
 In compose mode Claude also checks the cut-out's edges and, if a desk or laptop travels with the instructor, adds `key:` options and
 re-keys (`bin/fzv ingest <folder> --rekey`).
@@ -168,8 +169,8 @@ On the review page the editor writes a change under a beat, or pauses the final 
 ```
 
 Claude runs `bin/fzv revise <folder> "<requests>"` (beat numbers become the beat's time; each time is mapped to the scenes on
-screen, with what the instructor says there; logged in `edit/revisions.md`), edits only those scenes (and the beat's row; the
-request approves it), rebuilds, takes the changed storyboard frames, asks "render?" (unless the editor already said so), then
+screen, with what the instructor says there; logged in `edit/revisions.md`), edits only those scenes (and the beat's row; with the
+beat-sheet review on, the request approves it), rebuilds, takes the changed storyboard frames, asks "render?" (unless the editor already said so), then
 renders, finishes and verifies. Only changed clips and encode chunks are redone; a one-scene change takes a few minutes. Each
 request's **Status** in `edit/revisions.md` says what changed.
 
@@ -199,8 +200,10 @@ Keep the whole folder: re-runs and revisions reuse its caches.
 | Music level | prompt `Music: <track>, low` / `high`; house default `music.rel_lufs` |
 | Show the screen recording / rebuild it | prompt `Recording: show` (default) / `Recording: reference` (`, exact` = no corrections) |
 | Stricter or looser "show the process" | `visuals.max_text_only_s` in `global/defaults.yaml` |
-| More concept triggers | `global/concepts.yaml` |
-| Skip the approvals for one video (tests) | prompt `Review: off` (`beats` / `storyboard` keeps one; `on, no preview` skips only the preview video); house default `review.*` in `global/defaults.yaml` |
+| More concept triggers, or a new subject | `global/concepts.yaml` |
+| Stricter or looser variety (no animation repeated too often) | `visuals.max_repeat_share` in `global/defaults.yaml` (default 0.2) |
+| Skip the approvals for one video (tests) | prompt `Review: off` (`on, no preview` skips only the preview video); house default `review.*` in `global/defaults.yaml` |
+| Also approve the beat sheet before the build | prompt `Review: beats, storyboard` (`beats` alone: only the beat sheet); house default `review.beats` (`off`) |
 | Live preview in Studio, or a preview video | prompt `Review: on, preview video` for the draft video; house default `review.preview` (`browser`) |
 | Smoother or faster preview video | `review.preview_fps` in `global/defaults.yaml` (default 10) |
 | Music on or off after the fact | review page music switch → **Keep this for the final**, or `bin/fzv mix <folder> off\|on\|<track> --level …` (re-mixes only) |

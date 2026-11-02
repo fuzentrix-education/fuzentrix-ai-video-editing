@@ -1,4 +1,4 @@
-"""`fzv verify`: duration and fps, overlay coverage, frames on both sides of every cut, loudness; a contact sheet."""
+"""`fzv verify`: duration and fps, overlay coverage, frames on both sides of every cut, loudness, the listening check; a contact sheet."""
 from __future__ import annotations
 
 import io
@@ -16,7 +16,7 @@ def grab(path: Path, t: float, w: int = 384) -> Image.Image:
     return Image.open(io.BytesIO(b)).convert("RGB")
 
 
-def verify(proj, final: Path, raw_info: dict, cuts: list[dict], log=print) -> dict:
+def verify(proj, final: Path, raw_info: dict, cuts: list[dict], log=print, settings: dict | None = None) -> dict:
     fi = media.probe(final)
     lo = media.loudness(final)
     pdata = proj.load()
@@ -45,7 +45,10 @@ def verify(proj, final: Path, raw_info: dict, cuts: list[dict], log=print) -> di
         sheet.paste(im, ((i % cols) * (w + 4), (i // cols) * (h + 4)))
     sheet_path = proj.edit / "out" / "verify.jpg"
     sheet.save(sheet_path, quality=85)
-    report = {"ok": all(v["ok"] for v in checks.values()), "checks": checks, "sheet": str(sheet_path), "final": str(final)}
+    if settings is not None:                                 # the listening check (advisory: shown, never fails the video)
+        from .listen import listen
+        checks["sound"] = dict(listen(proj, final, settings, log), advisory=True)
+    report = {"ok": all(v["ok"] for v in checks.values() if not v.get("advisory")), "checks": checks, "sheet": str(sheet_path), "final": str(final)}
     (proj.edit / "verify.json").write_text(json.dumps(report, indent=1))
     log(f"verify: {'OK' if report['ok'] else 'PROBLEMS'}  " + "  ".join(f"{k}={'ok' if v['ok'] else 'FAIL'}" for k, v in checks.items()))
     return report

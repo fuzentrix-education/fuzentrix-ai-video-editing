@@ -13,7 +13,8 @@ from .config import REPO, rules as load_rules
 BLOCKS = {"block", "code", "term", "note"}
 # rule V1/V2: templates that SHOW a process (things move, transform, flow) vs templates that only put words on screen
 TEXT_ONLY = {"header", "title-hero", "card", "definition", "chips", "term-reveal", "rule-stack", "summary", "agenda", "problem", "note",
-             "name-card", "studio-tag", "captions", "contrast", "big-word", "callouts", "checklist", "bug", "scene", "presenter"}
+             "name-card", "studio-tag", "captions", "contrast", "big-word", "callouts", "checklist", "bug", "scene", "presenter",
+             "progress", "chapter"}
 
 
 def text_only_stretches(sec: dict, end_default: float, hidden: list[tuple[float, float]] = ()) -> list[tuple[float, float]]:
@@ -76,7 +77,7 @@ def sample(html: Path, local_times: list[float]) -> dict:
 
 def sample_cached(proj, m: dict, local_times: list[float]) -> dict:
     """DOM samples of a clip, cached by its content hash (a revision re-samples only the clips that changed)."""
-    key = f"{m['id']}_{m.get('hash', 'nohash')}_{len(local_times)}_{local_times[0] if local_times else 0:.2f}.json"
+    key = f"{m['id']}_{m.get('hash', 'nohash')}_{len(local_times)}_{local_times[0] if local_times else 0:.2f}_s2.json"   # s2: samples carry painted boxes
     D = proj.edit / "validate_cache"
     f = D / key
     if m.get("hash") and f.exists():
@@ -96,12 +97,35 @@ def kind_at(cuts: list[dict], t: float) -> str:
     return cuts[-1]["kind"] if cuts else "plate"
 
 
+def overlap_share(a, b) -> float:
+    """Intersection area as a share of the smaller box ([x0, y0, x1, y1])."""
+    w, h = min(a[2], b[2]) - max(a[0], b[0]), min(a[3], b[3]) - max(a[1], b[1])
+    if w <= 0 or h <= 0:
+        return 0.0
+    return w * h / max(1, min((a[2] - a[0]) * (a[3] - a[1]), (b[2] - b[0]) * (b[3] - b[1])))
+
+
+def contains(a, b, pad: int = 4) -> bool:
+    return a[0] - pad <= b[0] and a[1] - pad <= b[1] and a[2] + pad >= b[2] and a[3] + pad >= b[3]
+
+
 def inter(a, b) -> bool:
     return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
 
 
 def box(it):
     return [it["x"], it["y"], it["x"] + it["w"], it["y"] + it["h"]]
+
+
+def background_changes(spec: dict) -> list[tuple[float, str]]:
+    """(time, template) of every scene that replaces the whole background: a dark `scene` or a full-frame `cutaway` (rule L11)."""
+    out = []
+    for sec in spec.get("sections") or []:
+        for s in sec.get("scenes") or []:
+            (name, p), = s.items()
+            if name in ("scene", "cutaway"):
+                out.append((p.get("at") if isinstance(p.get("at"), (int, float)) else (sec.get("range") or [0])[0], name))
+    return out
 
 
 def validate(proj, spec: dict, clips: list[dict], manifest: list[dict], cuts: list[dict], zones: dict, settings: dict, step: float = 0.5, log=print) -> dict:
@@ -161,6 +185,12 @@ def validate(proj, spec: dict, clips: list[dict], manifest: list[dict], cuts: li
             for n in (i for i in items if i["role"] == "note"):
                 if any(inter(box(n), cb) for cb in codes):
                     flag("L6", t, f"note at {box(n)} overlaps a code card or terminal"); break
+            # L12: one block never covers another (text that wraps longer than planned pushes a card into its neighbour)
+            solid = [i["pb"] for i in items if i["role"] in ("block", "code", "term") and i.get("o", 1) > 0.6 and i.get("pb")]   # pb: what it paints
+            for k, b1 in enumerate(solid):
+                hit = next((b2 for b2 in solid[k + 1:] if overlap_share(b1, b2) > 0.04 and not contains(b1, b2) and not contains(b2, b1)), None)
+                if hit:
+                    flag("L12", t, f"block at {b1} overlaps the block at {hit}"); break
             # L8: edges
             for i in blocks:
                 bx = box(i)
@@ -214,6 +244,9 @@ def validate(proj, spec: dict, clips: list[dict], manifest: list[dict], cuts: li
     total_dur = cuts[-1]["end"] if cuts else 1
     if sum(d for _, d in cut_lens) > total_dur * lim["max_total_pct"] / 100:
         flag("L3", 0, f"cutaways total {sum(d for _, d in cut_lens):.1f}s (max {lim['max_total_pct']}% of runtime)")
+    # L11: the background stays the brand plate: no dark scenes or full-frame backdrops unless the prompt asks (overrides: {L11: why})
+    for t, name in background_changes(spec):
+        flag("L11", t, f"`{name}` changes the whole background; keep the brand plate and make the moment big with the graphics instead")
     # L1: nothing that touches the instructor in overlay mode
     if spec.get("mode", "overlay") == "overlay":
         for c in clips:
@@ -250,9 +283,30 @@ def validate(proj, spec: dict, clips: list[dict], manifest: list[dict], cuts: li
             if b - a > max_text:
                 flag("V2", a, f"{b - a:.0f}s of text-only screen in section {sec.get('id')} ({a:.1f}–{b:.1f}s, max {max_text:.0f}s): animate the process being explained")
     # V3 (advice): concept moments without a matching animation
-    from .concepts import covered, moments
+    from .concepts import blocked_templates, covered, is_animation, repeats, video_moments
+    blocked = blocked_templates(settings)
     advice = [{"rule": "V3", "t": m["t"], "msg": f"“{m['phrase']}” is said here; show it with {' / '.join(m['templates'])} ({m['show']})"}
-              for m in moments(proj.p("transcript.jsonl")) if not covered(m, spec)]
+              for m in video_moments(proj, settings) if m["templates"] and not covered(m, spec)]
+    # V5 (advice): variety; the same animation twice in a row, or one animation carrying too much of the video
+    from .plan import catalogue
+    from .spec import scene_span
+    fam = {n: m.get("family") for n, m in catalogue().items()}
+    seq = []
+    for sec in spec.get("sections") or []:
+        for s in sec.get("scenes") or []:
+            (name, p), = s.items()
+            key = f"hf:{p.get('item')}" if name == "hf" and isinstance(p, dict) else name
+            at, _ = scene_span(p, sec["range"][1])
+            if at is not None and is_animation(key, fam):
+                seq.append((at, key, f"{at:.1f}s"))
+    advice += [{"rule": "V5", "t": t, "msg": msg} for t, msg in repeats(sorted(seq), vis_cfg.get("max_repeat_share", 0.2))]
+    # S1: on-request styles (3D, sketch) only when the prompt asks for them
+    for sec in (spec.get("sections") or []) + [{"scenes": spec.get("studio") or []}]:
+        for s in sec.get("scenes") or []:
+            (name, p), = s.items()
+            if name in blocked:
+                flag("S1", p.get("at") if isinstance(p, dict) and isinstance(p.get("at"), (int, float)) else 0,
+                     f"{name} is used only when the prompt asks for its style (3D, sketch); swap it for a 2D template or add the request to the prompt")
     # V4: every beat of the beat sheet is built as approved (design §9f)
     if proj.p("beats.yaml").exists():
         from . import beats as B
@@ -284,8 +338,10 @@ def validate(proj, spec: dict, clips: list[dict], manifest: list[dict], cuts: li
     log(f"validate: {'OK' if not out else str(len(out)) + ' problem(s)'}; {len(sfx)} SFX cues")
     for p in out[:40]:
         log(f"  [{p['rule']}] {p['t']:.2f}s  {p['msg']}")
-    if advice:
-        log(f"validate: {len(advice)} concept moment(s) without a matching animation (advice, rule V3):")
-        for p in advice[:20]:
-            log(f"  [V3] {p['t']:.2f}s  {p['msg']}")
+    for rule, what in (("V3", "concept moment(s) without a matching animation"), ("V5", "variety note(s): an animation repeated")):
+        adv = [p for p in advice if p["rule"] == rule]
+        if adv:
+            log(f"validate: {len(adv)} {what} (advice, rule {rule}):")
+            for p in adv[:20]:
+                log(f"  [{rule}] {p['t']:.2f}s  {p['msg']}")
     return report

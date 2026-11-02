@@ -63,7 +63,7 @@ class Project:
         """Simple `Key: value` lines from prompt.md (Brand, Style, Subtitles, Music, Mode, Recording, Title)."""
         out = {}
         for ln in self.prompt().splitlines():
-            m = re.match(r"^\s*(?:screen[\s-]+)?(brand|style|subtitles|music|sfx|mode|title|recordings?|presenter box|instructor box|review)\s*:\s*(.+?)\s*(#.*)?$", ln, re.I)
+            m = re.match(r"^\s*(?:screen[\s-]+)?(brand|style|subtitles|music|sfx|voice|mode|title|recordings?|presenter box|instructor box|review|logo|progress bar|chapters)\s*:\s*(.+?)\s*(#.*)?$", ln, re.I)
             if m:
                 out[m.group(1).lower().rstrip("s") if m.group(1).lower().startswith("record") else m.group(1).lower()] = m.group(2).strip()
         t = re.search(r"^#\s+(.+)$", self.prompt(), re.M)
@@ -76,8 +76,6 @@ class Project:
         d = defaults()
         f = self.prompt_fields()
         over = {}
-        if "brand" in f:
-            over["brand"] = f["brand"].split()[0].lower()
         if "mode" in f:
             over["mode"] = f["mode"].split()[0].lower()
         if "subtitles" in f:
@@ -94,6 +92,11 @@ class Project:
                     over["music"]["rel_lufs"] = -22
                 elif "high" in v or "loud" in v:
                     over["music"]["rel_lufs"] = -14
+        for key, field in (("progress", "progress bar"), ("chapters", "chapters")):   # "Progress bar: off", "Chapters: off"
+            if field in f:
+                over.setdefault("chrome", {})[key] = not re.search(r"\b(off|no|none|hide)\b", f[field].lower())
+        if "voice" in f:                                       # "Voice: untouched" / "raw" / "off": no cleanup chain
+            over["voice"] = {"cleanup": not re.search(r"untouched|raw|off|none|as is", f["voice"].lower())}
         if "sfx" in f:
             v = f["sfx"].lower()
             over["sfx"] = {"enabled": not v.startswith(("off", "no", "none"))}
@@ -101,23 +104,28 @@ class Project:
                 over["sfx"]["minor"] = False
             if "library" in v and "only" in v:
                 over["sfx"]["fallback"] = "none"
+        txt = self.prompt().lower()                             # on-request styles: only when the prompt asks for them
+        over["styles"] = {"requested": [fam for fam, pat in (("3d", r"\b3-?d\b"), ("sketch", r"\bsketch")) if re.search(pat, txt)]}
+        if "logo" in f:                                         # off by default (added after the render); "Logo: on" burns it in top right
+            over["bug"] = {"layers": [] if f["logo"].lower().startswith(("off", "no", "none")) else ["plate", "studio"]}
         pb = f.get("presenter box") or f.get("instructor box")
         if pb:
             over["presenter"] = {"corner_box": not any(w in pb.lower() for w in ("off", "no", "none", "false"))}
-        if "review" in f:                                       # Review: on | off | beats (beat sheet only) | storyboard (storyboard only)
+        if "review" in f:          # Review: on (storyboard + preview) | off | beats, storyboard (both) | beats (beat sheet only)
             v = f["review"].lower()
-            if "no preview" in v or "preview off" in v:                 # e.g. "Review: on, no preview"
-                over["review"] = {"preview": "off"}
-            elif "preview video" in v or "video preview" in v:          # e.g. "Review: on, preview video"
-                over["review"] = {"preview": "video"}
-            elif v.startswith(("off", "no", "none", "skip")):
+            both = ("beat" in v and "storyboard" in v) or any(w in v for w in ("both", "full", "all"))
+            if v.startswith(("off", "no", "none", "skip")):
                 over["review"] = {"beats": "off", "storyboard": "off", "preview": "off"}
-            elif "beat" in v and "storyboard" not in v:
-                over["review"] = {"beats": "required", "storyboard": "off", "preview": "off"}
-            elif "storyboard" in v and "beat" not in v:
-                over["review"] = {"beats": "off", "storyboard": "required", "preview": "browser"}
-            else:
+            elif both:
                 over["review"] = {"beats": "required", "storyboard": "required", "preview": "browser"}
+            elif "beat" in v:
+                over["review"] = {"beats": "required", "storyboard": "off", "preview": "off"}
+            else:                                                       # "on" / "storyboard": the storyboard is the one approval
+                over["review"] = {"beats": "off", "storyboard": "required", "preview": "browser"}
+            if "no preview" in v or "preview off" in v:                 # e.g. "Review: on, no preview"
+                over["review"]["preview"] = "off"
+            elif "preview video" in v or "video preview" in v:          # e.g. "Review: on, preview video"
+                over["review"]["preview"] = "video"
         rec = f.get("recording") or f.get("recordings")
         if rec:
             v = rec.lower()

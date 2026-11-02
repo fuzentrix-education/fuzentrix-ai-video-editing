@@ -13,21 +13,37 @@ def write_tx(tmp_path, words):
     return f
 
 
-# ---------- brand kits ----------
-@pytest.mark.parametrize("bid", config.brand_ids())
-def test_brand_merges_house_and_makes_css(bid):
-    b = config.load_brand(bid)
-    assert b["fonts"]["display"]["family"] == "Outfit"            # from the shared house style
+# ---------- brand kit ----------
+def test_one_brand_kit_makes_css():
+    assert config.brand_ids() == ["career-orbit"]
+    b = config.load_brand("fuzentrix")                              # older prompts may still name a brand: the one kit loads
+    assert b["id"] == "career-orbit" and b["fonts"]["display"]["family"] == "Bricolage Grotesque"
     v = config.css_vars(b)
-    for k in ("text", "accent", "emph", "highlight", "code-bg1", "grad", "font-mono"):
+    for k in ("text", "accent", "emph", "highlight", "code-bg1", "grad", "font-mono", "success-soft", "danger-soft", "dark-success"):
         assert v[k]
     css = config.brand_css(b)
     assert "@font-face" in css and "--fz-text:" in css
+    assert 'font-family: "Inter"; src: url("fonts/manrope-' in css     # registry items asking for Inter get the kit's body font
+    for fam in ("bricolage-grotesque", "manrope", "jetbrains-mono"):
+        assert list((config.BRANDS / "fonts").glob(f"{fam}-latin-*-normal.woff2"))
 
 
-def test_career_orbit_merged_palette():
-    v = config.css_vars(config.load_brand("career-orbit"))
-    assert v["text"].upper() == "#0D274C" and v["accent"].upper() == "#16BBC8" and v["action"].upper() == "#1B53A2"
+def test_lms_palette_and_colour_budget():
+    v = config.css_vars(config.load_brand())
+    assert v["text"].upper() == "#102A56" and v["accent"].upper() == "#2563EB" and v["action"].upper() == "#1D4ED8"
+    assert v["purple"] == v["accent"]                                 # no extra hues: retired colours fold into the brand blue
+    hues = {v[k].upper() for k in ("accent", "action", "emph", "emph2", "icon", "label")}
+    assert hues <= {"#2563EB", "#1D4ED8"}                             # one brand colour (and its text-safe shade)
+
+
+def test_backdrop_renders_dotted(tmp_path):
+    from PIL import Image
+    out = config.render_backdrop(config.load_brand(), tmp_path / "bd.png")
+    im = np.asarray(Image.open(out).convert("RGB"), np.int16)
+    assert im.shape == (1080, 1920, 3)
+    row = im[540, 900:1100, 0]
+    assert row.max() - row.min() >= 12                                # the dot grid shows
+    assert abs(int(im[540, 960, 1]) - 0xF7) <= 12                     # pale base
 
 
 # ---------- anchors ----------
@@ -63,6 +79,8 @@ def test_plan_clips_assigns_studio_scenes_and_bug():
     plate = [c for c in clips if c["layer"] == "plate"][0]
     studio = [c for c in clips if c["layer"] == "studio"][0]
     assert plate["scenes"][0]["template"] == "bug"
+    res["sections"][0]["scenes"].append({"bug": {"at": 2}})          # a spec that places the logo itself: the setting still wins
+    assert not any(x["template"] == "bug" for c in spec.plan_clips(res, cuts, 25, []) for x in c["scenes"])
     assert studio["has_content"] and studio["start"] == 11.96 and studio["end"] == 15.0
 
 
@@ -115,7 +133,7 @@ def test_recording_content_area():
     bars[40:230, 60:420] = ui[40:230, 60:420]
     x, y, w, h = align.crop_from_frame(bars, 1920, 1080)                                     # window on a plain desktop
     assert abs(x - 240) <= 6 and abs(y - 160) <= 6 and abs(w - 1440) <= 12 and abs(h - 760) <= 12
-    plate = next(config.BRANDS.glob("*/plate/*.png"))
+    plate = config.editor_plates()[0]
     comp = np.asarray(Image.open(plate).convert("RGB").resize((480, 270)), np.uint8).copy()
     comp[76:234] = 243                                                                       # IDE band composited on the brand plate
     comp[100:104, 20:200] = 40
@@ -175,8 +193,8 @@ def test_recref_settled_states_ignore_caret():
 # ---------- third-party assets ----------
 def test_recolor_and_licences():
     from fzv import assets
-    svg, m = assets.recolor('<svg viewBox="0 0 10 10"><path fill="#1E5AA8"/><path fill="#F7F7F7"/><path fill="black"/><path style="fill:#E5A882"/><path fill="#F92F60"/></svg>')
-    assert m["#1E5AA8"] == "var(--fz-action)" and m["#F7F7F7"] == "#FFFFFF" and m["#000000"] == "#2B2F3A"
+    svg, m = assets.recolor('<svg viewBox="0 0 10 10"><path fill="#2463E0"/><path fill="#F7F7F7"/><path fill="black"/><path style="fill:#E5A882"/><path fill="#F92F60"/></svg>')
+    assert m["#2463E0"] in ("var(--fz-action)", "var(--fz-accent)") and m["#F7F7F7"] == "#FFFFFF" and m["#000000"] == "#2B2F3A"
     assert m["#E5A882"] in assets.SKIN and m["#F92F60"] == "var(--fz-danger)"
     assert assets.clean_svg('<?xml version="1.0"?><svg width="32" height="16"><g/></svg>') == '<svg viewBox="0 0 32 16"><g/></svg>'
     assert assets.licence_problem("CC BY-NC 4.0") and assets.licence_problem("free for personal use") and assets.licence_problem("")
@@ -335,6 +353,7 @@ def test_beats_check_states_and_gates(tmp_path):
     proj = Project(tmp_path)
     proj.save({"raw": "r.mp4", "duration": 20.0})
     (proj.edit / "transcript.jsonl").write_text(tx_f.read_text())
+    (tmp_path / "prompt.md").write_text("# T\nReview: beats, storyboard\n")      # the beat-sheet approval is opt-in
     doc = {"beats": [{"id": "b01", "start": 0, "end": 10, "idea": "", "show": "", "templates": [], "sync": []},
                      {"id": "b02", "start": 10, "end": 20, "idea": "stored", "show": "rows land", "templates": ["data-flow", "nope"], "sync": ["@zebra"]}]}
     B.write(proj.p("beats.yaml"), doc)
@@ -357,15 +376,53 @@ def test_beats_check_states_and_gates(tmp_path):
     assert B.gate_render(proj, proj.settings())                                # no storyboard yet
     (tmp_path / "prompt.md").write_text("# T\nReview: off\n")
     assert B.gate_build(proj, proj.settings()) is None and B.gate_render(proj, proj.settings()) is None
+    (tmp_path / "prompt.md").write_text("# T\n")                                # default: no beat-sheet gate, the storyboard still gates render
+    assert B.beats_state(proj) == "changed" and B.gate_build(proj, proj.settings()) is None
+    assert "storyboard" in B.gate_render(proj, proj.settings())
 
 
 def test_legacy_edit_without_beats_skips_gates(tmp_path):
     from fzv import beats as B
     from fzv.project import Project
     proj = Project(tmp_path)
-    assert B.gate_build(proj, proj.settings())                                # a new edit needs its beat sheet
+    (tmp_path / "prompt.md").write_text("# T\nReview: beats, storyboard\n")
+    assert B.gate_build(proj, proj.settings())                                # a new edit with the beat-sheet gate needs its beat sheet
     (proj.edit / "built" / "clips.json").write_text("[]")
     assert B.legacy(proj) and B.gate_build(proj, proj.settings()) is None and B.gate_render(proj, proj.settings()) is None
+
+
+def test_review_page_skips_the_beat_sheet_step_by_default():
+    from fzv.review import next_step
+    st = {"beats": "proposed", "storyboard": "missing", "preview": "missing", "preview_on": True, "preview_mode": "browser"}
+    msg, approve = next_step(dict(st, beats_gate="off"), False, False)
+    assert approve is None and "storyboard" in msg and "Beat sheet approved" not in msg
+    assert next_step(dict(st, beats_gate="required"), False, False)[1] == "beats"
+    assert next_step(dict(st, beats_gate="off", storyboard="ready"), False, False)[1] == "storyboard"
+
+
+def test_live_preview_needs_a_current_mix(tmp_path):
+    import os, time as _t
+    from fzv.project import Project
+    from fzv.studio import sound_stale
+    proj = Project(tmp_path)
+    (tmp_path / "prompt.md").write_text("# T\n")                                 # no music: the preview plays mix.wav
+    assert not sound_stale(proj)                                                  # nothing validated yet: nothing to mix
+    A = proj.edit / "audio"; A.mkdir(exist_ok=True)
+    (A / "cues.json").write_text("[]")
+    assert sound_stale(proj)                                                      # cues but no mix: the preview would be silent
+    (A / "mix.wav").write_bytes(b"x")
+    later = _t.time() + 5; os.utime(A / "mix.wav", (later, later))
+    assert not sound_stale(proj)
+    (tmp_path / "prompt.md").write_text("# T\nMusic: calm-piano\n")               # with music the stems are what it plays
+    assert sound_stale(proj)
+
+
+def test_l11_background_never_changes():
+    from fzv.validate import background_changes
+    spec = {"sections": [{"id": "a", "range": [0, 20], "scenes": [{"scene": {"kind": "dark", "at": 3.0, "until": 9.0}}, {"card": {"text": "x", "at": 1}}]},
+                         {"id": "b", "range": [20, 40], "scenes": [{"cutaway": {"at": "@word", "until": 30}}]}]}
+    assert background_changes(spec) == [(3.0, "scene"), (20, "cutaway")]
+    assert background_changes({"sections": [{"id": "c", "range": [0, 5], "scenes": [{"card": {"text": "y"}}]}]}) == []
 
 
 def test_beat_refs_become_times():
@@ -379,13 +436,19 @@ def test_beat_refs_become_times():
 def test_prompt_review_field(tmp_path):
     from fzv.project import Project
     r = Project(tmp_path).settings()["review"]
-    assert (r["beats"], r["storyboard"], r["preview"], r["preview_fps"]) == ("required", "required", "browser", 10)
+    assert (r["beats"], r["storyboard"], r["preview"], r["preview_fps"]) == ("off", "required", "browser", 10)   # storyboard: the one approval
+    (tmp_path / "prompt.md").write_text("# T\nReview: on\n")
+    r = Project(tmp_path).settings()["review"]
+    assert (r["beats"], r["storyboard"], r["preview"]) == ("off", "required", "browser")
+    (tmp_path / "prompt.md").write_text("# T\nReview: beats, storyboard\n")
+    r = Project(tmp_path).settings()["review"]
+    assert (r["beats"], r["storyboard"], r["preview"]) == ("required", "required", "browser")
     (tmp_path / "prompt.md").write_text("# T\nReview: beats only\n")
     r = Project(tmp_path).settings()["review"]
     assert (r["beats"], r["storyboard"], r["preview"]) == ("required", "off", "off")
     (tmp_path / "prompt.md").write_text("# T\nReview: on, no preview\n")
     r = Project(tmp_path).settings()["review"]
-    assert (r["beats"], r["storyboard"], r["preview"]) == ("required", "required", "off")
+    assert (r["beats"], r["storyboard"], r["preview"]) == ("off", "required", "off")
     (tmp_path / "prompt.md").write_text("# T\nReview: on, preview video\n")
     assert Project(tmp_path).settings()["review"]["preview"] == "video"
 
@@ -440,3 +503,161 @@ def test_studio_subcomposition_and_registry_hoist():
     assert "<symbol" not in sub and 'id="fz-presenter-video-fz-s1"' in sub              # icons live in the root; media ids unique
     assert len(hosts) == 1 and 'id="fz-s1-hf0-count-up"' in hosts[0] and 'data-start="21.500"' in hosts[0]
     assert '"_host":"fz-s1-hf0-count-up"' in sub and "hf0-count-up\" class" not in sub
+
+
+def test_3d_only_when_the_prompt_asks(tmp_path):
+    from fzv import beats as B
+    from fzv.anchors import Transcript
+    from fzv.concepts import blocked_templates
+    from fzv.project import Project
+    off = Project(tmp_path).settings()
+    assert {"db3d", "network3d", "loop3d"} <= blocked_templates(off) and "data-flow" not in blocked_templates(off)
+    (tmp_path / "prompt.md").write_text("# T\nUse 3D animations for the database part.\n")
+    assert not {"db3d", "network3d", "loop3d"} & blocked_templates(Project(tmp_path).settings())
+    doc = {"beats": [{"id": "b01", "start": 0, "end": 10, "idea": "x", "show": "y", "templates": ["db3d"], "sync": [1.0]}]}
+    errs, _, _ = B.check(doc, Transcript(None), 10.0, {"db3d"}, set(), [], set(), blocked={"db3d"})
+    assert any("only when the prompt asks" in e for e in errs)
+
+
+# ---------- concept collection and variety (rules V3, V5) ----------
+def test_concept_collection_is_consistent():
+    from fzv import concepts as C
+    assert C.lint() == []
+    ids = {c["id"] for c in C.lexicon()}
+    assert len(ids) > 400 and {"type-conversion", "use-effect", "endpoint", "joins", "gradient-descent", "ctr", "time-work", "resume"} <= ids
+
+
+def test_concept_matching_plurals_punctuation_and_longest_phrase(tmp_path):
+    from fzv import concepts as C
+    tx = write_tx(tmp_path, [("We", 0.0), ("build", 0.5), ("functional", 1.0), ("Components.", 1.5), ("Type", 5.0), ("conversion,", 5.5),
+                             ("then", 6.0), ("create,", 7.0), ("retrieve", 7.5), ("and", 8.0), ("the", 8.5), ("conversion", 9.0), ("rate", 9.5)])
+    ms = {m["id"]: m for m in C.moments(tx)}
+    assert ms["components"]["t"] == 1.0                                   # "functional component" matches "functional Components."
+    assert ms["type-conversion"]["t"] == 5.0                              # the longer phrase wins over any shorter one inside it
+    assert ms["crud"]["t"] == 7.0                                         # a comma between the words doesn't matter
+    assert ms["conversion"]["t"] == 9.0                                   # marketing's concept needs "conversion rate", never a bare "conversion"
+
+
+def test_vary_rotates_a_returning_concept_and_avoids_recent_leads():
+    from fzv.concepts import vary
+    m = lambda cid, ts: {"id": cid, "templates": ts}
+    ins = [m("a", ["x", "y", "z"]), m("b", ["x", "w"]), m("a", ["x", "y", "z"]), m("a", ["x", "y", "z"])]
+    out = vary(ins)
+    leads = [o["templates"][0] for o in out]
+    assert leads[0] == "x" and leads[1] == "w"                            # b's best choice was just used: its next one leads
+    assert leads[2] == "y" and leads[3] == "z"                            # a returns: its next template each time
+    assert all(sorted(o["templates"]) == sorted(i["templates"]) for o, i in zip(out, ins))   # reordered, never dropped
+
+
+def test_repeats_flags_back_to_back_and_overuse():
+    from fzv import beats as B
+    from fzv.concepts import is_animation, repeats
+    from fzv.plan import catalogue
+    fam = {n: v.get("family") for n, v in catalogue().items()}
+    assert is_animation("callouts", fam) and is_animation("hf:chart-story", fam) and not is_animation("code-card", fam) and not is_animation("header", fam)
+    seq = [(0, "callouts", "a"), (5, "callouts", "b"), (9, "bars", "c")]
+    assert [t for t, _ in repeats(seq)] == [5]
+    many = [(i, "range-gen" if i % 2 else f"t{i}", str(i)) for i in range(10)]
+    assert any("is 5 of the 10 animations" in msg for _, msg in repeats(many))
+    doc = {"beats": [{"id": "b01", "start": 0, "end": 9, "templates": ["header", "callouts"]},
+                     {"id": "b02", "start": 9, "end": 20, "templates": ["callouts", "code-card"]},
+                     {"id": "b03", "start": 20, "end": 30, "templates": ["code-card", "data-flow"]}]}
+    w = B.variety(doc, fam)
+    assert len(w) == 1 and w[0].startswith("b02: callouts again right after b01")
+
+
+# ---------- chrome, new animations, sound (2026-11-02) ----------
+def test_chapters_and_chrome_in_every_clip():
+    sp = {"title": "Tuples in Python", "sections": [
+        {"id": "intro", "range": [0, 10], "scenes": []},
+        {"id": "a", "range": [10, 20], "chapter": "Basics", "scenes": []},
+        {"id": "b", "range": [20, 30], "chapter": "Basics", "scenes": []},
+        {"id": "c", "range": [30, 40], "chapter": "Indexing", "scenes": []}]}
+    assert [c[2:] for c in spec.chapters(sp)] == [(1, "Basics"), (1, "Basics"), (2, "Indexing")]
+    clips = spec.plan_clips(sp, [{"kind": "studio", "start": 22, "end": 24}], 25, ["plate", "studio"], {"progress": True, "chapters": True}, 40)
+    by = {c["id"]: [s["template"] for s in c["scenes"]] for c in clips}
+    assert by["intro"][:1] == ["progress"] and "chapter" not in by["intro"]            # the intro carries no chapter
+    assert by["a"][:2] == ["progress", "chapter"] and by["st00"][:2] == ["progress", "chapter"]
+    ch = next(s for s in clips[3]["scenes"] if s["template"] == "chapter")["params"]
+    assert ch["n"] == 2 and ch["prev"] == {"n": 1, "name": "Basics"} and ch["lesson"] == "Tuples in Python"   # slides from chapter 1
+    off = spec.plan_clips(sp, [], 25, [], {"progress": False, "chapters": False}, 40)
+    assert all(not c["scenes"] for c in off)
+
+
+def test_new_prompt_fields(tmp_path):
+    from fzv.project import Project
+    (tmp_path / "prompt.md").write_text("# T\nVoice: untouched\nChapters: off\nProgress bar: on\n")
+    st = Project(tmp_path).settings()
+    assert st["voice"]["cleanup"] is False and st["chrome"]["chapters"] is False and st["chrome"]["progress"] is True
+    (tmp_path / "prompt.md").write_text("# T\n")
+    st = Project(tmp_path).settings()
+    assert st["voice"]["cleanup"] is True and st["chrome"] == {"progress": False, "chapters": True}   # no progress bar by default
+    assert st["bug"]["layers"] == []                                   # no logo burned in: added after the render
+    (tmp_path / "prompt.md").write_text("# T\nLogo: on\n")
+    assert Project(tmp_path).settings()["bug"]["layers"] == ["plate", "studio"]
+
+
+def test_sfx_levels_under_the_voice(tmp_path):
+    from fzv import audio
+    assert all(18 <= v <= 26 for v in audio.UNDER.values()) and set(audio.UNDER) >= set(audio.KINDS)
+    out = audio.synth_sfx([("ding", 1.0), ("pop", 3.0)], 5.0, tmp_path / "s.wav", voice_lufs=-18.0, cfg={"fallback": "synth", "minor_gap_s": 0})
+    import wave
+    with wave.open(str(out)) as w:
+        x = np.frombuffer(w.readframes(w.getnframes()), np.int16).reshape(-1, 2)[:, 0].astype(float) / 32767
+    def loudest(t0):
+        seg = x[int(t0 * 48000): int((t0 + 1) * 48000)]
+        return 10 * np.log10(np.convolve(seg ** 2, np.ones(4800) / 4800, "valid").max())
+    assert abs((-18.0 - loudest(1.0)) - audio.UNDER["ding"]) < 3 and abs((-18.0 - loudest(3.0)) - audio.UNDER["pop"]) < 3
+    assert audio.SPEECH_DIP < 1 and (audio.GLOBAL / "audio" / "sh.rnnn").exists()
+
+
+def test_storyboard_then_preview_then_render(tmp_path, monkeypatch):
+    """Two approvals before the render: the storyboard first, then the preview of the same build (2026-11-02)."""
+    import json as _j
+    from fzv import beats as B
+    from fzv.project import Project
+    from fzv.review import next_step
+    proj = Project(tmp_path)
+    proj.save({"raw": "r.mp4", "duration": 20.0})
+    (tmp_path / "prompt.md").write_text("# T\n")
+    B.write(proj.p("beats.yaml"), {"beats": [{"id": "b01", "start": 0, "end": 20, "idea": "x", "show": "y", "templates": ["card"], "sync": []}]})
+    (proj.edit / "built" / "clips.json").write_text(_j.dumps([{"id": "s1", "hash": "abc"}]))
+    sig = B.build_signature(proj)
+    (proj.edit / "review").mkdir(parents=True, exist_ok=True)
+    (proj.edit / "review" / "storyboard.json").write_text(_j.dumps({"build": sig}))
+    st = proj.settings()
+    assert B.storyboard_state(proj) == "ready" and B.preview_approval_state(proj, st) == "waiting"
+    assert "storyboard" in B.gate_render(proj, st)
+    B.record_approval(proj, "storyboard", sig, "frames ok")
+    made = {"v": False}
+    monkeypatch.setattr(B, "preview_made", lambda p, s: made["v"])
+    assert B.preview_approval_state(proj, st) == "missing" and "preview" in B.gate_render(proj, st)
+    made["v"] = True
+    assert B.preview_approval_state(proj, st) == "ready" and "preview" in B.gate_render(proj, st)
+    page = {"beats": "approved", "storyboard": "approved", "preview_on": True, "preview_mode": "browser", "beats_gate": "off"}
+    assert next_step(dict(page, preview_approval="ready"), False, False)[1] == "preview"
+    assert next_step(dict(page, storyboard="ready", preview_approval="waiting"), False, False)[1] == "storyboard"
+    B.record_approval(proj, "preview", sig, "render it")
+    assert B.preview_approval_state(proj, st) == "approved" and B.gate_render(proj, st) is None
+    (proj.edit / "built" / "clips.json").write_text(_j.dumps([{"id": "s1", "hash": "changed"}]))   # a change: both approvals again
+    assert B.storyboard_state(proj) == "stale" and B.gate_render(proj, st)
+
+
+def test_listening_check_notes():
+    """The listening check flags buried / too-loud effects, clipping, noise and music balance in plain words (advisory)."""
+    from fzv import listen
+    sr = listen.SR
+    t = np.arange(sr * 4) / sr
+    voice = 0.3 * np.sin(2 * np.pi * 220 * t) * (np.sin(2 * np.pi * 2 * t) > -0.2)       # speaking most of the time
+    sfx = np.zeros_like(voice)
+    for k, t0 in enumerate((0.5, 1.5, 2.5)):
+        a = int(t0 * sr); sfx[a:a + 1600] = (0.0003 if k < 2 else 0.25) * np.sin(2 * np.pi * 1500 * t[:1600])
+    fx = listen.effect_levels(voice, sfx, [("pop", 0.5), ("pop", 1.5), ("ding", 2.5)])
+    m = {"effects": 3, "buried": [f for f in fx if f["speaking"] and f["local_db"] < -32], "too_loud": [f for f in fx if f["overall_db"] > -12],
+         "voice_to_noise_db": 20.0, "music_under_voice_db": 8.0}
+    notes = listen.notes_from(dict(m, clipping={"runs": 2, "times": [61.0]}, true_peak_dbtp=-0.2))
+    text = " ".join(notes)
+    for want in ("buried", "too loud", "clips", "Background noise", "music is too close"):
+        assert want in text, want
+    assert listen.notes_from({"effects": 3, "buried": [], "too_loud": [], "voice_to_noise_db": 34, "music_under_voice_db": 20,
+                              "clipping": {"runs": 0, "times": []}, "true_peak_dbtp": -1.0}) == []

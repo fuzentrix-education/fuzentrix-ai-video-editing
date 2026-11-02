@@ -5,6 +5,7 @@
   "description": "Node side of fzv: HyperFrames renderer (pinned) and headless-Chrome helpers",
   "devDependencies": {
     "hyperframes": "0.8.162",
-    "puppeteer-core": "^24.0.0"
+    "puppeteer-core": "^24.0.0",
+    "three": "0.158.0"
   }
 }

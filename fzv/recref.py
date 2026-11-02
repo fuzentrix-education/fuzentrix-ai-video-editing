@@ -97,7 +97,7 @@ def build(rec: Path, r: dict, out_dir: Path, fps: float = 2.0, max_frames: int =
 def contact_sheets(out_dir: Path, keys: list[dict], cols: int = 2, rows: int = 4, tile_w: int = 900) -> list[str]:
     names = []
     try:
-        font = ImageFont.truetype(str(Path(__file__).resolve().parents[1] / "global/brand/_shared/fonts/jetbrains-mono-latin-700-normal.woff2"), 22)
+        font = ImageFont.truetype(str(Path(__file__).resolve().parents[1] / "global/brand/fonts/jetbrains-mono-latin-700-normal.woff2"), 22)
     except OSError:
         font = ImageFont.load_default()
     per = cols * rows

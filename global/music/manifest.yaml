@@ -13,3 +13,33 @@ tracks:
   duration: 265.8
   source: https://commons.wikimedia.org/wiki/File:Bach-Siloti,_Prelude_in_B_minor_(J._S._Bach,_arranged_Siloti),_arrangement_of_Prelude_in_E_minor_BWV_855a.ogg
   licence: CC0 1.0 (Felipe Sarro)
+- id: lofi-calm-001
+  mood: calm
+  file: lofi-calm-001.m4a
+  duration: 166.2
+  source: https://commons.wikimedia.org/wiki/File:Lofi_music_001.wav
+  licence: CC0 1.0 (Luisalvaz, own work)
+- id: softly-lofi
+  mood: focus
+  file: softly-lofi.m4a
+  duration: 261.6
+  source: https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_06_-_Softly.ogg
+  licence: CC0 1.0 (Loyalty Freak Music)
+- id: love-they-lofi
+  mood: focus
+  file: love-they-lofi.m4a
+  duration: 278.5
+  source: https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_05_-_Love_They.ogg
+  licence: CC0 1.0 (Loyalty Freak Music)
+- id: tuples-lofi-bed
+  mood: calm
+  file: tuples-lofi-bed.m4a
+  duration: 535.6
+  source: 'Bed for videos/ai-testing: lofi-calm-001 (0-2:19), love-they-lofi (2:19-6:35), old-saga-lofi (6:35-end), 4 s crossfades; tracks picked with earshot (calm, instrumental); sources listed under those ids'
+  licence: CC0 1.0 (Luisalvaz; Loyalty Freak Music)
+- id: old-saga-lofi
+  mood: calm
+  file: old-saga-lofi.m4a
+  duration: 150.3
+  source: https://commons.wikimedia.org/wiki/File:Loyalty_Freak_Music_-_02_-_Old_Saga.ogg
+  licence: CC0 1.0 (Loyalty Freak Music)

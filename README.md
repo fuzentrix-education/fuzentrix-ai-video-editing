@@ -3,11 +3,11 @@
 `fzv` turns an instructor's video into a finished, on-brand teaching video with motion graphics: titles, code cards that type
 along with the instructor, the program's real output, diagrams, props and characters, sound effects and (if asked) music.
 
-- **Global files** define what every video gets: brand kits, rules, style families, templates, icons, props, characters and music.
+- **Global files** define what every video gets: the brand kit, rules, style families, templates, icons, props, characters and music.
 - **A prompt per video** steers or overrides any of those defaults for that video.
 - **Editors chat, Claude edits.** Video editors work in Claude Code in VS Code (`/edit-video`, `/change`, `/review`, `/approve`);
-  Claude runs every `fzv` step. They approve a **beat sheet** (what each idea shows, on which words) and a **storyboard** (one frame
-  per beat over the real footage) on a local review page before the slow render.
+  Claude runs every `fzv` step. Claude plans a **beat sheet** (what each idea shows, on which words) and the editor approves the
+  **storyboard** (one frame per beat over the real footage, plus a live preview with the sound) on a local review page before the slow render.
 - **Fixes after delivery** are made by beat or time ("beat 7: use a car", "7:41 make the note larger"); only the changed parts are redone.
 - **Claude writes the edit.** `fzv` prepares a plan brief and a draft beat sheet from the video; Claude (following [CLAUDE.md](CLAUDE.md))
   fills the beat sheet and writes the edit spec from it; `fzv` checks it against the rules, renders it and delivers the final MP4.
@@ -29,7 +29,7 @@ test on real videos (an overlay rough cut and a green-screen take) is in [docs/t
 6. [Code and program output](#6-code-and-program-output)
 7. [House rules](#7-house-rules)
 8. [Styles and templates](#8-styles-and-templates)
-9. [Brand kits](#9-brand-kits)
+9. [Brand kit](#9-brand-kit)
 10. [Icons, props, characters, music and SFX](#10-icons-props-characters-and-music)
 11. [Revising a delivered video](#11-revising-a-delivered-video)
 12. [Command reference](#12-command-reference)
@@ -48,10 +48,9 @@ bin/setup
 
 # per video: a folder with the raw cut (and any screen recording)
 bin/fzv edit "videos/loop-control" --prompt "# Loop Control Statements
-Brand: career-orbit
 - Make the three example programs the highlight."
 # -> stops after writing edit/plan_brief.md and a draft edit/beats.yaml
-# -> Claude fills the beat sheet; the editor approves it on edit/review/index.html  (bin/fzv approve … beats)
+# -> Claude fills the beat sheet and goes on to the storyboard; the editor approves that on edit/review/index.html  (bin/fzv approve … storyboard)
 # -> Claude writes edit/edit.yaml; build, validate, storyboard, preview video; the editor approves  (bin/fzv approve … storyboard)
 bin/fzv edit "videos/loop-control"
 # -> videos/loop-control/Loop Control Statements - Edited.mp4, edit/out/verify.jpg and the review page
@@ -74,7 +73,7 @@ bin/setup
 2. creates the Python environment and installs fzv (mlx-whisper on Apple Silicon, faster-whisper elsewhere);
 3. installs HyperFrames and downloads its headless Chrome;
 4. downloads the transcription model once (about 1.6 GB);
-5. checks the shared library that ships with the repo (templates, registry animations, icons, props, music, sound effects, brand kits);
+5. checks the shared library that ships with the repo (templates, registry animations, icons, props, music, sound effects, the brand kit);
 6. runs `fzv doctor` (workers, transcription backend, encoder) and the tests.
 
 **Nothing is downloaded per video.** Every template, animation, icon, prop, character, music track and sound effect lives in
@@ -113,11 +112,11 @@ videos/loop-control/
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **ingest**   | Picks the raw cut and recordings. Extracts audio. Transcribes (Telugu + English speech, English-mode Whisper with word timestamps). Finds every shot change to the exact frame and classifies shots (studio close-up / plate with instructor in the corner / plate). Measures the instructor's safe zones and the free layout slots. Aligns each recording by audio, measures its content area and saves keyframes.**Mode:** an editor's rough cut is *overlay* mode (graphics go only into the empty space, the instructor is never touched); raw or green-screen footage is *compose* mode (the instructor is keyed and placed on the brand background). |
 | **plan**     | Writes`edit/plan_brief.md` (prompt, settings, shots, layout slots, recordings and keyframes, templates, icons, props, music, the timed transcript) and drafts `edit/beats.yaml`: one row per beat (8–20 s), cut at pauses, shot changes and concept moments. |
-| **(Claude + editor)** | Claude fills the beat sheet (idea, what we show, templates, sync words); `fzv beats` checks it and refreshes the review page; the editor approves (`fzv approve <folder> beats`). Then Claude writes`edit/edit.yaml` from it, following [CLAUDE.md](CLAUDE.md). `build` waits for the approval (rule R1). |
+| **(Claude + editor)** | Claude fills the beat sheet (idea, what we show, templates, sync words); `fzv beats` checks it and refreshes the review page; no approval needed by default; with `Review: beats, storyboard` the editor approves it first (`fzv approve <folder> beats`) and `build` waits for that (rule R1). Then Claude writes `edit/edit.yaml` from it, following [CLAUDE.md](CLAUDE.md). |
 | **build**    | Resolves word anchors (`at: "@phrase the instructor says"`), runs the programs shown on screen (§6), compiles clips into `edit/built/`, writes `edit/decisions.md`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | **validate** | Samples every clip twice a second in headless Chrome and checks the house rules (§7), including V4 (every beat built as approved). Fix what it reports;`fzv edit --force` renders anyway. |
 | **preview**  | (optional)`fzv preview <folder> <clip> <t1,t2>` — a contact sheet over the real footage, before spending time on rendering.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| **storyboard** | One frame per beat at its key moment over the real footage (`edit/out/storyboard.jpg`), about a minute; only changed frames are redone. The editor approves it (`fzv approve <folder> storyboard`); `render` waits for that (rule R2). |
+| **storyboard** | One frame per beat at its key moment over the real footage (`edit/out/storyboard.jpg`), about a minute; only changed frames are redone. Also saved in the video's folder as `<Title> - Storyboard.jpg`. The editor approves it (`fzv approve <folder> storyboard`), then the preview (`fzv approve <folder> preview`); `render` waits for both (rule R2). |
 | **draft** | The preview video (`edit/review/preview.mp4`): the whole edit at 10 fps in draft quality, over the footage at 960x540, with the real mix. The editor watches it with the storyboard before approving; only changed clips are re-drafted. |
 | **studio** | The live preview (default before the final render, or when the editor asks): the whole edit as one HyperFrames project opened in Studio, playing live with the real sound (music as its own track), view-only. |
 | **render**   | Renders changed clips only, in parallel, with retries. Overlay clips are transparent WebM; compose clips are opaque MP4.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -127,8 +126,8 @@ videos/loop-control/
 ### 3.3 With Claude Code
 
 Open **this folder** in VS Code with the Claude Code extension and type `/edit-video videos/loop-control` (or ask in plain words).
-Claude runs ingest and plan, fills the beat sheet, opens the review page and waits for your approval; then writes the spec,
-builds, validates, makes the storyboard and waits again; then renders, finishes, verifies, opens the page with the final video and
+Claude runs ingest and plan, fills the beat sheet, writes the spec,
+builds, validates, makes the storyboard and the live preview and waits for your approval; then renders, finishes, verifies, opens the page with the final video and
 lists anything to confirm (code it rebuilt, corrections it made, names it heard indistinctly).
 
 | Shortcut (`.claude/skills/`) | What it does |
@@ -148,7 +147,6 @@ override any of them for its video**, and every override is logged in `edit/deci
 
 ```markdown
 # Loop Control Statements
-Brand: career-orbit
 Style: default
 Subtitles: off
 Music: off
@@ -161,14 +159,14 @@ Recording: show
 | Field              | Default          | Values                                                                                                                                                                                              |
 | ------------------ | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `# Title`        | folder name      | the final file is`<Title> - Edited.mp4`                                                                                                                                                           |
-| `Brand:`         | `career-orbit` | any kit in`global/brand/` (`fzv brands`): `career-orbit`, `fuzentrix`                                                                                                                       |
 | `Style:`         | best per video   | free words:`sketch edit` (whiteboard-marker look, only on request), `minimal`, `more diagrams`…                                                                                              |
 | `Subtitles:`     | `off`          | `on`, `on, Telugu + English` (burned in, plus an `.srt`)                                                                                                                                      |
 | `Music:`         | `off`          | a track id or mood from`fzv music list`, e.g. `calm-piano` (18 LU under the voice), `calm-piano, low` (22), `…, high` (14)                                                                 |
 | `SFX:`           | `on`           | `minimal` (no entrance pops/swishes), `off`, `library only` (no synthesised fallback)                                                                                                         |
 | `Presenter box:` | `on`           | the bottom-right instructor sits in a rounded brand box (rough cuts: a frame with the plate patched outside it; raw footage: the cut-out is clipped to it);`off` to leave the instructor unframed |
 | `Recording:`     | `show`         | `reference` (never show it; rebuild it as animation, §5.2), `reference, exact` (rebuild without corrections)                                                                                   |
-| `Review:`       | `on`           | the editor approves the beat sheet and the storyboard before build and render; `off` (quick tests), `beats` or `storyboard` (only that one) |
+| `Review:`       | `on`           | the editor approves the storyboard, then the preview, before render; `beats, storyboard` adds the beat sheet before build; `beats` (only that); `off` (quick tests) |
+| `3D` (anywhere in the prompt) | off | "use 3D animations", `Style: 3d`: the 3D templates (db3d, network3d, loop3d) for one or two hero moments; never used otherwise (rule S1) |
 | `Mode:`          | detected         | `overlay` (editor's rough cut) or `compose` (raw / green-screen footage)                                                                                                                        |
 
 **Free text** steers everything else: what to emphasise, characters and props by plain name ("a student at a laptop", "a car
@@ -258,21 +256,21 @@ prompt may override any rule for its video (logged in `decisions.md`). The ones 
 | **Presenter**        | compose mode                                                                      | the instructor's poses (at most two moves)                                                                                                                                                                                     |
 
 Which template shows which explanation: [global/styles/explainer/STYLE.md](global/styles/explainer/STYLE.md). The phrases that should
-trigger an animation live in [global/concepts.yaml](global/concepts.yaml) (the plan brief lists every moment found; validate reports
-uncovered ones). `fzv templates` lists all 55 with their parameters (cards in `global/templates/<family>/`); style guides are in
+trigger an animation live in [global/concepts.yaml](global/concepts.yaml): one collection of 453 concepts for every course (general
+teaching moves, programming, Python, HTML, CSS, JavaScript, React, FastAPI/backend, databases, dev tools, AI/ML, data science, digital
+marketing, aptitude, career skills, spoken English). The plan brief lists every moment found and Claude uses the ones that fit the
+lesson; validate reports uncovered ones, and flags an animation repeated back to back or used too often (rule V5). `fzv templates` lists all 55 with their parameters (cards in `global/templates/<family>/`); style guides are in
 `global/styles/<family>/STYLE.md`. A worked spec for a full 15-minute video is [examples/loop-control/edit.yaml](examples/loop-control/edit.yaml).
 
-## 9. Brand kits
+## 9. Brand kit
 
-`global/brand/_shared/house.yaml` holds what every brand shares: fonts (Outfit, Inter, JetBrains Mono, Caveat for sketch), type
-scale, shapes, motion timings, code colours, audio levels, layout. Each `global/brand/<id>/brand.yaml` adds its logos and colours;
-`fzv build` turns the merged kit into CSS variables (`--fz-*`) that every template, icon and prop uses, so a video recolours by
-changing one line in the prompt.
+There is one brand kit for every video: `global/brand/brand.yaml` (Career Orbit, the Fuzentrix LMS). Its colours, fonts and card shapes
+follow the LMS design: navy text, one brand blue, Manrope and Bricolage Grotesque, 22 px cards. Green, red and amber appear only when a
+moment means correct, error or look here; there are no per-topic colours. The background is a pale dotted backdrop that stays all video.
+`fzv build` turns the kit into CSS variables (`--fz-*`) that every template, icon and prop uses.
 
-- **Career Orbit** (the LMS, default): the LMS app's navy ramp + the logo's teal.
-- **Fuzentrix Education** (the parent brand).
-
-Brand sheets and logo variants: [global/brand/README.md](global/brand/README.md).
+The colour budget, logo set and fonts: [global/brand/README.md](global/brand/README.md) and `global/brand/brand_sheet.png`
+(`fzv brands --sheet` renders it).
 
 ## 10. Icons, props, characters and music
 
@@ -384,7 +382,7 @@ the clips and encode chunks that changed (content-hash caches), and the request'
 | `fzv icons add …` · `fzv music list` · `fzv music add …`                        | Icon and music import, track list                                                                                                                   |
 | `fzv sfx list` · `fzv sfx add <file\|folder> [--category C] --source URL --licence L` · `fzv sfx audition` · `fzv sfx remove <cat:n\|file>…` | The SFX library: list, add, listen, prune |
 | `fzv registry search <words>` · `fzv registry add <name…>` · `fzv registry list` | HyperFrames registry animations (vendored into`global/registry/`, mounted with `hf`)                                                            |
-| `fzv brands`                                                                            | Brand kits                                                                                                                                          |
+| `fzv brands`                                                                            | The brand kit (`--sheet`: render its brand sheet)                                                                                                   |
 
 ## 13. What ends up in a video's folder
 
@@ -395,7 +393,7 @@ the clips and encode chunks that changed (content-hash caches), and the request'
 | `cuts.json`, `zones.json`           | Shots to the exact frame; the instructor's safe zones                                                  |
 | `recordings.json`, `recref/`        | Recording offsets, content areas; keyframes and contact sheets                                         |
 | `plan_brief.md`                       | What Claude reads to write the spec                                                                    |
-| `beats.yaml`, `beat_sheet.md`, `approvals.md` | The beat sheet (Claude fills it, the editor approves it), the same as a table, and every approval with the editor's words |
+| `beats.yaml`, `beat_sheet.md`, `approvals.md` | The beat sheet (Claude fills it; the editor approves it only with `Review: beats, storyboard`), the same as a table, and every approval with the editor's words |
 | `edit.yaml` → `edit.resolved.yaml` | The edit spec, and the same with every time in seconds and every terminal's real output                |
 | `decisions.md`                        | Brand, styles, why, overrides, corrections,**to confirm**, props to add                          |
 | `runs/`                               | Cached program runs                                                                                    |
@@ -427,7 +425,8 @@ revision only redo what changed. Everything slows sharply when the machine is sw
 | `[L2] … overlaps the instructor`                             | Move or shrink the block into a layout slot from the plan brief                                                                                                                           |
 | `[L10] … blocks / words`                                     | Fewer things at once: end the previous block (`until`) or group items                                                                                                                   |
 | `[V1]` / `[V2]` text-only section or stretch                | Show the process: pick an Explainer / Code / Diagram template for what is being explained (STYLE guide,`global/styles/explainer/`)                                                      |
-| `[V3]` advice: a concept moment isn't shown                   | Add the suggested template on that word, or say in`decisions` why not; extend `global/concepts.yaml` if a phrase misfires                                                             |
+| `[V3]` advice: a concept moment isn't shown                   | Add the suggested template on that word, or say in`decisions` why not; fix the phrase in `global/concepts.yaml` if it misfires                                                        |
+| `[V5]` advice: an animation is repeated                       | Show that moment another way: the concept's next template, a diagram, props or a chart (`visuals.max_repeat_share` sets how often one may appear)                                     |
 | Music too loud or too soft                                      | `Music: <track>, low` / `high` in the prompt, or `music.rel_lufs` in `global/defaults.yaml`                                                                                       |
 | `[E7] output is written by hand`                              | Use`exec: {code: <card>, stdin: [...]}` on the terminal                                                                                                                                 |
 | `[E9] the correction changes the program's output`            | Keep the recorded code, or explain in`logic_fix:` (goes to "to confirm")                                                                                                                |

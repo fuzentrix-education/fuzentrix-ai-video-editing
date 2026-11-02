@@ -13,6 +13,9 @@ All of them allow commercial use and edits without a credit in the video (design
 | Freesound via Openverse (ludvique, Kinoton, LloydEvans09, adh.dreaming, qubodup, Sclolex) | 7 soft whooshes in `global/sfx/whoosh/` | CC0 1.0 | none required |
 | Wikimedia Commons: Satie, Gymnopédie No. 1 (Musopen, Robin Alciatore) | `global/music/calm-piano.m4a` | Public domain | none required |
 | Wikimedia Commons: Bach–Siloti, Prelude in B minor (Felipe Sarro) | `global/music/focus-piano.m4a` | CC0 1.0 | none required |
+| Manrope, Bricolage Grotesque (Google Fonts, via Fontsource) | the brand kit's body and display fonts in `global/brand/fonts/` | SIL OFL 1.1 | [manrope-OFL-1.1.txt](manrope-OFL-1.1.txt), [bricolage-grotesque-OFL-1.1.txt](bricolage-grotesque-OFL-1.1.txt) |
+| rnnoise-models, somnolent-hogwash (github.com/GregorR/rnnoise-models) | `global/audio/sh.rnnn`, the speech denoiser in the voice cleanup (ffmpeg `arnndn`) | Not subject to copyright (the authors' statement: the trained models are not creative work) | none required |
+| three.js r158 (three.js authors) | `runtime/vendor/three.min.js` (the 3D templates) | MIT | keep `three.js-MIT.txt` |
 
 The MIT and Apache-2.0 licences ask that their notice stays with copies of the files; keep this folder with the library. Re-fetch or audit the set
 with `scripts/fetch_free_assets.py`.

@@ -6,7 +6,7 @@ All colours, fonts and timings come from the brand kit (CSS variables `--fz-*`),
 
 ## Look
 
-- Outfit 900, 64–92 px; the key word in the brand gradient (`--fz-grad`).
+- Bricolage Grotesque 800, 64–92 px; the key word in the brand gradient (`--fz-grad`, navy to blue).
 - **12 words at most, never running speech** (that would be subtitles).
 - At most one kinetic moment per section.
 

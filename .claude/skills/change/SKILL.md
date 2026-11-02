@@ -15,22 +15,25 @@ otherwise ask which video.
 ## 1. Where does the edit stand?
 Run `bin/fzv review "<folder>"`; it prints the beat sheet, storyboard and final state.
 
-## 2. Beat sheet not approved yet (still planning)
-Change those rows in `edit/beats.yaml` and add the editor's words to each row's `feedback`. Run `bin/fzv beats "<folder>"`,
-refresh the page (`bin/fzv review "<folder>" --open`), show only the changed rows in the chat and ask for approval
-(edit-video skill, step 2).
+## 2. Still planning (no storyboard yet)
+Change those rows in `edit/beats.yaml` and add the editor's words to each row's `feedback`. Run `bin/fzv beats "<folder>"` and carry
+on to the storyboard (edit-video skill, step 3). Only with `Review: beats, storyboard` in the prompt: refresh the page
+(`bin/fzv review "<folder>" --open`), show only the changed rows in the chat and ask for approval (edit-video skill, step 2).
 
-## 3. After the beat sheet was approved (storyboard or final video exists)
+## 3. Once the storyboard or the final video exists
 1. Run `bin/fzv revise "<folder>" "<the requests>"`: it maps each beat or time to the scenes on screen, prints what the instructor
    says there and logs the request in `edit/revisions.md`.
 2. Change only those scenes in `edit/edit.yaml` (CLAUDE.md "Revising after delivery"). When what a beat shows changes, update its row
-   in `edit/beats.yaml` too (`show`, `templates`, `sync`) and add the editor's words to `feedback`. Their request is their approval
-   of the rows it touches: `bin/fzv approve "<folder>" beats --note "change request: <their words>"`.
+   in `edit/beats.yaml` too (`show`, `templates`, `sync`) and add the editor's words to `feedback`. With the beat-sheet review on
+   (`Review: beats, storyboard`), their request is their approval of the rows it touches:
+   `bin/fzv approve "<folder>" beats --note "change request: <their words>"`.
 3. Run `bin/fzv build`, `bin/fzv validate` (fix everything), then `bin/fzv storyboard "<folder>"` (only changed frames are redone) and,
    if they want to see it move, the live preview (`bin/fzv studio "<folder>"`). Look at `edit/out/storyboard_changed.jpg` yourself and fix anything wrong.
-4. Refresh the page (`bin/fzv review "<folder>" --open`), say what changed (the preview video shows it in motion), and ask "Render the new version?" If their message already
-   said to go ahead and render, don't ask: approve with their words as the note.
-5. Once approved: `bin/fzv approve "<folder>" storyboard --note "<their words>"`, then `bin/fzv edit "<folder>"` in the background (only
+4. Refresh the page (`bin/fzv review "<folder>" --open`) and show the changed frames; on approval `bin/fzv approve "<folder>" storyboard
+   --note "<their words>"`. Then the preview of the new version (`bin/fzv studio "<folder>"`, or `bin/fzv draft` in video mode) and ask
+   "Render the new version?"; on approval `bin/fzv approve "<folder>" preview --note "<their words>"`. If their message already said to
+   go ahead and render, don't ask: record both approvals with their words as the note.
+5. Once approved: `bin/fzv edit "<folder>"` in the background (only
    changed clips and encode chunks are redone: minutes, not the whole video). Set each request's **Status** in `edit/revisions.md`
    to what changed, refresh the page and tell them it's ready.
 

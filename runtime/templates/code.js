@@ -1,9 +1,12 @@
 /* Code & Execution family: used for any code. Explanations always sit outside code and terminals (rule L6). */
 (function () {
   const R = FZ.register;
-  const STATE = { ok: ["#E3F5EA", "#12A150", "#12A150"], bad: ["#FDECEC", "#E5484D", "#E5484D"], skip: ["#FEF3E2", "#F6AD55", "#C27803"],
-                  now: ["#E6F6FA", "#1FA2BC", "#1B7F95"], dim: ["#F3F6FA", "#DCE7F4", "#C3CFDD"] };
-  const tileState = (a, el, g, kind) => { const c = STATE[kind]; if (c) a.to(el, g, { backgroundColor: c[0], borderColor: c[1], color: c[2], duration: 0.22 }); };
+  // tile states as kit colours [background, border, text]; resolved here because colour tweens need real values, not var()
+  const STATE = { ok: ["success-soft", "success", "success"], bad: ["danger-soft", "danger", "danger"], skip: ["highlight-soft", "highlight", "highlight-text"],
+                  dim: ["dim", "line", "mist"], now: ["tint", "accent", "text"] };
+  const cssv = (n, d) => getComputedStyle(document.documentElement).getPropertyValue("--fz-" + n).trim() || d;
+  const tileColors = (kind) => STATE[kind] && STATE[kind].map((n) => cssv(n, "#102A56"));
+  const tileState = (a, el, g, kind) => { const c = tileColors(kind); if (c) a.to(el, g, { backgroundColor: c[0], borderColor: c[1], color: c[2], duration: 0.22 }); };
 
   R({ name: "code-card", family: "code", layers: ["plate"],
       doc: "Dark editor card. Lines type in spoken chunks or at a steady speed; highlights, active-line bar, Run press. Registers `id` so notes can point at its lines.",
@@ -15,7 +18,7 @@
     const bx = a.box(p, "main"), BAR = 56, TOP = BAR + 20, X0 = 34 + 2 * chw + 26;
     const w = p.box && p.box.w ? bx.w : Math.min(bx.w, Math.max(560, X0 + Math.max(...lines.map((l) => l.length)) * chw + 80));
     const h = BAR + 40 + lines.length * lh;
-    const card = a.el(`<div class="bar"><div class="dot" style="background:#FF6058"></div><div class="dot" style="background:#FFBD2E"></div><div class="dot" style="background:#28CA42"></div>
+    const card = a.el(`<div class="bar"><div class="dot"></div><div class="dot"></div><div class="dot"></div>
       <div class="tab">${a.esc(p.title || "main.py")}</div><div class="run">${a.icon("play")}Run</div></div>`, "fz-code hide", { left: bx.x, top: bx.y, width: w, height: h }, a.root, "code");
     const act = a.el("", "fz-act hide", { top: TOP, height: lh, width: w }, card);
     const chars = lines.map((ln, li) => {
@@ -60,20 +63,18 @@
   R({ name: "note", family: "code", layers: ["plate"],
       doc: "An explanation card outside the code, joined to its target by a wire (rule L6). Target a code line, a terminal line, a recording highlight or a point.",
       params: { nt: "optional mono pill (markdown/code)", text: "explanation (markdown, 16 words max)", at: "", until: "", box: "x, y, w (default: side slot)",
-                target: "{code: id, line} | {code: id, run: true} | {term: id, line} | {rec: id, hl: name} | {point: [x, y]}", elbow_x: "optional x for the wire's bend" } }, (a, p) => {
+                target: "{code: id, line} | {code: id, run: true} | {term: id, line} | {rec: id, hl: name} | {point: [x, y]}", elbow_x: "ignored: the wire is routed around the other graphics automatically" } }, (a, p) => {
     const bx = a.box(p, "side");
     const n = a.el(`${p.nt ? `<div class="nt lt">${p.nt_code ? a.hlCode(p.nt) : a.md(p.nt)}</div>` : ""}<div class="nd">${a.md(p.text || "")}</div>`, "fz-card fz-note hide", { left: bx.x, top: bx.y, width: bx.w }, a.root, "note");
     a.show(n, p.at, a.until(p), { x: 30 }, 0.5, "back.out(1.3)"); a.sfx("swish", p.at);
     const t = p.target; if (!t) return;
     let p0 = null;
-    if (t.code && a.refs[t.code]) { const r = a.refs[t.code]; p0 = t.run ? r.run() : [r.lineEnd(t.line), r.cy(t.line)]; }
+    if (t.code && a.refs[t.code]) { const r = a.refs[t.code]; p0 = t.run ? r.run() : [r.lineEnd(t.line) + 8, r.cy(t.line)]; }   // clear of the last character
     else if (t.term && a.refs[t.term]) { const r = a.refs[t.term]; p0 = r.lineAnchor(t.line); }
     else if (t.rec && a.refs[t.rec]) { const r = a.refs[t.rec]; p0 = r.hlAnchor(t.hl); }
     else if (t.point) p0 = t.point;
     if (!p0) return;
-    const nb = { x: bx.x, y: bx.y, w: bx.w, h: n.getBoundingClientRect().height, ay: p.nt ? 47 : 40 };
-    if (t.rec) { const below = bx.y > p0[1]; a.wire(below ? [p0, [p0[0], bx.y]] : a.route(p0, nb, p.elbow_x), p.at + 0.15, a.until(p) - 0.1); }
-    else a.wire(a.route(p0, nb, p.elbow_x), p.at + 0.15, a.until(p) - 0.1);
+    a.pointer(p0, n, p.at + 0.15, a.until(p) - 0.1, p.nt ? 47 : 40);       // routed once every scene is laid out
   });
 
   R({ name: "terminal", family: "code", layers: ["plate"], doc: "Output panel. With `exec` it runs the code card's program and prints its exact output (input echoed where it is read, errors in red), scrolling like a real terminal. Registers `id` for notes.",
@@ -81,15 +82,15 @@
                 input: "{text, at} shown as 'input > text' (manual mode)", lines: "[{text, input, at, tone: ok|warn|bad|dim}] (filled by exec; by hand needs `manual`)", chips: "[{text, at}] instead of lines (needs `manual`)",
                 manual: "reason the output is written by hand (rule E7)", lh: "line height (default 44)" } }, (a, p) => {
     const bx = a.box(p, "bottom"), lh = p.lh || 44;
-    const t = a.el(`<div class="tbar"><div class="fz-label" style="color:var(--fz-on-dark-soft)">${a.esc(p.title || "Output")}</div><div style="width:10px;height:10px;border-radius:50%;background:#28CA42"></div></div>`,
+    const t = a.el(`<div class="tbar"><div class="fz-label" style="color:var(--fz-on-dark-soft)">${a.esc(p.title || "Output")}</div><div style="width:10px;height:10px;border-radius:50%;background:var(--fz-dark-success)"></div></div>`,
       "fz-term hide", { left: bx.x, top: bx.y, width: bx.w, height: bx.h }, a.root, "term");
     a.show(t, p.at, a.until(p), { y: 30 }, 0.55); a.sfx("swish", p.at);
     let n = 0; const ys = [];
-    const tone = { ok: "#6EE7B7", warn: "#FBBF24", bad: "#F87171", dim: "rgba(220,231,244,.5)" };
+    const tone = { ok: "var(--fz-dark-success)", warn: "var(--fz-dark-highlight)", bad: "var(--fz-dark-danger)", dim: "rgba(225,235,255,.5)" };
     if (p.input) { const l = a.el(`<span style="color:rgba(220,231,244,.5)">input &gt;</span> <span style="color:var(--fz-warning)">${a.esc(p.input.text)}</span>`, "tl hide", { top: 66 }, t); a.inn(l, p.input.at, { x: -12 }, 0.25); a.sfx("blip", p.input.at); n = 1; ys.push(66); }
     if (p.chips) {
       const row = a.el("", "abs", { left: 26, top: 66 + n * lh + 6, display: "flex", gap: 12, flexWrap: "wrap", width: bx.w - 52 }, t);
-      p.chips.forEach((c) => { const e = a.el(a.esc(c.text), "hide", { minWidth: 64, height: 64, padding: "0 14px", borderRadius: 14, background: "rgba(110,231,183,.12)", border: "2px solid rgba(110,231,183,.45)", display: "grid", placeItems: "center", font: "700 30px/1 var(--fz-font-mono)", color: c.tone ? tone[c.tone] : "var(--fz-num)" }, row); a.inn(e, c.at, { scale: 0.5 }, 0.25, "back.out(2)"); a.sfx("pop", c.at); });
+      p.chips.forEach((c) => { const e = a.el(a.esc(c.text), "hide", { minWidth: 64, height: 64, padding: "0 14px", borderRadius: 14, background: "rgba(134,239,172,.12)", border: "2px solid rgba(134,239,172,.45)", display: "grid", placeItems: "center", font: "700 30px/1 var(--fz-font-mono)", color: c.tone ? tone[c.tone] : "var(--fz-dark-success)" }, row); a.inn(e, c.at, { scale: 0.5 }, 0.25, "back.out(2)"); a.sfx("pop", c.at); });
     }
     const L = p.lines || [];
     if (L.length) {   // lines print one by one and scroll like a real terminal once the panel is full
@@ -140,13 +141,13 @@
     const ibox = panel.querySelector(".ibox"), cbox = panel.querySelector(".cbox");
     IT.forEach((it, k) => {
       const next = IT[k + 1] ? IT[k + 1].val : U, isT = !!it.result;
-      const val = a.el(a.esc(it.v), "abs hide", { left: 0, top: 0, width: 140, height: 96, display: "grid", placeItems: "center", font: "800 58px/1 var(--fz-font-mono)", color: isT ? "#F87171" : "#6EE7B7" }, ibox);
+      const val = a.el(a.esc(it.v), "abs hide", { left: 0, top: 0, width: 140, height: 96, display: "grid", placeItems: "center", font: "800 58px/1 var(--fz-font-mono)", color: isT ? "var(--fz-danger)" : "var(--fz-success)" }, ibox);
       a.inn(val, it.val, { y: 60 }, 0.35); if (IT[k + 1]) a.out(val, next, { y: -60 }, 0.3);
       a.sfx("tick", it.val);
       if (tiles && tiles.tiles[k]) tileState(a, tiles.tiles[k], it.val, "now");
       if (it.res != null) {
         const c = a.el(`<span style="font:700 34px/1 var(--fz-font-mono)">${a.hlCode(`${it.v} ${p.cond || ""}`)}</span><span style="color:var(--fz-text2);font-size:30px">${a.icon("arrow")}</span>
-          <span style="padding:6px 16px;border-radius:12px;font:800 28px/1 var(--fz-font-display);background:${isT ? "#FDECEC" : "#F1F5FA"};color:${isT ? "var(--fz-danger)" : "var(--fz-text2)"}">${isT ? "True" : "False"}</span>`,
+          <span style="padding:6px 16px;border-radius:12px;font:800 28px/1 var(--fz-font-display);background:${isT ? "var(--fz-danger-soft)" : "var(--fz-dim)"};color:${isT ? "var(--fz-danger)" : "var(--fz-text2)"}">${isT ? "True" : "False"}</span>`,
           "abs hide", { left: 0, top: 0, display: "flex", alignItems: "center", gap: 14, whiteSpace: "nowrap" }, cbox);
         a.inn(c, it.res, { x: -16 }, 0.35); if (IT[k + 1]) a.out(c, next - 0.2, {}, 0.2);
         a.sfx(isT ? "bad" : "pop", it.res);
@@ -170,8 +171,12 @@
     const bx = a.box(p, "side"), rows = {};
     const c = a.el(`<div class="fz-label">Variables</div>`, "fz-card fz-pad hide", { left: bx.x, top: bx.y, width: bx.w }, a.root, "block");
     a.show(c, p.at, a.until(p), { x: 30 }, 0.5);
+    // the value pill fits the longest value this variable ever shows (values sit absolutely inside it, so it can't grow by itself)
+    const longest = {};
+    [...(p.vars || []), ...(p.updates || [])].forEach((v) => { longest[v.name] = Math.max(longest[v.name] || 0, String(v.value ?? "").length); });
     (p.vars || []).forEach((v) => {
-      const r = a.el(`<div style="font:800 40px/1 var(--fz-font-mono);min-width:90px">${a.esc(v.name)}</div><div style="font:700 34px/1 var(--fz-font-mono);color:var(--fz-text2)">=</div><div class="val" style="position:relative;min-width:150px;height:72px;border-radius:16px;background:linear-gradient(160deg,var(--fz-code-bg1),var(--fz-code-bg2));overflow:hidden"></div>`,
+      const pw = Math.max(150, Math.ceil((longest[v.name] || 0) * 38 * 0.62) + 40);       // mono ~0.6 em per character, plus padding
+      const r = a.el(`<div style="font:800 40px/1 var(--fz-font-mono);min-width:90px">${a.esc(v.name)}</div><div style="font:700 34px/1 var(--fz-font-mono);color:var(--fz-text2)">=</div><div class="val" style="position:relative;min-width:${pw}px;height:72px;border-radius:16px;background:linear-gradient(160deg,var(--fz-code-bg1),var(--fz-code-bg2));overflow:hidden"></div>`,
         "hide", { display: "flex", alignItems: "center", gap: 18, marginTop: 18 }, c);
       a.inn(r, v.at, { x: 16 }, 0.35); rows[v.name] = { box: r.querySelector(".val"), cur: null };
     });
@@ -202,8 +207,8 @@
     const steps = win.querySelector(".fz-steps");
     (p.steps || []).forEach((st, i) => {
       const e = a.el(`<div class="sn">${i + 1}</div>${a.esc(st.label)}`, "fz-st", {}, steps);
-      a.to(e, st.at, { backgroundColor: "#1FA2BC", color: "#ffffff", duration: 0.3 }); a.to(e.querySelector(".sn"), st.at, { backgroundColor: "#ffffff", color: "#1FA2BC", duration: 0.3 });
-      if (i > 0) { const prev = steps.children[i - 1]; a.to(prev, st.at, { backgroundColor: "#E3F5EA", color: "#12A150", duration: 0.3 }); a.to(prev.querySelector(".sn"), st.at, { backgroundColor: "#12A150", color: "#ffffff", duration: 0.3 }); }
+      a.to(e, st.at, { backgroundColor: a.cv("accent"), color: "#ffffff", duration: 0.3 }); a.to(e.querySelector(".sn"), st.at, { backgroundColor: "#ffffff", color: a.cv("accent"), duration: 0.3 });
+      if (i > 0) { const prev = steps.children[i - 1]; a.to(prev, st.at, { backgroundColor: a.cv("success-soft"), color: a.cv("success"), duration: 0.3 }); a.to(prev.querySelector(".sn"), st.at, { backgroundColor: a.cv("success"), color: "#ffffff", duration: 0.3 }); }
     });
     const H = {};
     (p.highlights || []).forEach((h) => {
@@ -212,5 +217,47 @@
       H[h.name] = [bx.x + (x - rec.crop[0] + w / 2) * S, bx.y + 52 + (y - rec.crop[1] + hh) * S + 4];
     });
     a.refs[p.id] = { kind: "rec", box: { x: bx.x, y: bx.y, w: bx.w, h: 52 + viewH }, hlAnchor: (name) => H[name] };
+  });
+
+  R({ name: "char-scan", family: "code", layers: ["plate"],
+      doc: "A string split into character cells; a pointer walks along and stamps ✓ or ✗ for a test (Python's isalpha, isdigit, isalnum, isupper, islower, isspace); the result pops as True / False.",
+      params: { text: "the string", test: "alpha | digit | alnum | upper | lower | space", marks: "optional marks per character instead of a test: ✓ ✗ –",
+                label: "caption above, e.g. `\"Hi5\".isalpha()`", at: "", until: "", step: "s per character (default 0.4)", times: "[time per character] (overrides step)",
+                stop_on_fail: "stop at the first ✗, as Python does (default false: check every character)", result: "{at}: the True / False pill",
+                indexes: "show indexes under the cells (default false)", box: "x, y (default main slot)", size: "cell px (default 84)" } }, (a, p) => {
+    const bx = a.box(p, "main"), U = a.until(p), sz = p.size || 84, gap = sz + 12, chars = [...String(p.text || "")];
+    const isL = (c) => /\p{L}/u.test(c), isN = (c) => /\p{N}/u.test(c);
+    const test = { alpha: (c) => isL(c), digit: (c) => /\p{Nd}/u.test(c), alnum: (c) => isL(c) || isN(c), space: (c) => /\s/.test(c),
+                   upper: (c) => (c.toLowerCase() === c.toUpperCase() ? null : c === c.toUpperCase()), lower: (c) => (c.toLowerCase() === c.toUpperCase() ? null : c === c.toLowerCase()) }[p.test || "alpha"];
+    const marks = chars.map((c, k) => p.marks ? ({ "✓": true, "✗": false }[[...p.marks][k]] ?? null) : test ? test(c) : null);
+    const cased = p.test === "upper" || p.test === "lower";
+    const value = chars.length > 0 && (cased ? marks.some((m) => m === true) && !marks.some((m) => m === false) : marks.every((m) => m !== false));
+    let stopAt = chars.length; if (p.stop_on_fail) { const f = marks.findIndex((m) => m === false); if (f >= 0) stopAt = f + 1; }
+    const top = bx.y + (p.label ? 60 : 0);
+    if (p.label) { const l = a.el(a.hlCode(p.label), "abs hide lt", { left: bx.x, top: bx.y, font: "700 34px/1 var(--fz-font-mono)", color: "var(--fz-text)" }, a.root, "text"); a.show(l, p.at, U, { y: 10 }, 0.4); }
+    const cells = chars.map((c, k) => a.el(a.esc(c === " " ? "␣" : c), "fz-tile hide", { left: bx.x + k * gap, top: top + 34, width: sz, height: sz, fontSize: Math.round(sz * 0.5),
+      fontFamily: "var(--fz-font-mono)", borderRadius: Math.round(sz * 0.2), color: "var(--fz-text)" }, a.root, "block"));
+    a.inn(cells, p.at, { y: 18, scale: 0.85 }, 0.35, "back.out(1.6)", { stagger: 0.04 }); a.out(cells, U, { y: -10, stagger: 0.01 }); a.sfx("swish", p.at);
+    if (p.indexes) chars.forEach((_, k) => { const n = a.el(String(k), "abs hide", { left: bx.x + k * gap, top: top + 34 + sz + 64, width: sz, textAlign: "center", font: "600 22px/1 var(--fz-font-mono)", color: "var(--fz-mist)" }, a.root, "part"); a.show(n, p.at + 0.2, U, { y: 6 }, 0.3); });
+    const ptr = a.el(`<svg width="28" height="20" viewBox="0 0 28 20"><path d="M2 2 L26 2 L14 18 Z" style="fill:var(--fz-accent)"/></svg>`, "abs hide", { left: bx.x + sz / 2 - 14, top: top + 6 }, a.root, "part");
+    const t0 = p.at + 0.6 + chars.length * 0.04, times = chars.map((_, k) => (p.times && p.times[k] != null ? p.times[k] : t0 + k * (p.step || 0.4)));
+    if (chars.length) a.set(ptr, times[0] - 0.05, { autoAlpha: 1, x: 0 });
+    chars.slice(0, stopAt).forEach((_, k) => {
+      const g = times[k];
+      if (k > 0) a.to(ptr, g - 0.15, { x: k * gap, duration: 0.15, ease: "power1.out" });
+      const m = marks[k], tone = m === true ? ["success-soft", "success"] : m === false ? ["danger-soft", "danger"] : ["dim", "line"];
+      a.to(cells[k], g, { backgroundColor: a.cv(tone[0]), borderColor: a.cv(tone[1]), duration: 0.2 });
+      const stamp = a.el(m === true ? "✓" : m === false ? "✗" : "–", "abs hide", { left: bx.x + k * gap + sz / 2 - 18, top: top + 34 + sz + 12, width: 36, height: 36, borderRadius: 18,
+        display: "grid", placeItems: "center", font: "800 22px/1 var(--fz-font-body)", color: "#fff", background: m === true ? "var(--fz-success)" : m === false ? "var(--fz-danger)" : "var(--fz-mist)" }, a.root, "part");
+      a.pop(stamp, g + 0.05); a.out(stamp, U);
+      a.sfx(m === false ? "bad" : "tick", g);
+    });
+    if (chars.length) a.out(ptr, (times[stopAt - 1] || p.at) + 0.6);
+    if (p.result) {
+      const rx = bx.x + Math.min(stopAt, chars.length) * gap + 24;
+      const pill = a.el(value ? "True" : "False", "abs hide", { left: Math.min(rx, bx.x + chars.length * gap + 24), top: top + 34 + sz / 2 - 30, height: 60, padding: "0 24px", borderRadius: 30,
+        display: "grid", placeItems: "center", font: "800 32px/1 var(--fz-font-mono)", color: "#fff", background: value ? "var(--fz-success)" : "var(--fz-danger)" }, a.root, "part");
+      a.pop(pill, p.result.at); a.out(pill, U); a.sfx(value ? "good" : "bad", p.result.at);
+    }
   });
 })();

@@ -25,7 +25,7 @@
     if (p.box) {
       const B = p.box, bx = 1920 - B.margin - B.w, by = 1080 - B.margin - B.h;
       frame = a.el("", "abs hide", { left: bx, top: by, width: B.w, height: B.h, borderRadius: B.radius, background: "linear-gradient(165deg, #FFFFFF 0%, var(--fz-tint) 100%)",
-        border: "4px solid #FFFFFF", boxShadow: "0 30px 70px -24px rgba(13,39,76,.45), 0 0 0 1px var(--fz-line)" }, host.parentNode);
+        border: "4px solid #FFFFFF", boxShadow: "0 30px 70px -24px rgba(16,42,86,.45), 0 0 0 1px var(--fz-line)" }, host.parentNode);
       host.parentNode.insertBefore(frame, host);
       frame.setAttribute("data-fz", "presenter-frame");
       clipOf = (q) => { const t = poseOf(q), s = t.scale; return `inset(${(by + 4 - t.y) / s}px ${(t.x + w * s - (bx + B.w - 4)) / s}px ${(t.y + h * s - (by + B.h - 4)) / s}px ${(bx + 4 - t.x) / s}px round ${(B.radius - 4) / s}px)`; };
@@ -64,7 +64,7 @@
     patch(x, y + h, w, 1080 - y - h);                                         // below the box
     [[x, y, "100% 100%"], [x + w - r, y, "0 100%"], [x, y + h - r, "100% 0"], [x + w - r, y + h - r, "0 0"]].forEach(([l, t, at]) =>
       patch(l, t, r, r, { WebkitMaskImage: `radial-gradient(circle at ${at}, transparent ${r - 0.5}px, #000 ${r}px)`, maskImage: `radial-gradient(circle at ${at}, transparent ${r - 0.5}px, #000 ${r}px)` }));
-    const frame = a.el("", "abs hide", { left: x, top: y, width: w, height: h, borderRadius: r, border: "4px solid #FFFFFF", boxShadow: "0 24px 60px -20px rgba(13,39,76,.45), 0 0 0 1px var(--fz-line)" }, a.root, "presenter-frame");
+    const frame = a.el("", "abs hide", { left: x, top: y, width: w, height: h, borderRadius: r, border: "4px solid #FFFFFF", boxShadow: "0 24px 60px -20px rgba(16,42,86,.45), 0 0 0 1px var(--fz-line)" }, a.root, "presenter-frame");
     (p.intervals || []).forEach(([s, e]) => {
       els.forEach((el) => { a.set(el, s, { autoAlpha: 1 }); a.set(el, e, { autoAlpha: 0 }); });
       a.inn(frame, s, { scale: 0.97 }, 0.35); a.set(frame, e, { autoAlpha: 0 });

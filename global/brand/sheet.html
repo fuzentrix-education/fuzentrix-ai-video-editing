@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><title>Brand sheet</title>
+<!-- The one-page brand sheet. `fzv brands --sheet` renders it next to brand.css (made from brand.yaml), the fonts, the logo set and the
+     rendered backdrop, so the sheet always shows the kit as it is. -->
+<link rel="stylesheet" href="brand.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-variant-ligatures: none !important; font-feature-settings: "liga" 0, "calt" 0 !important; }
+body { width: 1920px; background: #fff; font-family: var(--fz-font-body); color: var(--fz-text); padding: 64px 80px 72px; }
+.lbl { font: 700 16px/1 var(--fz-font-mono); letter-spacing: .2em; text-transform: uppercase; color: var(--fz-text2); margin-bottom: 18px; }
+h1 { font: 800 64px/1 var(--fz-font-display); letter-spacing: -.01em; }
+h1 em { font-style: normal; color: var(--fz-emph); }
+.sub { font: 500 22px/1.45 var(--fz-font-body); color: var(--fz-text2); margin-top: 14px; max-width: 1500px; }
+.row { display: flex; gap: 28px; margin-top: 44px; }
+.panel { background: #fff; border: 1px solid var(--fz-line); border-radius: var(--fz-radius); padding: 30px; box-shadow: var(--fz-shadow); }
+.logos { display: grid; grid-template-columns: 1fr 1fr; border-radius: var(--fz-radius); overflow: hidden; border: 1px solid var(--fz-line); }
+.logos > div { height: 240px; display: flex; align-items: center; justify-content: center; gap: 48px; padding: 30px; }
+.logos img { max-height: 170px; max-width: 46%; }
+.group { margin-top: 26px; } .group h3 { font: 700 24px/1 var(--fz-font-display); margin-bottom: 14px; } .group h3 span { font: 500 18px/1 var(--fz-font-body); color: var(--fz-text2); margin-left: 10px; }
+.sw { display: flex; gap: 14px; flex-wrap: wrap; }
+.chip { width: 196px; border-radius: 16px; overflow: hidden; border: 1px solid var(--fz-line); background: #fff; }
+.chip .c { height: 74px; }
+.chip .t { padding: 10px 12px; font: 600 15px/1.35 var(--fz-font-body); }
+.chip .t b { display: block; font: 700 15px/1 var(--fz-font-mono); margin-bottom: 6px; color: var(--fz-text); }
+.chip .t span { color: var(--fz-text2); font-weight: 500; }
+.rules { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 8px; }
+.rules div { font: 600 22px/1.4 var(--fz-font-body); padding: 18px 22px; border-radius: 16px; }
+.do { background: var(--fz-success-soft); } .do b { color: var(--fz-success); } .dont { background: var(--fz-danger-soft); } .dont b { color: var(--fz-danger); }
+.frame { position: relative; width: 1760px; height: 990px; border-radius: var(--fz-radius); overflow: hidden; background: url(plate.png) center/cover; border: 1px solid var(--fz-line); }
+.card { position: absolute; background: var(--fz-card); border: 1px solid var(--fz-line); border-radius: var(--fz-radius); box-shadow: var(--fz-shadow); }
+.code { position: absolute; border-radius: var(--fz-radius); background: linear-gradient(160deg, var(--fz-code-bg1), var(--fz-code-bg2)); box-shadow: 0 40px 80px -24px rgba(16,42,86,.6); overflow: hidden; }
+.code .bar { height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 22px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.code .bar i { width: 13px; height: 13px; border-radius: 50%; background: rgba(225,235,255,.22); }
+.code .bar .run { margin-left: auto; padding: 8px 18px; border-radius: 10px; background: var(--fz-action); color: #fff; font: 700 18px/1 var(--fz-font-body); }
+.code pre { padding: 22px 30px; font: 700 34px/1.65 var(--fz-font-mono); color: var(--fz-code-text); }
+.kw { color: var(--fz-kw); } .str { color: var(--fz-str); } .num { color: var(--fz-num); } .fn { color: var(--fz-fn); } .ty { color: var(--fz-ty); } .op { color: var(--fz-op); } .cm { color: var(--fz-cm); font-weight: 500; font-style: italic; }
+.term { position: absolute; border-radius: 22px; background: linear-gradient(160deg, var(--fz-code-bg1), var(--fz-code-bg2)); padding: 20px 26px; font: 700 30px/1.5 var(--fz-font-mono); color: var(--fz-code-text); }
+.tile { width: 100px; height: 100px; border-radius: 22px; border: 2px solid; display: grid; place-items: center; font: 800 46px/1 var(--fz-font-display); box-shadow: 0 14px 30px -16px rgba(16,42,86,.3); }
+.label { font: 700 20px/1 var(--fz-font-mono); letter-spacing: .2em; text-transform: uppercase; color: var(--fz-label); }
+.dh { position: relative; color: var(--fz-emph); } .dh::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 6px; border-radius: 3px; background: var(--fz-accent); }
+.pill { display: inline-flex; align-items: center; gap: 12px; padding: 10px 22px 10px 10px; border-radius: 999px; background: #fff; border: 1px solid var(--fz-line); font: 600 26px/1 var(--fz-font-body); box-shadow: 0 18px 40px -14px rgba(16,42,86,.3); }
+.ic { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--fz-tint); color: var(--fz-icon); font: 800 22px/1 var(--fz-font-display); }
+.badge { position: absolute; border-radius: 28px; background: var(--fz-grad); color: #fff; display: grid; place-items: center; font: 800 72px/1 var(--fz-font-display); box-shadow: 0 30px 60px -20px rgba(16,42,86,.5); }
+.type div { margin-top: 12px; }
+</style></head>
+<body>
+<script>
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue("--fz-" + n).trim();
+const chip = (name, v, use) => `<div class="chip"><div class="c" style="background:${css(v)}"></div><div class="t"><b>${css(v).toUpperCase()}</b>${name}<br><span>${use}</span></div></div>`;
+document.body.insertAdjacentHTML("beforeend", `
+  <div class="lbl">Brand kit · global/brand/brand.yaml</div>
+  <h1>Career Orbit <em>video brand kit</em></h1>
+  <div class="sub">One kit for every video. Colours, fonts and card shapes follow the Career Orbit LMS design. Every frame stays calm:
+    neutrals, one brand blue, and three colours that only ever carry meaning. The dotted backdrop stays for the whole video.</div>
+
+  <div class="row"><div style="flex:1"><div class="lbl">Logo · light and dark</div>
+    <div class="logos"><div style="background:#fff"><img src="logo/careerorbit_logo.svg"><img src="logo/careerorbit_logo_horizontal.svg"></div>
+      <div style="background:var(--fz-deep)"><img src="logo/careerorbit_logo_on-dark.svg"><img src="logo/careerorbit_logo_horizontal_on-dark.svg"></div></div></div></div>
+
+  <div class="row"><div class="panel" style="flex:1"><div class="lbl">Colour budget</div>
+    <div class="group"><h3>Neutrals <span>text, cards, backdrop</span></h3><div class="sw">
+      ${chip("navy", "text", "Headings and body text")}${chip("slate", "text2", "Secondary text")}${chip("mist", "mist", "Quiet labels, dimmed items")}
+      ${chip("line", "line", "Borders, dividers, wires")}${chip("dim", "dim", "Inactive chips and tiles")}${chip("page", "page", "Backdrop base")}${chip("white", "card", "Cards")}</div></div>
+    <div class="group"><h3>Brand <span>the only decorative colour</span></h3><div class="sw">
+      ${chip("blue", "accent", "Fills, icons, progress, active")}${chip("blue text", "action", "Blue words, buttons")}${chip("blue soft", "tint", "Pills, icon wells")}${chip("sky", "on-dark-accent", "Blue on dark")}${chip("deep", "deep", "Dark panels")}</div></div>
+    <div class="group"><h3>Meaning <span>never decoration, never per topic</span></h3><div class="sw">
+      ${chip("green", "success", "Correct, True, output")}${chip("green soft", "success-soft", "Correct fill")}${chip("red", "danger", "Error, False, stop")}${chip("red soft", "danger-soft", "Error fill")}
+      ${chip("amber", "highlight", "Look here: rings, warnings")}${chip("amber soft", "highlight-soft", "Highlight fill")}${chip("amber text", "highlight-text", "Amber words")}</div></div>
+    <div class="group"><h3>Code <span>the LMS code editor's own theme, so videos match what students type in</span></h3><div class="sw">
+      ${chip("editor", "code-bg1", "Editor and terminal")}${chip("text", "code-text", "Names, operators")}${chip("keyword", "kw", "def, for, in, True, print, len")}${chip("string", "str", "Strings")}
+      ${chip("number", "num", "Numbers")}${chip("call", "fn", "input(), count()")}${chip("type", "ty", "Class names")}${chip("comment", "cm", "Comments")}</div></div>
+    <div class="group"><h3>Rules</h3><div class="rules">
+      <div class="do"><b>Do:</b> navy text and white cards; blue for emphasis; green, red and amber only when the moment means correct, wrong or look here.</div>
+      <div class="dont"><b>Don't:</b> a colour per topic; teal outside the logo; violet, pink, orange or rose; coloured window dots; changing the backdrop.</div></div></div>
+  </div></div>
+
+  <div class="row">
+    <div class="panel type" style="flex:1"><div class="lbl">Type</div>
+      <div style="font:800 64px/1 var(--fz-font-display)">Tuples in <span style="color:var(--fz-emph)">Python</span></div>
+      <div style="font:700 36px/1.1 var(--fz-font-display)">Bricolage Grotesque · titles, headings, big numbers</div>
+      <div style="font:600 28px/1.4 var(--fz-font-body)">Manrope · body text, chips and labels. Readable at 26 px and up.</div>
+      <div style="font:700 26px/1 var(--fz-font-mono)">JetBrains Mono · date = (15, 8, 2026)</div></div>
+    <div class="panel" style="flex:1"><div class="lbl">Shapes and motion</div>
+      <div style="font:600 24px/1.6 var(--fz-font-body)">Cards: white, 1 px line border, <b>22 px</b> corners, soft navy shadow (the LMS card).<br>
+        Chips and pills: fully round. Code cards: 22 px.<br>Motion: enter 0.55 s ease-out, exit 0.35 s, pop with a small overshoot.<br>Highlights: the words turn blue and a blue underline draws under them as she says them.<br>Pointers: thin blue lines with rounded corners, routed around other graphics.<br>Logo: not burned into videos; the team adds it after the final render.<br>
+        Backdrop: pale <code>page</code> with a navy dot grid (34 px) and two faint blue light pools, fixed all video.</div></div>
+  </div>
+
+  <div class="row"><div style="flex:1"><div class="lbl">A frame in the kit</div>
+    <div class="frame">
+      <div class="label" style="position:absolute;left:84px;top:70px">Example 1</div>
+      <div style="position:absolute;left:84px;top:104px;font:800 56px/1.06 var(--fz-font-display)">A tuple of <span style="color:var(--fz-emph)">numbers</span></div>
+      <div class="code" style="left:84px;top:210px;width:820px"><div class="bar"><i></i><i></i><i></i><span style="margin-left:14px;color:var(--fz-op);font:500 19px/1 var(--fz-font-mono)">example1.py</span><span class="run">▶ Run</span></div>
+        <pre><span class="cm"># a date never changes</span>
+date <span class="op">=</span> (<span class="num">15</span>, <span class="num">8</span>, <span class="num">2026</span>)
+<span class="kw">for</span> v <span class="kw">in</span> date:
+    <span class="kw">print</span>(<span class="str">"value"</span>, v)
+<span class="kw">print</span>(date.<span class="fn">count</span>(<span class="num">8</span>))</pre></div>
+      <div class="term" style="left:84px;top:610px;width:820px"><div style="font:700 18px/1 var(--fz-font-body);letter-spacing:.2em;color:var(--fz-on-dark-soft);margin-bottom:14px">OUTPUT</div>
+        value 15<br>value 8<br>value 2026<br><span style="color:var(--fz-dark-success)">1</span></div>
+      <div class="card" style="left:960px;top:210px;width:620px;padding:30px 36px;font:700 34px/1.35 var(--fz-font-display)">
+        A tuple is an <span class="dh">ordered</span>, <span class="dh">immutable</span> collection: once it is made, its values cannot change.</div>
+      <div style="position:absolute;left:960px;top:500px;display:flex;gap:16px">
+        <div class="tile" style="background:var(--fz-tint);border-color:var(--fz-accent);color:var(--fz-text)">15</div>
+        <div class="tile" style="background:var(--fz-success-soft);border-color:var(--fz-success);color:var(--fz-success)">8</div>
+        <div class="tile" style="background:var(--fz-danger-soft);border-color:var(--fz-danger);color:var(--fz-danger)">20</div>
+        <div class="tile" style="background:var(--fz-dim);border-color:var(--fz-line);color:var(--fz-mist)">26</div></div>
+      <div style="position:absolute;left:960px;top:620px;display:flex;gap:16px;font:700 18px/1 var(--fz-font-mono);color:var(--fz-text2)">
+        <span style="width:100px;text-align:center">now</span><span style="width:100px;text-align:center">correct</span><span style="width:100px;text-align:center">error</span><span style="width:100px;text-align:center">dimmed</span></div>
+      <div style="position:absolute;left:960px;top:690px" class="pill"><div class="ic">1</div>Create a tuple</div>
+      <div class="badge" style="left:1290px;top:680px;width:300px;height:150px">Tuple</div>
+    </div></div></div>
+`);
+</script>
+</body></html>

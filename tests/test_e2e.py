@@ -24,7 +24,7 @@ def test_end_to_end(tmp_path):
            "color=c=#F8F8F8:s=1920x1080:d=5:r=50[pl];[pl]drawbox=x=1500:y=760:w=380:h=320:color=#202830:t=fill[b];[a][b]concat=n=2:v=1:a=0[v]")
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-filter_complex", src, "-f", "lavfi", "-i", "sine=f=220:d=8", "-map", "[v]", "-map", "0:a",
                     "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", raw], check=True)
-    (v / "prompt.md").write_text("# E2E\nReview: off\n")        # no editor here to approve; the gates are tested in test_core
+    (v / "prompt.md").write_text("# E2E\nReview: off\nStyle: 3D\n")       # 3D only when the prompt asks (rule S1)        # no editor here to approve; the gates are tested in test_core
     fzv("ingest", v, "--no-transcribe")
     cuts = json.loads((v / "edit" / "cuts.json").read_text())
     assert [c["kind"] for c in cuts] == ["studio", "corner"]
@@ -34,7 +34,8 @@ sections:
     range: [3.0, 8.0]
     scenes:
       - header: { label: Test, title: "End to *end*", at: 3.2, until: 7.8 }
-      - card: { text: "A **card** in the main slot", at: 3.6, until: 7.8 }
+      - card: { text: "A **card** in the main slot", at: 3.6, until: 5.0 }
+      - db3d: { at: 5.0, until: 7.8, box: { x: 96, y: 300, w: 1000, h: 500 }, items: [{ text: "Rahul", at: 5.2 }, { text: "Priya", at: 5.8 }], count: { to: 2, label: records } }
 studio:
   - studio-tag: { text: "Studio *tag*", at: 0.4, until: 2.8 }
 """)
@@ -44,7 +45,7 @@ studio:
     assert "OK" in out, out
     (v / "edit" / "beats.yaml").write_text("""beats:
   - {id: b01, start: 0, end: 3.0, shot: studio, idea: Intro, show: A studio tag, templates: [studio-tag], sync: [0.4]}
-  - {id: b02, start: 3.0, end: 8.0, shot: corner, idea: The topic, show: A header and a card, templates: [header, card], sync: [3.2, 3.6]}
+  - {id: b02, start: 3.0, end: 8.0, shot: corner, idea: The topic, show: A header and a card then records fly into a 3D database, templates: [header, card, db3d], sync: [3.2, 3.6, 5.2]}
 """)
     fzv("storyboard", v)
     assert (v / "edit" / "review" / "storyboard" / "b02.jpg").exists() and (v / "edit" / "out" / "storyboard.jpg").exists()
@@ -59,6 +60,12 @@ studio:
                           cwd=S, capture_output=True, text=True, env=dict(os.environ, HYPERFRAMES_NO_TELEMETRY="1", HYPERFRAMES_SKIP_SKILLS="1"))
     assert snap.returncode == 0 and len(list((tmp_path / "snap").glob("frame-*.png"))) == 2, snap.stdout[-800:] + snap.stderr[-800:]
     fzv("render", v)
+    import numpy as np                                                # the 3D scene renders with alpha into the overlay clip
+    from PIL import Image
+    png = tmp_path / "f.png"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-c:v", "libvpx-vp9", "-ss", "4.0", "-i", v / "edit" / "out" / "s1.webm", "-frames:v", "1", png], check=True)
+    alpha = np.asarray(Image.open(png).convert("RGBA"))[..., 3]
+    assert (alpha[300:800, 96:1096] > 200).mean() > 0.02, "no 3D pixels in the overlay"
     fzv("finish", v)
     out = fzv("verify", v)
     assert (v / "E2E - Edited.mp4").exists() and "OK" in out

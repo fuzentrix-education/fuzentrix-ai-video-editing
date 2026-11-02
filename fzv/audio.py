@@ -1,4 +1,6 @@
-"""Audio (design §8.4, §9b): synthesised SFX from the recorded cues, optional music ducked under the voice, two-pass loudnorm."""
+"""Audio (design §8.4, §9b): the voice cleaned (rumble filter, speech denoiser, EQ, gentle levelling, de-esser), SFX from the
+recorded cues 18-26 dB under the voice and dipping while she speaks, optional music ducked under the voice, two-pass loudnorm.
+The voice itself is never ducked, cut or lowered."""
 from __future__ import annotations
 
 import json
@@ -75,6 +77,11 @@ KINDS = {
 }
 
 
+# kind -> dB under the voice's loudness, measured on the sound's loudest 100 ms (master prompt: 18-26 dB under the narration)
+UNDER = {"ding": 18, "good": 18, "bad": 19, "chime": 18, "impact": 18, "thud": 19, "click": 21, "whoosh": 22, "swish": 23,
+         "pop": 23, "blip": 24, "tick": 25, "type": 26}
+SPEECH_DIP = 0.7                     # SFX x0.7 (-3 dB) while she speaks, +-0.05 s, so an effect never masks a word
+
 IMPORTANT = {"ding", "good", "bad", "click", "impact", "chime", "thud", "type"}   # results, presses, typing: always kept
 TRANSITION = {"whoosh"}                                                               # scene changes: spaced out
 MINOR = {"pop", "swish", "blip", "tick"}                                              # element entrances: only when the moment is quiet
@@ -124,33 +131,61 @@ def sfx_library() -> dict[str, list[dict]]:
 _decoded: dict[str, np.ndarray] = {}
 
 
+def _norm(x: np.ndarray) -> np.ndarray:
+    """Scale so the loudest 100 ms sits at -20 dBFS RMS: every sound, short click or long whoosh, then lands at its UNDER level."""
+    w = int(0.1 * SR)
+    if len(x) == 0:
+        return x
+    e = np.convolve(x ** 2, np.ones(min(w, len(x))) / min(w, len(x)), "valid") if len(x) >= 2 else x ** 2
+    return x * (0.1 / max(np.sqrt(e.max()), 1e-6))
+
+
 def _load_sound(path: Path) -> np.ndarray:
-    """Decode to mono float at SR, RMS-normalised to -20 dBFS so library files sit at the category's level."""
+    """Decode to mono float at SR, normalised on its loudest 100 ms (-20 dBFS RMS)."""
     k = str(path)
     if k not in _decoded:
         b = subprocess.run(["ffmpeg", "-v", "error", "-i", k, "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"], capture_output=True).stdout
-        x = np.frombuffer(b, np.float32).astype(np.float64)
-        rms = np.sqrt(np.mean(x ** 2)) if len(x) else 1.0
-        _decoded[k] = x * (0.1 / max(rms, 1e-6))
+        _decoded[k] = _norm(np.frombuffer(b, np.float32).astype(np.float64))
     return _decoded[k]
 
 
-def synth_sfx(cues: list, duration: float, out: Path, offset_db: float = -8.0, min_gap: float = 0.06, cfg: dict | None = None) -> Path:
+def speech_gain(voice: Path, duration: float, lufs: float) -> np.ndarray:
+    """Per-sample gain for the SFX bus: SPEECH_DIP where she speaks (frames within 20 dB of her loudness, +-0.05 s), 1 elsewhere,
+    with 30 ms ramps."""
+    b = subprocess.run(["ffmpeg", "-v", "error", "-i", str(voice), "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"], capture_output=True).stdout
+    x = np.frombuffer(b, np.float32).astype(np.float64)
+    n, hop = int(duration * SR) + SR, int(0.02 * SR)
+    frames = len(x) // hop
+    rms = np.sqrt(np.mean(x[: frames * hop].reshape(frames, hop) ** 2, 1)) if frames else np.zeros(0)
+    on = 20 * np.log10(np.maximum(rms, 1e-9)) > lufs - 20
+    pad = 3                                                    # +-0.06 s around speech
+    on = np.convolve(on.astype(float), np.ones(2 * pad + 1), "same") > 0
+    g = np.ones(n)
+    idx = np.repeat(on, hop)[:n]
+    g[: len(idx)] = np.where(idx, SPEECH_DIP, 1.0)
+    r = int(0.03 * SR)
+    return np.convolve(np.pad(g, (r, r), mode="edge"), np.ones(2 * r + 1) / (2 * r + 1), "valid")[:n]
+
+
+def synth_sfx(cues: list, duration: float, out: Path, voice_lufs: float = -14.0, min_gap: float = 0.06, cfg: dict | None = None,
+              dip: np.ndarray | None = None) -> Path:
+    """Each cue at its UNDER level below the voice (plus `level_db` from the settings), dipping under speech (`dip`)."""
     cfg = cfg or {}
     cues = thin_cues(cues, cfg)
     lib = sfx_library()
     fallback = cfg.get("fallback", "synth")
-    offset_db += cfg.get("level_db", 0.0)
+    offset_db = voice_lufs + 20 + cfg.get("level_db", 0.0)         # sound normalised to -20 dBFS -> voice level, then UNDER below it
     L = np.zeros(int(duration * SR) + SR); Rch = np.zeros_like(L)
-    last, rotation = {}, {}
+    last, rotation, used = {}, {}, []
     for kind, t in sorted(cues, key=lambda c: c[1]):
         if kind not in KINDS or t < 0 or t >= duration:
             continue
         if t - last.get(kind, -9) < min_gap:                 # never stack identical cues
             continue
         last[kind] = t
-        gen, db, pan = KINDS[kind]
-        extra = cfg.get("minor_db", -4.0) if kind in MINOR else 0.0
+        gen, _, pan = KINDS[kind]
+        db = -UNDER.get(kind, 22)
+        extra = cfg.get("minor_db", 0.0) if kind in MINOR else 0.0
         rng = np.random.default_rng(abs(hash((kind, int(round(t * 100))))) % (2 ** 32))
         if lib.get(kind):                                    # the team's library first: files rotate, never the same one twice in a row
             files = lib[kind]
@@ -159,13 +194,17 @@ def synth_sfx(cues: list, duration: float, out: Path, offset_db: float = -8.0, m
             s = files[k % len(files)]
             x = _load_sound(GLOBAL / "sfx" / s["file"]) * 10 ** ((db + offset_db + extra + s.get("gain_db", 0.0)) / 20)
         elif fallback == "synth":                            # synthesised: every cue a slightly different take (pitch, level)
-            base = gen()
+            base = _norm(gen())
             f = rng.uniform(0.88, 1.12)
             x = np.interp(np.arange(0, len(base) - 1, f), np.arange(len(base)), base) * 10 ** ((db + offset_db + extra + rng.uniform(-1.5, 1.5)) / 20)
         else:
             continue
+        used.append((kind, round(t, 3)))
         s = int(t * SR); e = min(len(L), s + len(x)); x = x[: e - s]
         L[s:e] += x * np.sqrt((1 - pan) / 2) * 1.414; Rch[s:e] += x * np.sqrt((1 + pan) / 2) * 1.414
+    out.with_name("sfx_used.json").write_text(json.dumps(used))   # the effects really placed: the listening check listens for these
+    if dip is not None:                                      # effects dip while she speaks; the voice is never touched
+        L[: len(dip)] *= dip[: len(L)]; Rch[: len(dip)] *= dip[: len(Rch)]
     mix = np.stack([L, Rch], 1)[: int(duration * SR)]
     pcm = (np.clip(mix, -1, 1) * 32767).astype(np.int16)
     with wave.open(str(out), "wb") as w:
@@ -197,20 +236,41 @@ def music_loudness(track: Path) -> float:
     return v
 
 
+VOICE_CHAIN = ("highpass=f=80,arnndn=m={model}:mix=0.9,equalizer=f=250:t=q:w=1:g=-1.5,equalizer=f=3200:t=q:w=1:g=2,"
+               "acompressor=threshold=-20dB:ratio=2:attack=10:release=150,deesser=i=0.3")
+# rumble and desk thumps out; RNNoise speech denoiser keeping 10% of the dry signal so her tone stays natural; less boxiness; a
+# little presence; gentle levelling for a steady volume; softer "s" sounds. Model: global/audio/sh.rnnn (rnnoise-models, speech
+# in recording noise; not subject to copyright).
+
+
+def clean_voice(voice: Path, out: Path, cfg: dict, log=print) -> Path:
+    """The cleaned voice (cached by the chain), or the original with only a 70 Hz high-pass when `voice.cleanup` is off."""
+    chain = VOICE_CHAIN.format(model=str(GLOBAL / "audio" / "sh.rnnn")) if cfg.get("cleanup", True) else "highpass=f=70"
+    key = out.with_suffix(".key")
+    if out.exists() and key.exists() and key.read_text() == chain and out.stat().st_mtime >= voice.stat().st_mtime:
+        return out
+    media.run(["ffmpeg", "-v", "error", "-y", "-i", voice, "-af", chain, "-c:a", "pcm_s24le", out])
+    key.write_text(chain)
+    log("audio: voice cleaned (denoise, EQ, levelling, de-ess)" if cfg.get("cleanup", True) else "audio: voice untouched (70 Hz high-pass only)")
+    return out
+
+
 def mix(proj, raw: Path, duration: float, settings: dict, log=print) -> Path:
-    """voice (70 Hz high-pass) + SFX (+ ducked music) -> two-pass loudnorm -> edit/audio/mix.wav"""
+    """cleaned voice + SFX (dipping under speech) (+ ducked music) -> two-pass loudnorm -> edit/audio/mix.wav"""
     A = proj.edit / "audio"
-    voice = A / "voice.wav"
-    if not voice.exists():
-        media.extract_audio(raw, voice, SR, mono=False, codec="pcm_s24le")
+    raw_voice = A / "voice.wav"
+    if not raw_voice.exists():
+        media.extract_audio(raw, raw_voice, SR, mono=False, codec="pcm_s24le")
+    voice = clean_voice(raw_voice, A / "voice_clean.wav", settings.get("voice") or {}, log)
     lvl = media.loudness(voice).get("lufs", -22.0)
     cues = json.loads((A / "cues.json").read_text()) if (A / "cues.json").exists() else []
-    sfx = synth_sfx(cues, duration, A / "sfx.wav", offset_db=-8.0 + (lvl + 22.0), cfg=settings.get("sfx") or {})
+    dip = speech_gain(voice, duration, lvl)
+    sfx = synth_sfx(cues, duration, A / "sfx.wav", voice_lufs=lvl, cfg=settings.get("sfx") or {}, dip=dip)
     music = music_track(settings)
     inputs = ["-i", voice, "-i", sfx]
     fmt = "aformat=sample_rates=48000:channel_layouts=stereo"
     # the voice feeds both the mix and (with music) the ducking sidechain; a filter label can be used once, so split it
-    fc = f"[0:a]highpass=f=70,apad=whole_dur={duration},{fmt}" + (",asplit=3[v][vk][vn];[1:a]asplit=2[s][sn];" if music else "[v];")
+    fc = f"[0:a]apad=whole_dur={duration},{fmt}" + (",asplit=3[v][vk][vn];[1:a]asplit=2[s][sn];" if music else "[v];")
     if music:
         m = settings["music"]
         inputs += ["-stream_loop", "-1", "-i", music]

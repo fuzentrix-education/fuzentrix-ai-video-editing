@@ -2,7 +2,7 @@
 
 **Family:** core · **Layers:** plate, studio
 
-Brand logo, top right, in a white pill. Stays until the clip ends.
+Brand logo, top right, straight on the backdrop (no box); the on-dark version during dark scenes. Stays until the clip ends.
 
 | Parameter | Meaning |
 |---|---|

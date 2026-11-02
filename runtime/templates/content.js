@@ -82,7 +82,7 @@
       a.inn(row, p.row_at && p.row_at[i] != null ? p.row_at[i] : p.at + 0.2 + i * 0.08, { x: -16 }, 0.3);
       return row;
     });
-    (p.highlights || []).forEach((h) => { const r = R_[h.row]; if (!r) return; const tgt = h.col != null ? r.children[h.col] : r; a.to(tgt, h.at, { backgroundColor: h.tone === "danger" ? "#FDECEC" : h.tone === "success" ? "#E3F5EA" : "#E6F6FA", duration: 0.25 }); if (h.until != null) a.to(tgt, h.until, { backgroundColor: "rgba(0,0,0,0)", duration: 0.25 }); a.sfx("blip", h.at); });
+    (p.highlights || []).forEach((h) => { const r = R_[h.row]; if (!r) return; const tgt = h.col != null ? r.children[h.col] : r; a.to(tgt, h.at, { backgroundColor: a.cv(h.tone === "danger" ? "danger-soft" : h.tone === "success" ? "success-soft" : "tint"), duration: 0.25 }); if (h.until != null) a.to(tgt, h.until, { backgroundColor: "rgba(0,0,0,0)", duration: 0.25 }); a.sfx("blip", h.at); });
   });
 
   // ---------- Data Storytelling ----------

@@ -41,7 +41,7 @@
    "until": "",
    "box": "x, y, w (default: side slot)",
    "target": "{code: id, line} | {code: id, run: true} | {term: id, line} | {rec: id, hl: name} | {point: [x, y]}",
-   "elbow_x": "optional x for the wire's bend"
+   "elbow_x": "ignored: the wire is routed around the other graphics automatically"
   }
  },
  "terminal": {
@@ -157,6 +157,29 @@
    "steps": "[{label, at}]",
    "highlights": "[{name, box: [x, y, w, h] in recording pixels, at, until}]",
    "hide": "[{at, until}] periods to hide the window (e.g. concept scenes)"
+  }
+ },
+ "char-scan": {
+  "name": "char-scan",
+  "family": "code",
+  "layers": [
+   "plate"
+  ],
+  "doc": "A string split into character cells; a pointer walks along and stamps \u2713 or \u2717 for a test (Python's isalpha, isdigit, isalnum, isupper, islower, isspace); the result pops as True / False.",
+  "params": {
+   "text": "the string",
+   "test": "alpha | digit | alnum | upper | lower | space",
+   "marks": "optional marks per character instead of a test: \u2713 \u2717 \u2013",
+   "label": "caption above, e.g. `\"Hi5\".isalpha()`",
+   "at": "",
+   "until": "",
+   "step": "s per character (default 0.4)",
+   "times": "[time per character] (overrides step)",
+   "stop_on_fail": "stop at the first \u2717, as Python does (default false: check every character)",
+   "result": "{at}: the True / False pill",
+   "indexes": "show indexes under the cells (default false)",
+   "box": "x, y (default main slot)",
+   "size": "cell px (default 84)"
   }
  },
  "term-reveal": {
@@ -304,9 +327,37 @@
    "plate",
    "studio"
   ],
-  "doc": "Brand logo, top right, in a white pill. Stays until the clip ends.",
+  "doc": "Brand logo, top right, straight on the backdrop (no box); the on-dark version during dark scenes. Stays until the clip ends.",
   "params": {
    "at": "appear time (default: clip start)"
+  }
+ },
+ "progress": {
+  "name": "progress",
+  "family": "core",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "Lesson progress: a thin bar across the very top that fills with the lesson's time. Off by default; prompt `Progress bar: on` adds it to every clip.",
+  "params": {
+   "total": "the lesson's duration in s (set automatically)"
+  }
+ },
+ "chapter": {
+  "name": "chapter",
+  "family": "core",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "Chapter pill, top left: number badge, chapter name \u00b7 lesson name. Added automatically for every section with `chapter:` (setting chrome.chapters); slides to the next chapter when it changes.",
+  "params": {
+   "n": "chapter number",
+   "name": "chapter name (short)",
+   "lesson": "lesson name",
+   "prev": "{n, name}: the chapter shown before; the pill swaps at `at`",
+   "at": ""
   }
  },
  "header": {
@@ -466,7 +517,7 @@
   "layers": [
    "plate"
   ],
-  "doc": "Full-frame backdrop for a short full-screen moment (rule L3: at most 12 s each, 10% of runtime). Put the scenes that belong to it after it, with box set inside the full frame.",
+  "doc": "Only when the prompt asks (rule L11: the background stays the brand plate). Full-frame backdrop for a short full-screen moment (rule L3: at most 12 s each, 10% of runtime). Put the scenes that belong to it after it, with box set inside the full frame.",
   "params": {
    "at": "",
    "until": "required",
@@ -756,11 +807,31 @@
    "plate"
   ],
   "static": false,
-  "doc": "Compose mode only: switch the background behind the instructor to a dark brand scene for a big moment (the hero reveal, a fun fact); text turns light for its duration.",
+  "doc": "Only when the prompt asks (rule L11: the background stays the brand plate). Compose mode: switch the background behind the instructor to a dark brand scene; text turns light for its duration.",
   "params": {
    "kind": "dark",
    "at": "",
    "until": ""
+  }
+ },
+ "venn": {
+  "name": "venn",
+  "family": "explainer",
+  "layers": [
+   "plate"
+  ],
+  "doc": "Two sets as circles that draw on; each value pops into its region as it is said; an operation fills its region (union, intersection, difference, symmetric difference) in the brand blue; amber rings point at values, red strikes skip them; an optional result row.",
+  "params": {
+   "a": "{label, at}",
+   "b": "{label, at}",
+   "items": "[{v, in: a | b | both, at}]",
+   "op": "{kind: union | intersection | a-b | b-a | symmetric, at, label}",
+   "rings": "[{v, at, until}]",
+   "strike": "[{v, at}]",
+   "result": "{text, at}: a mono row under the circles, e.g. result = {10, 20}",
+   "at": "",
+   "until": "",
+   "box": "default: main slot"
   }
  },
  "presenter": {
@@ -862,6 +933,56 @@
    "vars": "{variable: value} (see fzv registry list)",
    "cues": "[times] for items with a `cues` variable (one per step)",
    "css": "{--custom-prop: value} the item's own CSS variables (e.g. text sizes of a component in a small box)"
+  }
+ },
+ "db3d": {
+  "name": "db3d",
+  "family": "3d",
+  "layers": [
+   "plate"
+  ],
+  "doc": "3D: records (labelled cards) fly one by one into a database cylinder that turns slowly; it pulses as each lands and a count rises. For collecting / storing data in a database. One hero moment per video.",
+  "params": {
+   "items": "[{text, at}] each card flies in at `at`",
+   "label": "label under the database (default Database)",
+   "count": "{to, label} count shown under the database (optional)",
+   "at": "",
+   "until": "",
+   "box": "x, y, w, h (default main slot)"
+  }
+ },
+ "network3d": {
+  "name": "network3d",
+  "family": "3d",
+  "layers": [
+   "plate"
+  ],
+  "doc": "3D: devices on a floor (person, laptop/client, server, database) joined by arcs; request and response packets travel along them on their words. For client/server, user -> DBMS -> database, APIs. One hero moment per video.",
+  "params": {
+   "nodes": "[{id, kind: person|laptop|server|database, text, x, z, at}] x -5..5, z -3..3 (floor units)",
+   "links": "[{from, to, at}] arcs draw on at `at`",
+   "packets": "[{from, to, label, at, dur, kind: req|res}]",
+   "at": "",
+   "until": "",
+   "box": "x, y, w, h (default main slot)"
+  }
+ },
+ "loop3d": {
+  "name": "loop3d",
+  "family": "3d",
+  "layers": [
+   "plate"
+  ],
+  "doc": "3D: loop values ride a conveyor one per iteration through a gate that checks the condition; passing values drop into an output tray, the break value turns the gate red and the belt stops. For for-loops, range(), break.",
+  "params": {
+   "values": "[values] in loop order",
+   "times": "[time per value] when each value reaches the gate",
+   "cond": "condition label on the gate, e.g. 'i == 6'",
+   "stop_value": "value where break stops the loop (optional)",
+   "label": "caption above the belt (markdown)",
+   "at": "",
+   "until": "",
+   "box": "x, y, w, h (default main slot)"
   }
  },
  "sketch-board": {

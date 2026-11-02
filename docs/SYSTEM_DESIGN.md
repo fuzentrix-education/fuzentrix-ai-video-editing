@@ -5,7 +5,7 @@
 **Reference implementations:** `Automations/video-edits/` (`dbms-trail`, `durga-trail`, `loop-control`).
 
 This document describes `fzv`, a standalone tool that turns an instructor's video into a finished, on-brand teaching video with motion graphics.
-- Every video reads the same **global** rules, styles and templates. When several brand kits exist, the video's prompt names the one to use (Career Orbit by default).
+- Every video reads the same **global** rules, styles, templates and the one brand kit (Career Orbit).
 - Each video can carry its own **prompt** that steers or overrides those defaults.
 - After delivery, a video can be fixed at specific timestamps with further prompts.
 
@@ -39,7 +39,7 @@ The document also records the decisions behind the design and the lessons from t
 | D9 | **A video's prompt can override anything** for that video, including global rules. Every override is logged in `edit/decisions.md`. | The user's choice; the log keeps overrides visible. |
 | D10 | **No outros or end cards.** The editors' intro animation already brands every video. | The user's instruction. |
 | D11 | **Style families** (§7): a fixed base on every video, content-driven families picked per video, and Sketch only on request. | Variety per video without losing the house look. |
-| D12 | **The instructor stays visible most of the time.** Short full-screen cutaways are allowed when a moment needs one (§8.2, L3). | The user's choice. |
+| D12 | **The instructor stays visible most of the time, and the background never changes.** Short full-screen cutaways and dark scenes only when the video's prompt asks (§8.2, L3, L11). | The user's choice; 2026-10-28: "the background has changed entirely, avoid such things". |
 | D13 | **Device-agnostic.** Worker counts, transcription backend and encoder are chosen from the machine at run time; nothing is tuned to one computer (§5.1). | The user's instruction: build the workflow, not for a device. |
 | D14 | **Brand per video, chosen by the prompt.** With several kits in `global/brand/`, the prompt names one; otherwise `defaults.yaml` (Career Orbit). | The user's instruction. |
 | D15 | **Subtitles and music are opt-in.** Off by default; the prompt can switch either on, with options (§3.3, §9a, §9b). | The user's instruction. |
@@ -56,9 +56,11 @@ The document also records the decisions behind the design and the lessons from t
 | D27 | **Music is audible.** When the prompt asks for music, the bed sits a fixed loudness below the voice (−18 LU; "low" −22, "high" −14), measured per track, with gentle ducking. | The first music test was effectively silent (−28 dB plus hard ducking). |
 | D28 | **Animations from the HyperFrames registry.** 448 open-source (Apache-2.0) blocks and components; `fzv registry add` vendors them into `global/registry/` and the `hf` template mounts them in a box with their variables and word-anchored cues (§7.4). | The user: "get the animation templates also, or take from web". |
 | D29 | **Editors work by chatting in Claude Code (VS Code); the CLI is Claude's toolset.** Project skills (`/edit-video`, `/change`, `/review`, `/approve`) in `.claude/skills/`, safe steps pre-approved in `.claude/settings.json`, a one-page [editor guide](EDITOR-GUIDE.md), one-time `bin/setup`. | The editors are not technical; the user: "make things easy for editing for editors", "currently I am using Claude Code UI in VS Code". |
+| D34 | **One concept collection for every course; variety (V5).** The concept list (Python and DBMS phrases only) became one collection of 453 concepts in `global/concepts.yaml`, covering technical and non-technical courses (programming, Python, web, React, FastAPI, databases, dev tools, AI/ML, data science, digital marketing, aptitude, career skills, spoken English). Nothing is chosen per course: every concept is available to every video and Claude uses the moments that fit the lesson. Phrases are kept specific so a word from one subject rarely fires in another. Suggestions rotate and `fzv beats` / `fzv validate` flag repeated animations (rule V5). | The user: "expand it to vast things, so that it can fit wide range of courses, technical and non technical… User should not feel they are repeated"; then "no need to divide by course… it should be a collection, agents use what will be appropriate". The three test edits each had the same animation back to back. |
+| D33 | **3D inside HyperFrames, free sources only.** HyperFrames stays (Apache-2.0, no per-render fees; plain HTML + GSAP that Claude writes well; our runtime, checks and Studio). A `3d` template family (db3d, network3d, loop3d) uses three.js r158 (MIT, vendored, loaded only by clips that use it): each scene is a pure function of time driven by the paused timeline, toon shading in the theme's colours, HTML labels; it renders on the Mac's GPU (ANGLE Metal), and the DOM sampler uses software WebGL. Used only when the video's prompt asks for 3D (`styles.on_request`, rule S1), then for one or two hero moments. Tools and assets stay free: ACE-Step (MIT) if music is ever generated; no paid plans. (Earshot (MIT) is an optional tool outside the repo for picking music and vetting sounds; the listening check uses plain measurements, rule A6.) | The user: "include three.js, earshot into the workflow", "we go with free sources only". |
 | D32 | **Live preview in HyperFrames Studio, only on request or before the final render (§9g); music on/off from the review page.** `fzv studio` turns the built clips into one Studio project (view-only); `review.preview: browser` makes it the default preview, the draft video stays as `video`. The mix also writes voice+SFX and music stems, so the review page can switch music off live and Studio shows music as its own track; `fzv mix` applies a choice by re-mixing only. | The user: "can we have preview directly in hyperframes studio", "generate browser preview … only when the user asks or before final rendering", "I need control to turn bg music off or on". |
 | D31 | **A preview video before the final render (§9f).** The storyboard approval also waits for a quick low-frame-rate render of the whole edit with the real mix, so motion, timing and sound are checked before the slow render. | The user: "are we not generating a preview before final rendering"; stills can't show timing or sound. |
-| D30 | **Two approvals before the slow steps: the beat sheet and the storyboard (§9f).** `build` runs only from an approved beat sheet, `render` only after the storyboard of the current build is approved (rules R1/R2, setting `review.*`, prompt `Review: off`). Approvals carry a fingerprint, so any later change needs a new one. Edits made before beat sheets keep working without them. | Plans per idea give better edits than scene-by-scene specs; mistakes are cheapest before rendering; editors need to see and steer the edit. |
+| D30 | **Two approvals before the slow render: the storyboard, then the preview (§9f; since 2026-11-02, earlier one combined approval).** Claude still plans the beat sheet (it drives the storyboard and V4), but since 2026-10-28 the editor approves only the storyboard with its preview: `render` runs only after the storyboard of the current build is approved (rule R2). The beat-sheet approval (rule R1: `build` only from an approved sheet) is opt-in (`review.beats: required`, prompt `Review: beats, storyboard`); prompt `Review: off` turns both off. The user found the separate beat-sheet stop unnecessary: the storyboard shows the same plan as frames. Approvals carry a fingerprint, so any later change needs a new one. Edits made before beat sheets keep working without them. | Plans per idea give better edits than scene-by-scene specs; mistakes are cheapest before rendering; editors need to see and steer the edit. |
 | D21 | **Output on screen is the program's real output.** The build runs the code shown on screen and prints exactly what a terminal shows (rule E7). | The user's instruction: outputs printed exactly how the code outputs them. |
 
 ## 3. Organisation: global files and video folders
@@ -78,10 +80,9 @@ fuzentrix-ai-video-editing/                git repo
   global/
     defaults.yaml                          defaults: brand, style mix, cutaway limits, clutter budget, subtitles off, music off, output naming
     rules.yaml  RULES.md                   the rules (§8): machine-checkable defaults
-    brand/                                 brand kits (see global/brand/README.md)
-      _shared/     house.yaml (fonts, type, shapes, motion, code colours, audio, layout) + fonts/ + plate/ + brand sheet
-      career-orbit/  brand.yaml (extends _shared/house.yaml) + logo set + brand sheet
-      fuzentrix/     brand.yaml (extends _shared/house.yaml) + logo set + brand sheet
+    brand/                                 the one brand kit (see global/brand/README.md)
+      brand.yaml   logo, colours, backdrop, fonts, type, shapes, code colours, motion, audio, layout
+      logo/ fonts/ plates/ (editors' slides, for keying) archive/ + brand sheet
     styles/<family>/STYLE.md               the fixed look of each style family (§7)
     templates/<family>/<template>.md       template cards: parameters, footprint, rules (§9)
     props/                                 characters and props library + manifest.yaml (§9c)
@@ -122,7 +123,6 @@ The prompt is free text. It may also be passed on the command line, and is then 
 
 ```markdown
 # Loop Control Statements
-Brand: career-orbit                  # which kit in global/brand/ (default: defaults.yaml → career-orbit)
 Style: default                       # e.g. "sketch edit", "minimal", "more diagrams"
 Subtitles: off                       # default off. "on" (English), or "on, Telugu + English", with a position
 Music: off                           # default off. e.g. "calm-focus, low" (a track id or mood from global/music)
@@ -221,62 +221,33 @@ Turnaround depends on one section's length, not the whole video.
 
 ## 6. Brand kit
 
-The brand kits live in `global/brand/` (see its README). `_shared/house.yaml` holds everything that is the same for every brand: fonts, type scale, shapes, shared colours, code colours, motion, audio and layout. Each `<brand>/brand.yaml` extends it with its logo set, colour roles, corner-logo setup and name-card label. `base.css` and the SFX levels are generated from the merged result; no template hard-codes a colour, font or duration. Each kit ships a one-page brand sheet (`<brand>_brand_sheet.png`).
+There is **one** brand kit, `global/brand/brand.yaml` (Career Orbit, the Fuzentrix LMS; see `global/brand/README.md` and
+`brand_sheet.png`). It holds the logo set, colours, backdrop, fonts, type scale, shapes, code colours, motion, audio and layout. `brand.css`
+(the `--fz-*` variables), the backdrop image and the SFX levels are generated from it at build time; no template hard-codes a colour, font
+or duration. A `Brand:` line in an older prompt changes nothing. Decided 2026-11-02: "no multiple kits now for fuzentrix or careerorbit,
+only one" (the Fuzentrix Education logo set is kept in `global/brand/archive/`).
 
-### 6.1 Career Orbit (the LMS; default brand)
+**Source:** the Career Orbit LMS design's default theme, so the videos look like the product students use: navy text, one blue, Manrope
+and Bricolage Grotesque, white cards with 22 px corners and soft navy shadows.
 
-The kit is complete in `global/brand/career-orbit/` (see its README and `career-orbit_brand_sheet.png`).
-
-**Logo set:** stacked (the master, rebuilt from footage because no original exists), horizontal and icon. Each comes in colour, on-dark and white, as SVG and transparent PNGs.
-- **On-dark:** white CAREER, teal ORBIT, and the icon with its dark tones lifted so the navy part of the ring stays visible.
-- **In videos:** the horizontal logo is the corner logo, 40 px high in a white pill.
-
-**Colours:** a merge of two sources, so logo, LMS app and videos look like one product.
-- the LMS app's navy ramp (`fuzentrix_ui/src/styles/theme.css`) for text, surfaces and buttons
-- the logo's teal as the accent
+**Colour budget** (2026-11-02: the other editing pipeline's videos used "so many colors, not consistent"):
 
 ```yaml
-colors:
-  navy:        "#0D274C"   # LMS brand-900: headings and body text
-  action:      "#1B53A2"   # LMS brand-600: buttons, links, small-text emphasis (7.4:1 on white)
-  action-hover: "#174484"  # LMS brand-700
-  teal:        "#16BBC8"   # logo: THE accent (icons, progress, active states, accents on dark). Never text on white
-  orbit-text:  "#30809F"   # logo "ORBIT": title emphasis at heading sizes
-  slate:       "#52657D"   line: "#DDE9F6"   tint: "#EFF5FB"   surface: "#FFFFFF"   surface-warm: "#FBFAF7"
-  deep:        "#07152B" / "#081830"   # LMS brand-deep / brand-950: dark panels
-gradients:
-  orbit: ["#164673", "#145695", "#1790B4", "#16BBC8"]   # the logo's ring: hero titles, brand moments
-  deep:  ["#0D274C", "#081830"]                          # the LMS sidebar: dark panels, cutaway backgrounds
-roles: { text: navy, title-emphasis: orbit-text, small-emphasis: action, accent: teal, action: action, highlight: warning (amber) }
+neutrals: { navy: "#102A56", slate: "#3B5079", mist: "#8A9BBA", line: "#DCE7FA", dim: "#F1F4F9", page: "#F4F7FC", surface: "#FFFFFF" }
+brand:    { blue: "#2563EB", blue-text: "#1D4ED8", blue-soft: "#E3EDFF", sky: "#78B7FF", deep: "#0B1D37" }   # the only decorative colour
+meaning:  { success: "#15803D", danger: "#C42020", highlight: "#F59E0B" }   # correct / error / look here, each with a soft fill
+code:     { bg: ["#0D1A3A", "#0A1530"], text: "#E1EBFF", keyword: "#A5B6FF", string: "#7EE0B5", number: "#F7B267", call: "#5CC8FF", type: "#FFD580" }   # the LMS editor theme
 ```
 
-The wordmark keeps its own navy `#1C2F58` inside the logo artwork only. The LMS app's interface fonts (Avenir, Source Sans 3) are not used; videos use the house fonts.
-
-### 6.2 Fuzentrix Education
-
-The kit is complete in `global/brand/fuzentrix/` (see its README). Typography, shapes, motion and sound come from the house style; only these differ from Career Orbit.
-
-**Logo set:** every file comes from the original vector (`MAIN LOGO.svg` from the landing site), re-cropped or recoloured but never redrawn.
-- stacked (master), horizontal and icon
-- each in colour and on-dark (white)
-- SVG plus transparent PNGs
-
-The horizontal lockup is the video corner logo, 40 px high in a white pill.
-
-```yaml
-colors:
-  ink:        "#0D274C"   # logo gradient (bottom), website primary: text
-  brand-blue: "#3381C2"   # logo gradient (top): accent, title emphasis (large text only)
-  brand-mid:  "#205487"   # gradient midpoint: emphasis in small text (7.8:1 on white)
-  coral:      "#CF501B"   # website accent: calls to action
-  orange:     "#D9731D"   # website focus ring: code highlight boxes and wires
-  cyan:       "#38BDF8"   # website accent: accents on dark
-  slate:      "#5C6B80"   surface: "#F3F6FA"   tint: "#ECF6FB"   line: "#E1E7EF"
-gradients:
-  logo: ["#0D274C", "#3381C2"]   # bottom to top
-```
-
-The older slide values (navy `#062858`, blue `#0A59C8`, Aptos) are replaced by these. The kit is used when a video's prompt sets `Brand: fuzentrix`.
+- No per-topic colours; teal stays inside the logo artwork; no violet, pink, orange or rose; window dots are neutral.
+- **Backdrop:** the pale page with a navy dot grid (34 px) and two faint blue light pools, rendered from `backdrop:` and fixed for the whole
+  video (L11). In overlay mode the rough cut's own background shows instead (the editors' slide in `global/brand/plates/`).
+- **Fonts:** Bricolage Grotesque (display), Manrope (body), JetBrains Mono (code), Caveat (sketch only). Registry items that name Inter or
+  Outfit get the kit's fonts through `fonts.aliases`.
+- **Logo:** not burned into videos: the team adds the Career Orbit logo after the final render (2026-11-02). With prompt `Logo: on` the
+  horizontal lockup goes top right, 40 px high, straight on the backdrop (no box), the on-dark version during dark scenes.
+- **Emphasis and pointers:** highlighted words turn blue with a drawn blue underline. A note's pointer is a thin blue line with rounded
+  corners, routed after layout around everything visible while it shows (never along a line of text or through a card or tile).
 
 ## 7. Style families
 
@@ -286,23 +257,24 @@ All families use the brand kit. A family fixes the **look and motion grammar**; 
 
 | Family | Availability | Used for | Look and motion |
 |---|---|---|---|
-| **Core Explainer** | **Always** (the base) | titles, headers, agenda, definitions, concept and type cards, analogies, flowcharts, summaries | White cards on the plate, Swiss grid, Outfit and Inter, orbit-blue accents; slide and fade entrances, pops for chips |
+| **Core Explainer** | **Always** (the base) | titles, headers, agenda, definitions, concept and type cards, analogies, flowcharts, summaries | White cards on the dotted backdrop, Swiss grid, Bricolage Grotesque and Manrope, blue accents; slide and fade entrances, pops for chips |
 | **Code & Execution** | **Always, for any code** | syntax, code typed to the instructor's dictation, line highlights, notes with wires, loop traces, variable boxes, output terminal, screen-recording window | Dark navy editor cards, JetBrains Mono with ligatures off, syntax palette; explanations always outside the code (rule L6) |
 | **Explainer** | **Always, wherever a process is explained** | data flowing into a database, processing, type conversion, range generation, request/response, searching many records, a system and its operations, app screens, records filling in, pain points and benefits | Brand nodes and cards; things move (packets travel, chips fly in, values convert, numbers emit, a magnifier scans); each step on its word; dark brand scene for big moments in compose mode. See `global/styles/explainer/STYLE.md` |
-| **Kinetic Typography** | Content-driven | the defined term, a rule, a key takeaway, "X vs Y" | Big Outfit 800–900, word-by-word or line-by-line reveal, orbit gradient on the keyword. **12 words at most and never running speech**, so it can't turn into subtitles |
+| **Kinetic Typography** | Content-driven | the defined term, a rule, a key takeaway, "X vs Y" | Big Bricolage Grotesque 800, word-by-word or line-by-line reveal, the navy-to-blue gradient on the keyword. **12 words at most and never running speech**, so it can't turn into subtitles |
 | **Technical Diagram** (blueprint / isometric) | Content-driven | architecture, client–server, database tables and ER diagrams, memory and stack models, request flow | A light blueprint grid on white (stays with the plate); blocks, arrows and line icons in brand blues; isometric blocks for systems; parts assemble and arrows draw on |
 | **Data Storytelling** | Content-driven | counts, comparisons, growth, Big-O, query results | Flat bars, lines and tables in brand colours; count-ups; values build as the instructor says them |
 | **Sketch / Whiteboard** | **Only when the prompt asks** (for example "sketch edit") | analogies and stories, or a whole video in sketch style | Whiteboard marker: a clean white board, navy `#1C2F58` and teal `#16BBC8` / `#30809F` marker strokes, red and green for right and wrong, Caveat for labels; strokes draw themselves on with a slight hand wobble; people and objects from one fixed open-licence line-art set |
 
 **Not in the library** (low fit for lessons; see Appendix A): 3D scenes, character animation, glitch or synthwave, pixel art, hype product-launch edits. A prompt that asks for one is flagged in `decisions.md` as needing new templates.
 
-### 7.3 Show the process (rules V1–V3)
+### 7.3 Show the process (rules V1–V3, V5)
 
 Text cards (header, card, definition, chips) only label an idea. Whenever the instructor explains how something works, the planner
 shows it happening with an Explainer, Code, Diagram, Data or Props template, in step with the words:
 - **Every step on its word.** Each moving part has its own `at`, anchored to the word that names it.
 - **Rhythm:** a new visual roughly every 8–12 s; at most 15 s of words-only screen (V2); every section over 30 s has an animated explanation (V1).
-- **Concept moments:** `global/concepts.yaml` maps spoken phrases to the templates that show them ("type conversion" → `type-convert`, "1 to n" → `range-gen`, "store the data" → `data-flow`, "log in" → `mockup`…). `fzv plan` lists the moments found in the transcript; `fzv validate` reports uncovered ones as advice (V3). The team extends the lexicon.
+- **Concept moments (D34):** `global/concepts.yaml` maps spoken phrases to the templates that show them ("type conversion" → `type-convert`, "1 to n" → `range-gen`, "store the data" → `data-flow`, "usestate" → `variables`, "conversion rate" → `icon-grid`…): one collection of 453 concepts for every course, in sections only for finding things. Phrases match plural- and punctuation-blind, the longest phrase winning, and are kept specific ("conversion rate", not "conversion") so a word from one subject rarely fires in another. `fzv plan` lists the moments found in the transcript and Claude uses the ones that fit the lesson; `fzv beats` and `fzv validate` report uncovered ones as advice (V3). The team extends the collection (how-to in its header).
+- **Variety (V5):** every concept lists two or more 2D templates; a concept that comes back leads with its next template, and a template suggested for one of the last three moments moves to the back. `fzv beats` and `fzv validate` flag an animation twice in a row, or one carrying more than 20% of a video's animations (`visuals.max_repeat_share`).
 - **Concrete examples:** the instructor's own examples first; illustrative details (sample rows, a portal screen) are allowed and listed under "to confirm".
 - **Reference:** the earlier hand-made DBMS edit (`video-edits/dbms-trail/`) is the bar: about one new visual every 9 s, each one moving.
 
@@ -372,7 +344,7 @@ These are the global defaults. A video's prompt may override any of them (D9); o
 | E1 | Content and timing come only from the video's own audio. Never compare against or correct from a script. | review |
 | E2 | Keep the original timing: never cut, trim, re-order or extend the instructor's footage. No outro. | auto (output duration = source duration) |
 | E3 | Subtitles are off by default; only the prompt switches them on (§9a). Otherwise on-screen text is titles, labels, code and short notes; a note is 16 words at most. | auto |
-| E4 | The brand kit is the one the prompt names; without one, `defaults.yaml` (Career Orbit). | auto |
+| E4 | Every video uses the one brand kit (`global/brand/brand.yaml`); a `Brand:` line in a prompt changes nothing. | auto |
 | E5 | The name card appears only when the instructor introduces themself in the audio, using the name they say. Never guess from file or folder names. | auto (anchor on the self-introduction) |
 | E6 | Anything shown that wasn't said outright (code rebuilt from dictation, a name heard indistinctly) is listed under "to confirm" in `decisions.md` and in the delivery message. | auto |
 | E7 | Program output on screen is the program's real output: a terminal prints through `exec`, which runs the code card's code at build time. Hand-written output needs `manual: <reason>`. | auto |
@@ -393,6 +365,8 @@ These are the global defaults. A video's prompt may override any of them (D9); o
 | L8 | Content margins: 96 px left; header band at y 78–180; brand bug at the top right; nothing within 40 px of the edge. | auto |
 | L9 | One idea on screen at a time. The previous scene leaves before or as the next one enters. | review |
 | L10 | **Clutter budget** at any moment: at most 4 content blocks (for example a code card, its output and two supporting visuals; header and logo don't count; a list, tile row or diagram counts once), 40 words of non-code text, 12 code lines, and 1 animated focus point. Studio-layer graphics: 1 block, 12 words. | auto (sampled every 0.5 s) |
+| L11 | **The background stays the brand plate for the whole video**: no dark `scene` and no full-frame `cutaway` backdrop unless the prompt asks (override `L11`). Big moments are made big by the graphics themselves. | auto |
+| L12 | **Blocks never cover each other**: a card, code card or terminal never overlaps another's painted area (text that wraps longer than planned pushes a card into its neighbour). Place the next block below the previous one's real height, or shorten the text. | auto |
 
 ### 8.2a Visual explanation
 
@@ -400,15 +374,16 @@ These are the global defaults. A video's prompt may override any of them (D9); o
 |---|---|---|
 | V1 | Every section of 30 s or more has at least one animated explanation (a template that shows a process, not only words). | auto |
 | V2 | At most 15 s of plate time where only text templates are on screen (`visuals.max_text_only_s`). | auto |
-| V3 | Every concept moment in the transcript (`global/concepts.yaml`) is shown with a matching template around its word, or `decisions` says why not. | advice |
+| V3 | Every concept moment in the transcript (`global/concepts.yaml`) that fits the lesson is shown with a matching template around its word, or `decisions` says why not. | advice |
 | V4 | Every beat of the beat sheet is built with the templates it was approved with, inside its time (±1 s). | auto |
+| V5 | Variety: no explainer, diagram, data, kinetic, props, 3D, sketch or registry animation twice in a row, and none in more than 20% of the video's animations (`visuals.max_repeat_share`; code and core templates repeat by design). | advice |
 
 ### 8.2b Review gates (D30)
 
 | ID | Rule | Check |
 |---|---|---|
-| R1 | `edit.yaml` is built only from a beat sheet the editor approved; a beat sheet changed after approval needs a new approval. | gate (`review.beats`) |
-| R2 | Rendering starts only after the editor approved the storyboard of the current build, having seen its preview video (and the beat sheet is still approved). | gate (`review.storyboard`, `review.preview`) |
+| R1 | Opt-in (`review.beats: required`, prompt `Review: beats, storyboard`): `edit.yaml` is built only from a beat sheet the editor approved; a beat sheet changed after approval needs a new approval. Off by default. | gate (`review.beats`) |
+| R2 | Rendering starts only after the editor approved, in order, the storyboard of the current build (shown directly; also saved as `<Title> - Storyboard.jpg` in the video's folder) and then its preview (2026-11-02: "we directly show the storyboard, and when it is approved, preview should be shown before rendering"); with R1 on, the beat sheet is still approved. | gate (`review.storyboard`, `review.preview`) |
 
 ### 8.3 Typography and motion
 
@@ -427,10 +402,11 @@ These are the global defaults. A video's prompt may override any of them (D9); o
 
 | ID | Rule | Check |
 |---|---|---|
-| A1 | The voice is untouched except a 70 Hz high-pass. | auto |
-| A2 | Subtle SFX only, tied to visual events, peaks ≥ 20 dB below the voice. Music only when the prompt asks for it (§9b), audible but under the voice (D27). | auto |
+| A1 | The voice is never cut, faded or lowered. It is cleaned, keeping her natural tone: 80 Hz high-pass, RNNoise speech denoiser (`global/audio/sh.rnnn`, 10% dry), −1.5 dB at 250 Hz, +2 dB at 3.2 kHz, gentle compression (2:1 from −20 dB), de-esser. Prompt `Voice: untouched` keeps only a 70 Hz high-pass (2026-11-02, from the team's master prompt). | auto |
+| A2 | SFX only on visual events, each kind at its level 18–26 dB under the voice (loudest 100 ms against the voice's loudness: results 18, clicks 21, whooshes 22, entrances 23–25, typing 26), dipping 3 dB more while she speaks (±0.06 s); only the effects are ducked. Music only when the prompt asks for it (§9b), audible but under the voice (D27). | auto |
 | A5 | SFX from the team's library first (`global/sfx/`), files rotating per category; synthesised fallback varies every take (pitch, level); only sounds within 0.35 s of another are dropped; `SFX: minimal` drops entrance sounds, `SFX: off` drops all (§9e). | auto |
 | A3 | Final mix at −14 LUFS integrated, −1 dBTP. | auto |
+| A6 | **Listening check** after the final mix (`fzv/listen.py`, run by `verify`; plain measurements, a few seconds): effects buried under her voice (> 32 dB under it while she speaks, in more than 15% of cues; `edit/audio/sfx_used.json` lists the placed effects) or too loud (< 12 dB under her usual level), clipping (runs at full scale) and a peak above −0.5 dBTP, background noise (voice < 25 dB above it) and music balance (12–30 dB under the voice). Advisory: notes on the review page and in `edit/out/listen.json`. 2026-11-02: the old Tuples mix had 76 of 105 effects buried, the new one 4. Earshot was tried and left out: under continuous speech it can't tell an effect from a syllable (it passed the old mix), and it costs ~1.1 GB of models and ~30 s per check; it stays an optional tool outside the repo for picking music and vetting new sounds. | advisory |
 | D1 | 1920×1080 at the source fps; H.264 High, yuv420p; AAC 320k at 48 kHz; faststart; metadata stripped. | auto |
 | D2 | The final goes in the video folder as `<Title> - Edited.mp4`. Earlier versions move to `edit/_prev/` and are never deleted. | auto |
 | D3 | `edit/README.md`, `decisions.md` and the verification sheet ship with every final. | auto |
@@ -447,11 +423,11 @@ The library lives in `runtime/templates/*.js`. Each template carries its own doc
 | Template | Family | Use |
 |---|---|---|
 | `agenda` | Core | Numbered list of cards, each entering when said (agenda, plan, steps) |
-| `bug` | Core | Brand logo, top right, in a white pill |
+| `bug` | Core | Brand logo, top right, no box (on-dark version in dark scenes). Off by default: the logo is added after the render; prompt `Logo: on` |
 | `captions` | Core | Subtitles |
 | `card` | Core | A single text card with an optional icon and label: a takeaway, a fact, a question |
 | `chips` | Core | A row of short keyword or question chips |
-| `cutaway` | Core | Full-frame backdrop for a short full-screen moment (rule L3: at most 12 s each, 10% of runtime) |
+| `cutaway` | Core | Only when the prompt asks (L11). Full-frame backdrop for a short full-screen moment (rule L3: at most 12 s each, 10% of runtime) |
 | `definition` | Core | One-sentence definition in a card; phrases underline as they are said |
 | `flowchart` | Core | Nodes and arrows, with an optional marker that walks the path |
 | `header` | Core | Section label and title, top left (the header band) |
@@ -491,7 +467,7 @@ The library lives in `runtime/templates/*.js`. Each template carries its own doc
 | `process-flow` | Explainer | Inputs box -> process (spinning icon) -> output card: dots travel through when the process runs |
 | `range-gen` | Explainer | A range generator emits its numbers one by one into slots (first ones paced, the rest quickly), optionally stopping at a break value |
 | `request-flow` | Explainer | Nodes with big icons; packets travel along curved links when they are sent (request -> processing -> result back). Optional blocked direct path |
-| `scene` | Explainer | Compose mode only: switch the background behind the instructor to a dark brand scene for a big moment (the hero reveal, a fun fact); text turns light for its duration |
+| `scene` | Explainer | Only when the prompt asks (L11). Compose mode: switch the background behind the instructor to a dark brand scene; text turns light for its duration |
 | `type-convert` | Explainer | A value changes type: a quoted value with its type badge goes through the conversion function and comes out converted |
 | `prop-scene` | Props | A small staged scene: a ground line (road or desk) with several props, each with its own entrance and moves |
 | `sketch-board` | Sketch | A clean whiteboard panel for a sketch scene (inside the free area, or full frame inside a cutaway) |
@@ -660,7 +636,7 @@ sections:
 |---|---|---|
 | plan | Reads the prompt, transcript and cut summary; splits the video into sections; picks style families and templates; writes on-screen text from what was said; sets anchors; writes `decisions.md` | Write coordinates, colours or animation code |
 | revise | Turns timestamped requests into `edit.yaml` changes for the affected scenes only | Touch other sections or generated HTML |
-| beat sheet | Fills every beat (idea, what we show, templates, sync words); changes rows on the editor's requests | Approve it for the editor; build before approval |
+| beat sheet | Fills every beat (idea, what we show, templates, sync words); changes rows on the editor's requests; goes on to the storyboard (no stop unless R1 is on) | Approve it for the editor; with R1 on, build before approval |
 | storyboard | Looks at the storyboard first and fixes problems; shows it to the editor | Render before the editor approves |
 | review | Reads preview and verification sheets and reports problems | Approve output without showing the sheets |
 

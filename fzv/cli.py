@@ -4,7 +4,7 @@
   fzv ingest   <folder>                   identify files, audio, shots + safe zones, recordings, transcript
   fzv plan     <folder> [--check]         write edit/plan_brief.md for Claude and draft edit/beats.yaml; --check validates edit/edit.yaml
   fzv beats    <folder> [--redraft]       check the beat sheet, write beat_sheet.md and the review page (drafts it if missing)
-  fzv approve  <folder> beats|storyboard  record the editor's approval (build waits for the beat sheet, render for the storyboard)
+  fzv approve  <folder> beats|storyboard  record the editor's approval (render waits for the storyboard; build for the beat sheet only with review.beats: required)
   fzv build    <folder>                   resolve anchors, compile clips (edit/built/)
   fzv preview  <folder> <clip> <t,t,...>  contact sheet of a clip over the real footage
   fzv validate <folder>                   rule checks before rendering
@@ -24,7 +24,7 @@
   fzv music list | add <file> --id ID --mood M --source URL --licence L
   fzv sfx list | add <file|folder> [--category C] --source URL --licence L
   fzv registry search <words> | add <name…> | list   HyperFrames registry animations (mount with the `hf` template)
-  fzv brands                              list brand kits
+  fzv brands                              show the brand kit
   fzv look     <folder> raw|rec1 t0-t1    tile frames over a raw-cut time range (--fps, --box x,y,w,h)
 """
 from __future__ import annotations
@@ -41,7 +41,7 @@ from pathlib import Path
 import yaml
 
 from . import media
-from .config import GLOBAL, REPO, brand_ids, defaults
+from .config import GLOBAL, REPO, defaults
 from .project import Project
 
 
@@ -237,19 +237,23 @@ def cmd_plan(a) -> int:
     if not proj.p("beats.yaml").exists() and not B.legacy(proj):
         n = draft_beats(proj)
         log(f"plan: drafted {proj.p('beats.yaml')} ({n} beats from pauses, shots and concept moments)")
-    log(f"Next: fill edit/beats.yaml (idea, show, templates, sync), run `fzv beats {proj.folder}` and show the editor the review page; "
-        f"once approved, write {proj.spec_path} from it")
+    if B.gate_mode(proj.settings(), "beats") != "off":
+        log(f"Next: fill edit/beats.yaml (idea, show, templates, sync), run `fzv beats {proj.folder}` and show the editor the review page; "
+            f"once approved, write {proj.spec_path} from it")
+    else:
+        log(f"Next: fill edit/beats.yaml (idea, show, templates, sync) and run `fzv beats {proj.folder}` until it reports no problems; then "
+            f"write {proj.spec_path} from it, build and make the storyboard (the editor's one approval)")
     return 0
 
 
 # ---------------------------------------------------------------- beat sheet, storyboard, review (design §9f)
 def draft_beats(proj: Project) -> int:
     from . import beats as B
-    from .concepts import moments
+    from .concepts import video_moments
     pdata = proj.load()
     tx = proj.p("transcript.jsonl")
     cuts = json.loads(proj.p("cuts.json").read_text()) if proj.p("cuts.json").exists() else [{"kind": "plate", "start": 0, "end": pdata["duration"]}]
-    rows = B.draft(tx, cuts, pdata["duration"], moments(tx))
+    rows = B.draft(tx, cuts, pdata["duration"], video_moments(proj))
     B.write(proj.p("beats.yaml"), {"title": proj.prompt_fields().get("title") or proj.folder.name, "beats": rows})
     return len(rows)
 
@@ -257,17 +261,31 @@ def draft_beats(proj: Project) -> int:
 def check_beats(proj: Project, settings: dict):
     from . import beats as B
     from .anchors import Transcript
-    from .concepts import moments
+    from .concepts import blocked_templates, video_moments
     from .plan import catalogue
     from .registry import manifest
     from .validate import TEXT_ONLY
     doc = B.load(proj.p("beats.yaml"))
-    return B.check(doc, Transcript(proj.p("transcript.jsonl")), proj.load()["duration"], set(catalogue()), {x["name"] for x in manifest()},
-                   moments(proj.p("transcript.jsonl")), TEXT_ONLY, settings.get("visuals", {}).get("max_text_only_s", 15))
+    cat, vis = catalogue(), settings.get("visuals", {})
+    errs, warns, res = B.check(doc, Transcript(proj.p("transcript.jsonl")), proj.load()["duration"], set(cat), {x["name"] for x in manifest()},
+                               video_moments(proj, settings), TEXT_ONLY, vis.get("max_text_only_s", 15), blocked=blocked_templates(settings))
+    if not errs:
+        warns += B.variety(doc, {n: m.get("family") for n, m in cat.items()}, vis.get("max_repeat_share", 0.2))
+    return errs, warns, res
 
 
 BEAT_STATUS = {"missing": "no beat sheet", "draft": "draft (Claude is filling it)", "proposed": "waiting for the editor's approval",
                "approved": "approved", "changed": "changed after approval: needs the editor's approval again"}
+UNGATED_STATUS = {"proposed": "planned (the editor approves the storyboard)", "changed": "planned (changed since an earlier approval)"}
+
+
+def beat_status(proj: Project, settings: dict | None = None) -> str:
+    """The beat sheet's state in words; with `review.beats: off` (the default) a filled sheet is simply planned, no approval needed."""
+    from . import beats as B
+    st = B.beats_state(proj)
+    if B.gate_mode(settings or proj.settings(), "beats") == "off":
+        return UNGATED_STATUS.get(st, BEAT_STATUS[st])
+    return BEAT_STATUS[st]
 
 
 def write_beat_sheet(proj: Project) -> None:
@@ -275,7 +293,7 @@ def write_beat_sheet(proj: Project) -> None:
     from .review import title_of
     st = B.beats_state(proj)
     a = B.approval(proj, "beats") if st == "approved" else None
-    status = BEAT_STATUS[st] + (f" ({a['at']}{': ' + a['note'] if a.get('note') else ''})" if a else "")
+    status = beat_status(proj) + (f" ({a['at']}{': ' + a['note'] if a.get('note') else ''})" if a else "")
     proj.p("beat_sheet.md").write_text(B.markdown(B.load(proj.p("beats.yaml")), title_of(proj), status), encoding="utf-8")
 
 
@@ -295,7 +313,7 @@ def cmd_beats(a) -> int:
     write_beat_sheet(proj)
     out = page(proj, log=log)
     doc = B.load(f)
-    log(f"beats: {len(doc.get('beats') or [])} beats; {len(errs)} problem(s), {len(warns)} note(s); status: {BEAT_STATUS[B.beats_state(proj)]}")
+    log(f"beats: {len(doc.get('beats') or [])} beats; {len(errs)} problem(s), {len(warns)} note(s); status: {beat_status(proj)}")
     for e in errs:
         log(f"  [problem] {e}")
     for w in warns:
@@ -320,15 +338,28 @@ def cmd_approve(a) -> int:
         B.record_approval(proj, "beats", B.beats_fingerprint(B.load(proj.p("beats.yaml"))), a.note or "")
         write_beat_sheet(proj)
         log("approve: beat sheet approved. Next: write edit/edit.yaml from it, build, validate, `fzv storyboard`")
-    else:
+    elif a.what == "storyboard":                              # step 1 of 2: the frames
         st = B.storyboard_state(proj)
         if st in ("missing", "stale"):
             log("approve: make the storyboard of the current build first (`fzv storyboard`)"); return 1
-        why = preview_missing(proj, proj.settings())
-        if why:
-            log(f"approve: {why}"); return 1
         B.record_approval(proj, "storyboard", B.build_signature(proj), a.note or "")
-        log("approve: storyboard approved. Next: render, finish, verify")
+        if B.preview_mode(proj.settings()) == "off":
+            log("approve: storyboard approved. Next: render, finish, verify")
+        else:
+            how = "`fzv studio` (the live preview)" if B.preview_mode(proj.settings()) == "browser" else "`fzv draft` (the preview video)"
+            log(f"approve: storyboard approved. Next: open the preview with {how}, show it to the editor, and wait for their approval")
+    else:                                                     # step 2 of 2: the whole edit playing with its sound
+        settings = proj.settings()
+        pv = B.preview_approval_state(proj, settings)
+        if pv == "off":
+            log("approve: this video has no preview step (`Review: no preview`); render once the storyboard is approved"); return 1
+        if pv == "waiting":
+            log("approve: approve the storyboard first; the preview comes after it"); return 1
+        if pv == "missing":
+            why = preview_missing(proj, settings)
+            log(f"approve: {why}"); return 1
+        B.record_approval(proj, "preview", B.build_signature(proj), a.note or "")
+        log("approve: preview approved. Next: render, finish, verify")
     page(proj, log=log)
     return 0
 
@@ -349,8 +380,7 @@ def cmd_storyboard(a) -> int:
 def preview_mode(settings: dict) -> str:
     """browser | video | off (`required`, the earlier name, means video)."""
     from . import beats as B
-    m = B.gate_mode(settings, "preview")
-    return "video" if m == "required" else m
+    return B.preview_mode(settings)
 
 
 def preview_missing(proj: Project, settings: dict) -> str | None:
@@ -506,8 +536,8 @@ def add_corner_box(proj: Project, pdata: dict, settings: dict, res: dict, clips:
     plate = pdata.get("plate_file")
     if plate:                                                   # the exact image the editor used, so patches are seamless
         from .build import link_or_copy
-        from .config import BRANDS
-        link_or_copy(BRANDS / plate, proj.edit / "comp" / "assets" / "brand" / "editor_plate.png")
+        from .config import resolve_plate
+        link_or_copy(resolve_plate(plate), proj.edit / "comp" / "assets" / "brand" / "editor_plate.png")
     for c in clips:
         if c["layer"] != "plate":
             continue
@@ -539,7 +569,7 @@ def cmd_build(a) -> int:
         log(f"build: {len(errs)} problem(s); fix edit.yaml"); return 1
     with open(proj.p("edit.resolved.yaml"), "w", encoding="utf-8") as f:
         yaml.safe_dump(res, f, sort_keys=False, allow_unicode=True)
-    clips = S.plan_clips(res, cuts, settings["graphics_fps"], settings["bug"]["layers"])
+    clips = S.plan_clips(res, cuts, settings["graphics_fps"], settings["bug"]["layers"], settings.get("chrome"), pdata.get("duration"))
     add_corner_box(proj, pdata, settings, res, clips, cuts)
     if settings["subtitles"]["enabled"] and proj.p("transcript.jsonl").exists():
         from .captions import cues
@@ -636,7 +666,7 @@ def cmd_verify(a) -> int:
     proj = Project(a.folder)
     settings, pdata, sp, cuts, tx = load_all(proj)
     title = sp.get("title") or proj.prompt_fields().get("title") or proj.folder.name
-    rep = verify(proj, proj.output_path(title), media.probe(proj.folder / pdata["raw"]), cuts, log)
+    rep = verify(proj, proj.output_path(title), media.probe(proj.folder / pdata["raw"]), cuts, log, settings)
     log(f"verify: sheet {rep['sheet']}")
     from .review import page
     log(f"review page: {page(proj, settings, log=log)}")
@@ -645,7 +675,7 @@ def cmd_verify(a) -> int:
 
 def cmd_edit(a) -> int:
     """Everything in order. Stops where someone has to act: Claude fills the beat sheet and writes edit.yaml, the editor approves
-    the beat sheet and the storyboard (settings `review.*`)."""
+    the storyboard (and the beat sheet too with `review.beats: required`; settings `review.*`)."""
     from . import beats as B
     proj = Project(a.folder)
     if a.prompt:
@@ -660,7 +690,7 @@ def cmd_edit(a) -> int:
     if why:
         log(f"edit: waiting: {why}"); return 0
     if not proj.spec_path.exists():
-        log("edit: stopping here; write edit/edit.yaml " + ("from the approved beat sheet" if proj.p("beats.yaml").exists() else "from edit/plan_brief.md")
+        log("edit: stopping here; write edit/edit.yaml " + ("from the beat sheet" if proj.p("beats.yaml").exists() else "from edit/plan_brief.md")
             + ", then run `fzv edit` again"); return 0
     for step in (cmd_build, cmd_validate):
         if step(argparse.Namespace(folder=a.folder)):
@@ -671,7 +701,7 @@ def cmd_edit(a) -> int:
     if B.gate_mode(settings, "storyboard") != "off" and proj.p("beats.yaml").exists():
         if cmd_storyboard(argparse.Namespace(folder=a.folder, all=False)):
             return 1
-        if B.storyboard_state(proj) != "approved" and preview_missing(proj, settings):
+        if B.preview_approval_state(proj, settings) == "missing":     # the preview only once the storyboard is approved
             if preview_mode(settings) == "browser":
                 if cmd_studio(argparse.Namespace(folder=a.folder, stop=False, port=None, no_open=False, build_only=False)):
                     return 1
@@ -819,8 +849,26 @@ def cmd_registry(a) -> int:
 
 
 def cmd_brands(a) -> int:
-    for b in brand_ids():
-        log(f"{b}{'  (default)' if b == defaults()['brand'] else ''}")
+    from .config import BRANDS, brand_css, load_brand, render_backdrop
+    b = load_brand()
+    log(f"{b['id']}: {b['name']} (the one brand kit, global/brand/brand.yaml)")
+    if not a.sheet:
+        return 0
+    # the brand sheet: sheet.html beside the kit's own brand.css, fonts, logo set and backdrop, rendered to brand_sheet.png
+    W = REPO / ".cache" / "brand-sheet"
+    if W.exists():
+        shutil.rmtree(W)
+    W.mkdir(parents=True)
+    (W / "brand.css").write_text(brand_css(b, "fonts/"), encoding="utf-8")
+    for d in ("fonts", "logo"):
+        (W / d).symlink_to(BRANDS / d)
+    render_backdrop(b, W / "plate.png")
+    shutil.copy2(BRANDS / "sheet.html", W / "sheet.html")
+    out = BRANDS / "brand_sheet.png"
+    r = subprocess.run(["node", str(REPO / "node" / "sample.mjs"), "still", str(W / "sheet.html"), str(out), "1920", "1000"], capture_output=True, text=True, cwd=REPO)
+    if r.returncode:
+        log(f"brands: the sheet didn't render: {r.stderr[-400:]}"); return 1
+    log(f"brands: sheet {out}")
     return 0
 
 
@@ -881,7 +929,7 @@ def main(argv=None):
     add("_transcribe", cmd__transcribe)
     p = add("plan", cmd_plan); p.add_argument("--check", action="store_true")
     p = add("beats", cmd_beats); p.add_argument("--redraft", action="store_true", help="start a new draft (the old sheet goes to edit/_prev/)")
-    p = add("approve", cmd_approve); p.add_argument("what", choices=["beats", "storyboard"]); p.add_argument("--note", help="the editor's words")
+    p = add("approve", cmd_approve); p.add_argument("what", choices=["beats", "storyboard", "preview"]); p.add_argument("--note", help="the editor's words")
     p = add("storyboard", cmd_storyboard); p.add_argument("--all", action="store_true", help="redo every frame")
     p = add("mix", cmd_mix, help="music on/off, track and level; re-mixes the final (or the preview) without rendering graphics again")
     p.add_argument("music", help="off | on | <track id>"); p.add_argument("--level", choices=["low", "normal", "high"])
@@ -913,7 +961,7 @@ def main(argv=None):
     p.add_argument("action", choices=["search", "add", "list"]); p.add_argument("names", nargs="*")
     p = add("music", cmd_music, folder=False); p.add_argument("action", choices=["list", "add"]); p.add_argument("file", nargs="?")
     p.add_argument("--id"); p.add_argument("--mood", default="calm"); p.add_argument("--bpm", type=int); p.add_argument("--source"); p.add_argument("--licence", default="")
-    add("brands", cmd_brands, folder=False)
+    p = add("brands", cmd_brands, folder=False); p.add_argument("--sheet", action="store_true", help="render global/brand/brand_sheet.png from the kit")
     p = add("look", cmd_look, help="tile frames of the raw cut or a recording over a raw-cut time range")
     p.add_argument("source", help="raw | rec1 | rec2 ..."); p.add_argument("range", help="t0-t1 in raw-cut seconds")
     p.add_argument("--fps", type=float, default=1.0); p.add_argument("--box", help="x,y,w,h crop in source pixels"); p.add_argument("--cols", type=int, default=4)

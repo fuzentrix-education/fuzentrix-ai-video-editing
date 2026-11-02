@@ -1,53 +1,1888 @@
-# Concept moments (rule V3). When the instructor names one of these, the screen should SHOW it with one of the listed templates,
-# starting on the word (design §7.3). `fzv plan` lists every moment found in the transcript; `fzv validate` reports moments
-# without a matching animation as advice. Phrases are matched in the English-mode transcript (romanised Telugu is common), so
-# keep them specific. The team may add concepts freely.
+# Concept moments (rules V3, V5): one collection for every course, technical and non-technical. When the instructor names a
+# concept, the screen should SHOW it with one of its templates, starting on the word (design §7.3). `fzv plan` lists every moment
+# it finds in the transcript, with the templates that show it (freshest first); Claude uses the ones that fit the lesson and skips a
+# match that means something else here (a word in the beat's notes). `fzv beats` and `fzv validate` report uncovered moments (V3).
+#
+#   id          unique
+#   phrases     matched word for word in the English-mode transcript (romanised Telugu is common). Case, punctuation and plurals
+#               don't matter, and where two phrases overlap the longer one wins. Keep them specific: two or more words when one word
+#               is common speech or means different things in different subjects ("conversion rate", not "conversion"; "seo
+#               keywords", not "keywords"). A phrase belongs to one concept only.
+#   templates   best first, at least two 2D ones, so a concept that comes back can be shown another way (rule V5). Brand templates
+#               first, registry animations (hf:<item>) after them; 3D and sketch only as extra options (used only when the prompt
+#               asks). Never scene or cutaway (rule L11).
+#   show        what moves on screen for this concept
+#   gap         optional: seconds before the concept is listed again (default 45; 12 for iterations, 90-120 for a lesson's topic word)
+#
+# The sections are only for finding things: every concept is available to every video. The team adds concepts freely; check with
+#   .venv/bin/python -m pytest tests/test_core.py -k concept
 concepts:
+
+  # ======== General: comparisons, steps, numbers, examples, definitions, recaps (every subject)
+  - id: compare
+    phrases: ["difference between", "versus", " vs ", "compared to", "compare the two", "comparison between"]
+    templates: [contrast, table, type-cards, hf:comparison-split]
+    show: "the two side by side, each difference landing on its word"
+  - id: before-after
+    phrases: ["before and after", "before vs after", "earlier it was", "after the change", "with and without"]
+    templates: [contrast, process-flow, hf:comparison-split]
+    show: "the before state, then the after state wiping in over it; what changed glows"
+  - id: steps
+    phrases: ["step by step", "first step", "step one", "step 1", "second step", "next step", "final step", "last step", "the steps are"]
+    templates: [agenda, flowchart, checklist, hf:state-chip-rail]
+    show: "the steps appearing in order, the current one lit as the instructor reaches it"
+  - id: how-it-works
+    phrases: ["how it works", "how does it work", "behind the scenes", "under the hood", "works internally", "the process is", "the process of"]
+    templates: [process-flow, blocks, flowchart, request-flow]
+    show: "the mechanism moving part by part: what goes in, what happens inside, what comes out"
+  - id: many-items
+    phrases: ["10,000", "10000", "thousands of", "lakhs of", "crores of", "millions of", "billions of", "thousand students", "1000s", "huge amount of"]
+    templates: [icon-grid, counter, bars, hf:count-up]
+    show: "a grid of icons filling while the number counts up to the amount said"
+  - id: share-of-total
+    phrases: ["percent of", "per cent of", "percentage of", "out of 100", "half of the", "majority of", "one third of", "one fourth of"]
+    templates: [icon-grid, counter, bars, hf:conic-progress-ring]
+    show: "a 10 x 10 grid with that share lit (or a ring filling) while the number counts to it"
+  - id: growth-trend
+    phrases: ["increases over time", "decreases over time", "keeps increasing", "keeps decreasing", "growing rapidly", "exponential growth", "upward trend", "downward trend", "growth rate"]
+    templates: [curve, bars, hf:mk-line-graph]
+    show: "the line drawing itself rising (or falling) as described, the end value called out"
+  - id: cause-effect
+    phrases: ["as a result", "leads to", "which causes", "resulting in", "cause and effect", "chain reaction"]
+    templates: [flowchart, process-flow, request-flow]
+    show: "cause → effect as linked boxes, each arrow drawing on the word that names the effect"
+  - id: cycle
+    phrases: ["life cycle", "lifecycle", "the cycle repeats", "again and again", "full circle"]
+    templates: [flowchart, hub, hf:state-chip-rail]
+    show: "the stages around a circle, a marker walking round and back to the start"
+  - id: types-of
+    phrases: ["types of", "kinds of", "categories of", "classified into", "divided into", "two types", "three types", "four types"]
+    templates: [type-cards, hub, flowchart, table]
+    show: "the parent idea splitting into its types, one card per type as each is named"
+  - id: pros-cons
+    phrases: ["advantages and disadvantages", "pros and cons", "benefits and drawbacks", "merits and demerits", "advantages of", "disadvantages of", "benefits of"]
+    templates: [contrast, checklist, table, callouts]
+    show: "two columns filling: ticks for the advantages, crosses for the disadvantages, each on its word"
+  - id: problem-solution
+    phrases: ["the problem is", "the solution is", "to solve this", "solve this problem", "pain point", "the challenge is"]
+    templates: [callouts, process-flow, contrast, prop-scene]
+    show: "the problem as a red chip (or a puzzled character), then the solution resolving it"
+  - id: real-life
+    phrases: ["real life example", "real world example", "in real life", "in the real world", "imagine you are", "for example imagine"]
+    templates: [prop-scene, prop-move, mockup, prop]
+    show: "the everyday scene built from library props and characters, each part entering as it is described"
+  - id: timeline
+    phrases: ["history of", "in the year", "over the years", "timeline", "evolution of", "was invented", "was introduced in", "was released in"]
+    templates: [flowchart, curve, agenda, hf:state-chip-rail]
+    show: "a timeline drawing left to right, each year and milestone popping on its word"
+  - id: definition
+    phrases: ["is nothing but", "is defined as", "definition of", "in simple words", "in simple terms", "simply put", "the meaning of"]
+    templates: [definition, term-reveal, hf:marker-highlight]
+    show: "the one-line meaning building phrase by phrase, the key word underlined"
+  - id: acronym
+    phrases: ["stands for", "full form", "abbreviation", "short form of"]
+    templates: [big-word, term-reveal, definition]
+    show: "the short form large, each letter expanding into its word"
+  - id: recap
+    phrases: ["to summarize", "to summarise", "in summary", "key takeaway", "to recap", "quick recap", "in short", "important point"]
+    templates: [summary, rule-stack, checklist, term-reveal]
+    show: "the takeaways stacking up one by one, the last one emphasised"
+  - id: question
+    phrases: ["have you ever", "what do you think", "think about it", "can you guess", "guess what"]
+    templates: [card, prop, chips, hf:kinetic-type-swap]
+    show: "the question in a big card beside a thinking character; the answer revealed on its word"
+  - id: fun-fact
+    phrases: ["did you know", "fun fact", "interesting fact", "surprising fact"]
+    templates: [big-word, counter, card, term-reveal]
+    show: "the striking number or word landing big, then the one line that explains it"
+  - id: app-usage
+    phrases: ["log in", "login", "sign up", "signup", "portal", "click on the", "open the app", "open the website", "visit the website", "download the app", "tap on"]
+    templates: [mockup, hf:browser-device-stage, hf:press-ripple]
+    show: "the app or site screen being used: typing, pressing, loading, the result"
+  - id: search
+    phrases: ["search for", "searching for", "searching", "search through", "look for", "how long will it take", "manual search"]
+    templates: [icon-grid, table, tiles]
+    show: "a magnifier sweeping many records, the found one lighting up"
+  - id: money
+    phrases: ["rupees", "per month", "per annum", "how much it costs", "save money", "earn money", "make money"]
+    templates: [counter, bars, prop, hf:count-up]
+    show: "the amount counting up next to a money bag, or bars comparing the amounts"
+  - id: speed-time
+    phrases: ["saves time", "in seconds", "within seconds", "takes hours", "takes days", "much faster", "time consuming", "faster than"]
+    templates: [contrast, bars, prop, counter]
+    show: "the slow way against the fast way, a stopwatch and the two times compared"
+  - id: top-n
+    phrases: ["top 5", "top five", "top 3", "top three", "top 10", "top ten", "most popular", "leaderboard", "number one"]
+    templates: [bars, agenda, table, prop]
+    show: "a leaderboard building from the bottom up, number one landing last with a trophy"
+  - id: requirements
+    phrases: ["requirements are", "you need to have", "prerequisite", "things you need", "checklist"]
+    templates: [checklist, chips, hf:mk-specs-list]
+    show: "the list ticking off item by item as each is named"
+  - id: mistakes-tips
+    phrases: ["common mistakes", "mistakes to avoid", "do's and don'ts", "never do this", "best practices", "tips and tricks", "pro tip"]
+    templates: [contrast, checklist, callouts, rule-stack]
+    show: "the mistake struck through in red, the right way beside it with a tick"
+  - id: automation
+    phrases: ["automation", "automate", "automated", "manual work", "done manually", "do it manually"]
+    templates: [contrast, process-flow, prop-scene]
+    show: "the repetitive task done by hand (many slow steps) against the robot or script doing it in one go"
+  - id: worldwide
+    phrases: ["all over the world", "across the world", "worldwide", "around the world", "every country", "globally"]
+    templates: [prop, icon-grid, counter, request-flow]
+    show: "a globe with points lighting across it while the count of countries or users rises"
+  - id: companies-use
+    phrases: ["companies like", "big companies", "top companies", "companies are using", "mnc", "product based companies", "service based companies"]
+    templates: [chips, hub, icon-grid, counter]
+    show: "the skill in the middle and the companies named around it, each popping on its name"
+  - id: jobs-demand
+    phrases: ["job opportunities", "high demand", "in demand", "salary package", "lpa", "job roles", "career growth", "career opportunities"]
+    templates: [bars, hub, counter, hf:chart-story]
+    show: "the job roles around the skill (hub), or salary and demand bars rising as they are said"
+
+  # ======== Computing fundamentals: how computers, the internet, servers and data work
+  - id: request-response
+    phrases: ["sends a request", "request and response", "request response", "the response comes back", "gets a response", "fetch the data", "bridge between", "bridge", "back end", "backend"]
+    templates: [request-flow, blocks, hf:offset-path-traveler, network3d]
+    show: "a request packet travelling from the user to the server (or DBMS) and the response coming back on its word"
+  - id: client-server
+    phrases: ["client server", "client and server", "client side", "server side", "web server"]
+    templates: [blocks, request-flow, prop-scene, network3d]
+    show: "the client (laptop or phone) and the server joined by a link; which work runs on which side"
+  - id: three-tier
+    phrases: ["frontend and backend", "front end and back end", "front end back end", "full stack developer", "three tier", "3 tier architecture"]
+    templates: [blocks, hub, request-flow]
+    show: "three layers stacking: frontend (what users see) → backend (the logic) → database, a request travelling down and back"
+  - id: how-the-web-works
+    phrases: ["domain name", "dns", "ip address", "how the internet works", "type the url", "enter the url", "web address"]
+    templates: [request-flow, flowchart, blocks]
+    show: "the URL typed in a browser, a DNS lookup returning the IP, then the request reaching the right server"
+  - id: data-to-information
+    phrases: ["processed data", "process the data", "into information", "raw data", "meaningful information", "data and information", "arrange the data"]
+    templates: [process-flow, table, contrast]
+    show: "raw items → process → the meaningful output sentence"
+  - id: json
+    phrases: ["json", "json format", "json data", "json object", "javascript object notation"]
+    templates: [form-card, code-card, table]
+    show: "a JSON object building key by key in its braces, each value typing in beside its key"
+  - id: api
+    phrases: ["api", "application programming interface", "third party api", "public api"]
+    templates: [request-flow, blocks, hub, hf:offset-path-traveler]
+    show: "two apps talking through the API: a request goes in, a JSON reply comes out"
+  - id: memory-storage
+    phrases: ["ram and rom", "primary memory", "secondary memory", "hard disk", "stored in memory", "memory location", "storage device"]
+    templates: [blocks, tiles, data-flow, variables]
+    show: "memory as a row of numbered cells, the value dropping into its cell; RAM a small fast box, the disk a big slow one"
+  - id: binary
+    phrases: ["binary", "zeros and ones", "0s and 1s", "bits and bytes", "byte", "kilobyte", "megabyte", "gigabyte", "terabyte"]
+    templates: [tiles, table, counter]
+    show: "a row of 0/1 tiles flipping, the bytes adding up to the number they stand for"
+  - id: computer-parts
+    phrases: ["cpu", "processor", "motherboard", "input devices", "output devices", "input unit", "output unit", "hardware and software"]
+    templates: [blocks, hub, prop-scene]
+    show: "the computer's parts as labelled blocks (input → CPU ↔ memory → output), each lighting as named"
+  - id: operating-system
+    phrases: ["operating system", "windows and linux", "linux", "macos"]
+    templates: [hub, blocks, mockup]
+    show: "the OS in the middle, between the apps above and the hardware below, managing each"
+  - id: cloud
+    phrases: ["cloud computing", "on the cloud", "in the cloud", "cloud storage", "aws", "azure", "google cloud", "cloud server"]
+    templates: [data-flow, blocks, request-flow]
+    show: "files and apps flying up into a cloud, then reachable from a laptop and a phone"
+  - id: file-system
+    phrases: ["file system", "files and folders", "folder structure", "file path", "directory", "sub folder", "subfolder"]
+    templates: [flowchart, data-flow, blocks]
+    show: "a folder tree unfolding level by level, the file landing in its folder"
+  - id: network
+    phrases: ["computer network", "networking", "connected devices", "wifi", "wi fi", "router", "lan and wan", "internet connection"]
+    templates: [request-flow, blocks, hub, network3d]
+    show: "devices joined through a router, a message hopping along the links to the right device"
+  - id: security
+    phrases: ["encryption", "encrypted", "encrypt", "decrypt", "hacker", "hacking", "cyber attack", "https", "secure connection", "data breach"]
+    templates: [process-flow, request-flow, type-convert, prop-scene]
+    show: "the message locked into scrambled text on the way, and a hacker's path blocked with a red cross"
+  - id: app-types
+    phrases: ["web app", "web application", "mobile app", "mobile application", "desktop app", "desktop application"]
+    templates: [type-cards, mockup, hf:browser-device-stage]
+    show: "the same app in a browser, on a phone and in a desktop window, each named as it appears"
+  - id: compiler-interpreter
+    phrases: ["compiler", "interpreter", "compiled language", "interpreted language", "machine code", "machine language", "bytecode", "byte code"]
+    templates: [process-flow, contrast, flowchart]
+    show: "source code going through the compiler (all at once) or the interpreter (line by line) and coming out as machine code"
+
+  # ======== Programming (any language): variables, conditions, loops, functions, data structures, algorithms, OOP, example programs
+  # ---- values and operators
+  - id: variable
+    phrases: ["declare a variable", "create a variable", "variable name", "assign the value", "assign a value", "assignment operator", "store the value in", "value is stored", "variables are like"]
+    templates: [variables, tiles, form-card]
+    show: "a labelled box (the name) with the value dropping into it; a new assignment replaces the old value"
+  - id: data-types
+    phrases: ["data types", "primitive types", "primitive data types", "int float string", "integer float", "string data type", "boolean data type"]
+    templates: [type-cards, table, variables, hub]
+    show: "a card per type with an example value and its badge: int 10, float 3.5, str \"hi\", bool True"
+  - id: arithmetic
+    phrases: ["arithmetic operators", "floor division", "operator precedence", "bodmas", "integer division", "exponent operator", "power operator"]
+    templates: [process-flow, tiles, code-card]
+    show: "the expression evaluating piece by piece: each operator applied and its result replacing it"
+  - id: modulus
+    phrases: ["modulus", "modulo", "remainder", "mod operator", "divisible by"]
+    templates: [process-flow, tiles, table]
+    show: "the number split into equal groups, the leftover dropping out as the remainder"
+  - id: comparison-operators
+    phrases: ["comparison operators", "relational operators", "greater than or equal", "less than or equal", "not equal to", "greater than", "less than"]
+    templates: [contrast, tiles, trace]
+    show: "the two values on either side of the operator, the answer flipping to True or False"
+  - id: logical-operators
+    phrases: ["logical operators", "logical and", "logical or", "truth table", "both conditions", "either condition", "and operator", "or operator", "not operator"]
+    templates: [table, flowchart, tiles]
+    show: "the truth table filling row by row, the True results lighting"
+  # ---- control flow
+  - id: condition
+    phrases: ["equal to equal to", "condition is true", "condition is false", "condition true", "condition false", "condition check", "if condition", "if else", "else if", "elif", "if block", "else block", "nested if", "ternary operator"]
+    templates: [flowchart, trace, code-card]
+    show: "the condition evaluating to True/False with the branch it takes lighting up"
+  - id: switch-case
+    phrases: ["switch case", "switch statement", "match case", "match statement", "default case"]
+    templates: [flowchart, hub, table]
+    show: "the value travelling down to the matching case's door; no match falls through to default"
+  - id: loop
+    phrases: ["for loop", "while loop", "do while", "the loop runs", "loop repeats", "repeat the code", "repeats until", "looping"]
+    templates: [flowchart, trace, tiles, loop3d]
+    show: "the loop as a cycle: check → body → update → back to the check, a marker going round once per pass and leaving when the check fails"
+  - id: iteration
+    phrases: ["first iteration", "second iteration", "next iteration", "each iteration", "every iteration", "last iteration", "iteration lo"]
+    templates: [trace, tiles, variables]
+    show: "the loop variable taking each value, the condition checked per round"
+    gap: 12
+  - id: nested-loop
+    phrases: ["nested loop", "nested for loop", "inner loop", "outer loop", "pattern printing", "star pattern", "pyramid pattern"]
+    templates: [tiles, trace, code-card]
+    show: "a grid filling cell by cell: the outer loop picks the row, the inner loop walks its columns"
+  - id: break-continue
+    phrases: ["break statement", "continue statement", "break the loop", "exit the loop", "come out of the loop", "skip the iteration", "skips the current", "pass statement", "loop control"]
+    templates: [tiles, trace, flowchart, loop3d]
+    show: "values passing one by one: continue skips one (dimmed), break stops the loop (red)"
+  - id: infinite-loop
+    phrases: ["infinite loop", "never ends", "runs forever", "loop never stops"]
+    templates: [flowchart, counter, tiles]
+    show: "the marker circling the loop while a counter climbs without end, then the fix that lets it exit"
+  # ---- functions
+  - id: function
+    phrases: ["define a function", "function definition", "call the function", "function call", "calling the function", "def keyword", "reusable code", "reuse the code", "built in function", "user defined function"]
+    templates: [process-flow, blocks, code-card]
+    show: "the function as a machine: arguments go in, the body runs, the result comes out; calling it again reuses it"
+  - id: parameters
+    phrases: ["parameters and arguments", "pass the argument", "pass the value", "default parameter", "default argument", "keyword argument", "positional argument"]
+    templates: [variables, process-flow, tiles]
+    show: "each argument flying into its parameter slot in the function header"
+  - id: return
+    phrases: ["return value", "returns the value", "return statement", "return keyword", "returns the result"]
+    templates: [request-flow, process-flow, variables]
+    show: "the result travelling back from the function to where it was called and landing in the variable"
+  - id: scope
+    phrases: ["local variable", "global variable", "scope of a variable", "variable scope", "local scope", "global scope", "global keyword"]
+    templates: [blocks, variables, contrast]
+    show: "nested boxes: the function's box sees its own variables and the global ones; outside cannot see in"
+  - id: recursion
+    phrases: ["recursion", "recursive function", "recursive call", "base case", "calls itself"]
+    templates: [flowchart, tiles, trace]
+    show: "calls stacking up (f(3) → f(2) → f(1)), the base case reached, then the results returning down the stack"
+  # ---- data structures
+  - id: array-index
+    phrases: ["array", "index position", "zero based indexing", "starts from zero", "starts from 0", "index 0", "index zero", "first index"]
+    templates: [tiles, table, variables]
+    show: "a row of slots with index numbers under them, the asked index lighting up"
+  - id: strings
+    phrases: ["string concatenation", "concatenate", "concatenation", "join two strings", "substring", "string length", "sequence of characters", "each character"]
+    templates: [tiles, char-scan, process-flow, code-card]
+    show: "the string as letter tiles; concatenation snaps two rows together, a substring lifts out"
+  - id: matrix
+    phrases: ["matrix", "matrices", "2d array", "two dimensional array", "2d list", "multi dimensional"]
+    templates: [tiles, table, trace]
+    show: "a grid of values with row and column numbers; the cell at [row][col] lighting"
+  - id: stack
+    phrases: ["stack data structure", "push and pop", "last in first out", "lifo", "top of the stack", "push operation", "pop operation"]
+    templates: [tiles, blocks, prop-scene]
+    show: "tiles stacking upward: push lands on top, pop lifts the top one off (last in, first out)"
+  - id: queue
+    phrases: ["queue", "first in first out", "fifo", "enqueue", "dequeue", "front and rear"]
+    templates: [tiles, prop-scene, request-flow]
+    show: "people in a line: new ones join at the back, the one at the front leaves first"
+  - id: linked-list
+    phrases: ["linked list", "next pointer", "head node", "node points to", "pointer to the next"]
+    templates: [blocks, flowchart, tiles]
+    show: "nodes as boxes joined by arrows; inserting a node re-points two arrows"
+  - id: tree
+    phrases: ["binary tree", "tree data structure", "root node", "leaf node", "parent and child", "binary search tree", "bst"]
+    templates: [flowchart, blocks, tiles]
+    show: "the tree growing from the root down; a value travelling left or right to its place"
+  - id: graph
+    phrases: ["graph data structure", "vertices and edges", "nodes and edges", "bfs", "dfs", "breadth first", "depth first", "shortest path"]
+    templates: [request-flow, flowchart, blocks]
+    show: "nodes joined by edges; the traversal lighting nodes in visit order"
+  - id: hashing
+    phrases: ["key value pair", "key value", "hash table", "hash map", "hashmap", "hash function", "hashing"]
+    templates: [table, process-flow, hub]
+    show: "a key going through the hash function and dropping straight into its bucket; looking it up jumps to the same bucket"
+  # ---- algorithms
+  - id: algorithm
+    phrases: ["algorithm", "pseudocode", "pseudo code", "flow chart", "logic building", "step by step logic"]
+    templates: [flowchart, agenda, trace]
+    show: "the algorithm as a flowchart drawing step by step, a marker walking it with a sample input"
+  - id: dry-run
+    phrases: ["dry run", "trace the code", "tracing the code", "line by line", "execution flow", "flow of execution"]
+    templates: [trace, variables, code-card]
+    show: "stepping through the code line by line, the current line highlighted and the variable boxes updating"
+  - id: sorting
+    phrases: ["sorting", "sort the", "bubble sort", "selection sort", "insertion sort", "merge sort", "quick sort", "ascending order", "descending order"]
+    templates: [tiles, bars, trace]
+    show: "bars or tiles swapping places pass by pass until they are in order"
+  - id: linear-search
+    phrases: ["linear search", "sequential search", "check each element", "one by one comparison"]
+    templates: [tiles, icon-grid, trace]
+    show: "a pointer moving tile by tile, comparing each with the target until it matches"
+  - id: binary-search
+    phrases: ["binary search", "divide in half", "middle element", "mid element", "half of the array", "sorted array"]
+    templates: [tiles, trace, flowchart]
+    show: "the range halving: the middle tile checked, one half dimmed, again until the target lights"
+  - id: complexity
+    phrases: ["time complexity", "space complexity", "big o", "o of n", "o of 1", "o of n square", "o of log n", "worst case", "best case"]
+    templates: [curve, bars, table]
+    show: "growth curves (1, log n, n, n²) drawing as n grows, the one named highlighted"
+  # ---- errors, I/O, testing
+  - id: errors
+    phrases: ["syntax error", "runtime error", "logical error", "error message", "debugging", "debug", "bug in the code", "fix the error", "traceback", "exception occurs", "the program crashes"]
+    templates: [code-card, terminal, callouts, hf:code-diff]
+    show: "the line with the error turning red and the message printing, then the fix and a clean run"
+  - id: input-output
+    phrases: ["user input", "take input", "read the input", "input from the user", "print the output", "display the output", "input and output"]
+    templates: [terminal, process-flow, form-card]
+    show: "the user typing a value, the program using it, the output printing"
+  - id: comments
+    phrases: ["comment line", "comments in code", "single line comment", "multi line comment", "comment out", "hash symbol"]
+    templates: [code-card, note, hf:code-highlight]
+    show: "the comment lines greying out as the computer skips them; only the code runs"
+  - id: testing
+    phrases: ["unit test", "unit testing", "pytest", "test case", "assert statement", "test driven", "edge case"]
+    templates: [checklist, terminal, flowchart]
+    show: "test cases ticking green one by one; the failing edge case turning red until the fix"
+  # ---- OOP
+  - id: class-object
+    phrases: ["class and object", "object oriented", "oops concepts", "blueprint", "instance of", "create an object", "object creation", "instance of the class"]
+    templates: [blocks, form-card, prop-scene, hub]
+    show: "the class as a blueprint card stamping out objects, each with its own values"
+  - id: inheritance
+    phrases: ["inheritance", "parent class", "child class", "super class", "subclass", "base class", "derived class", "inherits from"]
+    templates: [flowchart, blocks, hub]
+    show: "the parent class above, child classes below receiving its methods (they light up in the child), plus their own"
+  - id: encapsulation
+    phrases: ["encapsulation", "private variable", "data hiding", "getter and setter", "access modifier"]
+    templates: [blocks, variables, prop]
+    show: "the data locked inside the object; only its methods (getter, setter) reach in"
+  - id: polymorphism
+    phrases: ["polymorphism", "method overriding", "method overloading", "many forms", "same method name"]
+    templates: [type-cards, flowchart, hf:kinetic-type-swap]
+    show: "one method name called on different objects, each answering in its own way"
+  - id: abstraction
+    phrases: ["abstraction", "abstract class", "abstract method", "hide the details", "hiding the implementation", "java interface"]
+    templates: [blocks, process-flow, mockup]
+    show: "a simple front panel (what you use) over the hidden machinery (how it works)"
+  # ---- classic example programs
+  - id: swap
+    phrases: ["swap two numbers", "swap the values", "swapping", "temp variable", "temporary variable"]
+    templates: [variables, tiles, trace]
+    show: "the two boxes exchanging values through a temp box, step by step"
+  - id: even-odd
+    phrases: ["even or odd", "even number", "odd number", "even and odd", "odd or even"]
+    templates: [tiles, process-flow, flowchart]
+    show: "the number divided by 2: remainder 0 → the tile turns green (even), 1 → odd"
+  - id: prime
+    phrases: ["prime number", "divisors", "factors of", "only two factors"]
+    templates: [tiles, trace, icon-grid]
+    show: "candidate divisors tried one by one and crossed out; none divides → prime"
+  - id: factorial
+    phrases: ["factorial", "factorial of"]
+    templates: [tiles, trace, counter]
+    show: "5 × 4 × 3 × 2 × 1 multiplying tile by tile, the running product growing to 120"
+  - id: fibonacci
+    phrases: ["fibonacci", "fibonacci series", "previous two numbers", "sum of previous two"]
+    templates: [tiles, trace, curve]
+    show: "each new tile is the sum of the two before it, the two lighting as they add"
+  - id: palindrome-reverse
+    phrases: ["palindrome", "reverse a string", "reverse the string", "reverse a number", "reverse the number", "reversed"]
+    templates: [tiles, trace, contrast]
+    show: "the letters flipping order; compared with the original, every pair matching → palindrome"
+  - id: digits
+    phrases: ["sum of digits", "armstrong number", "last digit", "extract the digit", "number of digits", "count the digits"]
+    templates: [tiles, trace, variables]
+    show: "the number peeling off its last digit each round (n % 10), the sum box growing"
+  - id: largest-smallest
+    phrases: ["largest number", "smallest number", "maximum value", "minimum value", "max and min", "biggest number", "greatest of three"]
+    templates: [tiles, bars, trace]
+    show: "the current-max box updating as each value is compared"
+  - id: running-total
+    phrases: ["sum of numbers", "sum of n numbers", "running total", "total sum", "calculate the total", "accumulator", "sum of first n"]
+    templates: [variables, trace, counter, tiles]
+    show: "each number dropping into the total box, which grows round by round"
+  - id: leap-year
+    phrases: ["leap year"]
+    templates: [flowchart, tiles]
+    show: "the year passing the divisible-by-4, 100 and 400 checks in a decision flow"
+  - id: multiplication-table
+    phrases: ["multiplication table", "times table", "tables program"]
+    templates: [table, trace, tiles]
+    show: "the table filling line by line (5 × 1 = 5 …) as the loop runs"
+
+  # ======== Python: type conversion, range, lists, tuples, dicts, slicing, comprehensions, exceptions, files
   - id: type-conversion
-    phrases: ["type conversion", "type convert", "typecast", "type cast", "convert it into", "converted into", "int of input", "string to int", "string to integer"]
-    templates: [type-convert]
+    phrases: ["type conversion", "type convert", "typecast", "type cast", "type casting", "convert it into", "converted into", "int of input", "string to int", "string to integer", "int function", "float function", "str function"]
+    templates: [type-convert, process-flow, tiles]
     show: "the value with its type badge going through int()/str()/float() and coming out converted"
   - id: generate-sequence
-    phrases: ["1 to n", "one to n", "range 1", "range of", "generate numbers", "generates numbers", "numbers from 1", "1 to 10", "1 to 11", "n plus 1"]
-    templates: [range-gen, tiles, trace]
+    phrases: ["1 to n", "one to n", "range 1", "range of", "range function", "generate numbers", "numbers from 1", "1 to 10", "1 to 11", "n plus 1", "start stop step", "step value"]
+    templates: [range-gen, tiles, trace, loop3d]
     show: "range() emitting the numbers one by one into slots; n+1 excluded; stop at a break value"
-  - id: iteration
-    phrases: ["first iteration", "next iteration", "each iteration", "every iteration", "iteration lo"]
-    templates: [trace, tiles, range-gen]
-    show: "the loop variable taking each value, the condition checked per round"
-  - id: collect-store
-    phrases: ["store the data", "stored in the database", "store in the database", "stores data", "save the data", "collecting data", "collect all", "data organize", "records are stored"]
-    templates: [data-flow, db-tables]
-    show: "the items flying into the database / table as they are named; the container filling"
-  - id: process-data
-    phrases: ["processed data", "process the data", "arrange", "meaningful", "into information"]
-    templates: [process-flow]
-    show: "raw items -> process -> the meaningful output sentence"
-  - id: request-response
-    phrases: ["request", "response", "sends a request", "fetch", "bridge", "back end", "backend"]
-    templates: [request-flow, blocks]
-    show: "a packet travelling from the user to the system and the result coming back"
-  - id: search
-    phrases: ["search", "find out", "look for", "searching", "how long"]
-    templates: [icon-grid, table]
-    show: "a magnifier scanning many records; the found one lighting up"
-  - id: many-items
-    phrases: ["10,000", "10000", "thousands", "lakhs", "thousand students", "1000s"]
-    templates: [icon-grid, counter, data-flow]
-    show: "a grid of icons with the number counting up"
-  - id: crud
-    phrases: ["create, retrieve", "create retrieve", "update and delete", "insert", "retrieve"]
-    templates: [hub, table, data-flow]
-    show: "the system with its operations appearing around it, or the operation applied to a table row"
-  - id: app-usage
-    phrases: ["log in", "login", "portal", "click on", "open the app", "website", "screen"]
-    templates: [mockup]
-    show: "the app or site screen being used: typing, pressing, loading, the result"
-  - id: condition
-    phrases: ["equal to equal to", "condition is true", "condition is false", "condition true", "condition false", "condition check"]
-    templates: [trace, flowchart, code-card]
-    show: "the condition evaluating to True/False with the branch it takes"
-  - id: compare
-    phrases: ["difference between", "versus", " vs ", "compared to"]
+  - id: python-uses
+    phrases: ["why python", "uses of python", "applications of python", "python is used", "python is easy", "features of python"]
+    templates: [hub, icon-grid, chips]
+    show: "Python in the middle and what it is used for (web, AI, data, automation) on spokes, each as named"
+  - id: indentation
+    phrases: ["indentation", "indent", "four spaces", "indentation error", "colon and indentation"]
+    templates: [code-card, hf:code-highlight, note]
+    show: "the indented block lit as one group under its colon line; a wrong indent turning red"
+  - id: f-string
+    phrases: ["f string", "fstring", "format string", "string formatting", "format method", "print function", "sep and end"]
+    templates: [process-flow, code-card, tiles]
+    show: "the template string with {holes}; each value drops into its hole and the finished sentence prints"
+  - id: list
+    phrases: ["python list", "list of values", "square brackets", "append", "append method", "add to the list", "list methods", "insert method", "remove method", "pop method", "extend method"]
+    templates: [tiles, variables, code-card]
+    show: "the list as a row of tiles in square brackets; append adds a tile at the end, insert squeezes one in, pop lifts one out"
+  - id: negative-index
+    phrases: ["negative index", "negative indexing", "minus one index", "index minus 1", "last element", "positive and negative index"]
+    templates: [tiles, table, hf:code-highlight]
+    show: "indexes 0, 1, 2… above the tiles and …, -2, -1 below; the asked one lighting"
+  - id: slicing
+    phrases: ["slicing", "slice", "start and end index", "colon operator", "list slicing", "string slicing", "step in slicing"]
+    templates: [tiles, range-gen, code-card]
+    show: "a bracket sliding over the tiles from start up to (not including) end; the slice lifting out as a new row"
+  - id: tuple
+    phrases: ["tuple", "round brackets"]
+    templates: [tiles, type-cards, code-card]
+    show: "values locking into a row inside round brackets"
+    gap: 120
+  - id: mutability
+    phrases: ["immutable", "mutable", "mutable and immutable", "cannot be changed", "can not be changed", "cannot be modified", "can't change"]
+    templates: [tiles, contrast, terminal]
+    show: "trying to change a tile: it shakes and turns red with the TypeError, while a list's tile changes freely"
+  - id: dictionary
+    phrases: ["dictionary", "dict", "dictionary keys", "dot get", "dictionary methods", "items method", "keys method"]
+    templates: [table, form-card, hub]
+    show: "a two-column table: each key on the left with its value on the right; looking up a key lights its row"
+  - id: set
+    phrases: ["python set", "sets in python", "unique values", "no duplicates", "union and intersection", "set operations", "set union", "set intersection"]
+    templates: [venn, tiles, type-cards, table]
+    show: "two sets as circles; each value drops into its region as she says it; union / intersection / difference fill their region"
+  - id: char-check
+    phrases: ["isalpha", "isdigit", "isalnum", "isupper", "islower", "isspace", "is alpha", "is digit", "only alphabets", "only digits", "checks every character", "each and every character"]
+    templates: [char-scan, tiles, table]
+    show: "the string as character cells; a pointer checks each one and stamps a tick or a cross; True / False pops at the end"
+    gap: 20
+  - id: symmetric-difference
+    phrases: ["symmetric difference", "set difference", "difference of sets", "common elements", "common values", "in both sets"]
+    templates: [venn, contrast, table]
+    show: "two overlapping circles; the operation's region fills as she names it; the result set builds underneath"
+  - id: comprehension
+    phrases: ["list comprehension", "dictionary comprehension", "comprehension", "one line for loop"]
+    templates: [process-flow, tiles, hf:code-morph]
+    show: "the four-line loop turning into the one-line comprehension; values flowing through the filter into the new list"
+  - id: lambda-map-filter
+    phrases: ["lambda", "lambda function", "anonymous function", "map function", "filter function", "reduce function", "zip function", "enumerate"]
+    templates: [process-flow, tiles, code-card]
+    show: "the values passing through the small function one by one and the new values coming out"
+  - id: exceptions
+    phrases: ["try except", "try and except", "exception handling", "except block", "finally block", "raise an exception", "value error", "zero division error", "zerodivisionerror", "valueerror", "type error", "name error"]
+    templates: [flowchart, terminal, code-card]
+    show: "the program hits the bad value: instead of crashing (red), it jumps to the except block and carries on"
+  - id: modules
+    phrases: ["import module", "import the module", "import statement", "python module", "modules in python", "built in module", "math module", "random module", "datetime module"]
+    templates: [hub, blocks, code-card]
+    show: "the program in the middle and the modules it imports clicking in, each bringing its functions"
+  - id: pip-packages
+    phrases: ["pip install", "install the package", "install the library", "third party library", "pypi", "python package"]
+    templates: [data-flow, blocks, hf:code-terminal-run]
+    show: "the package flying from PyPI into the project after pip install"
+  - id: file-handling
+    phrases: ["file handling", "open the file", "read the file", "write to the file", "write into the file", "append mode", "read mode", "write mode", "with open", "close the file", "csv file", "text file"]
+    templates: [data-flow, process-flow, terminal]
+    show: "lines flowing from the program into the file (write) or out of it (read), the mode badge r / w / a on the file"
+  - id: constructor-self
+    phrases: ["self keyword", "self parameter", "init method", "constructor", "underscore init", "dunder method", "dunder init", "magic method"]
+    templates: [form-card, blocks, code-card]
+    show: "creating the object runs its constructor (__init__ in Python): each attribute fills into the new object's card"
+  - id: decorators
+    phrases: ["decorator", "at the rate symbol", "wrapper function"]
+    templates: [process-flow, blocks, hf:code-morph]
+    show: "the original function wrapped in an outer box that adds work before and after it"
+  - id: generators
+    phrases: ["generator function", "yield", "yield keyword", "lazy evaluation", "next function", "iterator"]
+    templates: [range-gen, tiles, process-flow]
+    show: "values made one at a time only when asked (next), never all stored at once"
+  - id: args-kwargs
+    phrases: ["args and kwargs", "star args", "kwargs", "variable length arguments", "arbitrary arguments"]
+    templates: [tiles, table, form-card]
+    show: "extra positional values packing into a tuple (*args) and named ones into a dict (**kwargs)"
+  - id: unpacking
+    phrases: ["unpacking", "tuple unpacking", "packing and unpacking", "multiple assignment"]
+    templates: [tiles, variables, hf:code-morph]
+    show: "values flying out of the tuple into their variable boxes one by one"
+  - id: string-methods
+    phrases: ["string methods", "upper method", "lower method", "split method", "strip method", "replace method", "join method", "string find", "count method"]
+    templates: [type-convert, process-flow, tiles]
+    show: "the string going through the method and coming out changed (\"hello\" → upper() → \"HELLO\")"
+  - id: copy-reference
+    phrases: ["shallow copy", "deep copy", "copy of the list", "same reference", "same object", "id function"]
+    templates: [blocks, variables, contrast]
+    show: "two names pointing at one box (a change shows in both) against a real copy in its own box"
+  - id: virtual-env
+    phrases: ["virtual environment", "venv", "requirements.txt", "requirements file", "pip freeze"]
+    templates: [blocks, data-flow, hf:code-terminal-run]
+    show: "each project in its own box with its own packages, never mixing"
+
+  # ======== HTML: tags, page structure, the DOM tree, links, images, lists, tables, forms, semantic tags
+  - id: html-intro
+    phrases: ["html css and javascript", "html css javascript", "structure style and behaviour", "structure style and behavior", "hypertext markup language", "markup language"]
+    templates: [blocks, hub, prop-scene, type-cards]
+    show: "a page built in three layers: HTML the bones, CSS the paint, JavaScript making it move (the house analogy)"
+  - id: tags-elements
+    phrases: ["html tag", "opening tag", "closing tag", "self closing", "html element", "angle brackets", "start tag", "end tag"]
+    templates: [code-card, blocks, mockup]
+    show: "the element built in pieces: opening tag, content, closing tag snapping round it, the browser rendering it beside"
+  - id: page-structure
+    phrases: ["doctype", "head and body", "head section", "body section", "html structure", "boilerplate", "basic structure", "body tag", "head tag"]
+    templates: [blocks, flowchart, code-card]
+    show: "nested boxes: html containing head (title, meta) and body (what you see)"
+  - id: dom-tree
+    phrases: ["dom", "document object model", "dom tree", "parent element", "child element", "nested elements", "sibling elements"]
+    templates: [flowchart, blocks, tiles]
+    show: "the page as a tree: html at the root, head and body below, each element branching as it is named"
+  - id: text-tags
+    phrases: ["heading tag", "h1 tag", "h1 to h6", "paragraph tag", "p tag", "line break", "br tag", "bold and italic", "strong tag"]
+    templates: [mockup, code-card, contrast]
+    show: "code on one side, the rendered page on the other: each tag appears in the browser as it is typed"
+  - id: links
+    phrases: ["anchor tag", "a tag", "href", "hyperlink", "link to another page", "target blank", "navigation link"]
+    templates: [mockup, request-flow, hf:press-ripple]
+    show: "the cursor pressing the link and the browser moving to the new page"
+  - id: images-media
+    phrases: ["image tag", "img tag", "src attribute", "alt attribute", "alt text", "video tag", "audio tag", "embed a video", "iframe"]
+    templates: [mockup, code-card, form-card]
+    show: "the img tag's src pulling the picture into the page; when it fails, the alt text shows instead"
+  - id: attributes
+    phrases: ["id attribute", "class attribute", "name and value", "attribute value", "html attribute", "tag attributes"]
+    templates: [form-card, code-card, hf:code-highlight]
+    show: "the tag's attributes listed like form fields (name = value), each lighting as named"
+  - id: html-lists
+    phrases: ["unordered list", "ordered list", "ul tag", "ol tag", "li tag", "list item", "bullet points", "description list"]
+    templates: [mockup, agenda, code-card]
+    show: "bullets (ul) against numbers (ol), appearing item by item in the rendered page"
+  - id: html-tables
+    phrases: ["table tag", "tr tag", "td tag", "th tag", "table row", "table data", "table header", "table heading", "colspan", "rowspan"]
+    templates: [table, code-card, mockup]
+    show: "the table building row by row as each <tr> and <td> is typed"
+  - id: forms
+    phrases: ["form tag", "input tag", "input field", "input type", "text box", "submit button", "label tag", "placeholder", "radio button", "checkbox", "dropdown", "select tag", "textarea"]
+    templates: [form-card, mockup, hf:press-ripple]
+    show: "the form appearing field by field; typing into it and pressing submit"
+  - id: semantic
+    phrases: ["semantic tags", "semantic html", "semantic elements", "header tag", "footer tag", "nav tag", "section tag", "article tag", "main tag", "aside tag"]
+    templates: [blocks, mockup, type-cards]
+    show: "a page wireframe labelled header / nav / main / section / footer, each region lighting as named"
+  - id: block-inline
+    phrases: ["block element", "block level", "inline element", "div tag", "span tag", "div and span"]
+    templates: [contrast, blocks, mockup]
+    show: "block elements taking the full width line by line, inline ones sitting side by side in the text"
+  - id: browser-render
+    phrases: ["browser renders", "render the page", "rendered in the browser", "open in the browser", "live server", "view page source", "inspect element", "developer tools", "dev tools"]
+    templates: [mockup, process-flow, hf:browser-device-stage]
+    show: "the HTML file going into the browser and coming out as the visible page"
+  - id: head-meta
+    phrases: ["meta tag", "title tag", "viewport meta", "charset", "favicon"]
+    templates: [mockup, code-card, blocks]
+    show: "the head's tags landing where they show: the title in the tab, the favicon beside it, the viewport for phones"
+  - id: accessibility
+    phrases: ["accessibility", "screen reader", "aria", "aria label", "accessible website"]
+    templates: [mockup, checklist, callouts]
+    show: "the page read out by a screen reader, each labelled element lighting as it is announced; the unlabelled ones flagged"
+
+  # ======== CSS: selectors, box model, flexbox, grid, positioning, cascade, units, colours, responsive design, transitions
+  - id: ways-to-add-css
+    phrases: ["inline css", "internal css", "external css", "style tag", "link tag", "stylesheet", "style sheet", "cascading style sheets"]
+    templates: [type-cards, blocks, code-card]
+    show: "three cards: inline (in the tag), internal (a style tag in the head), external (a linked .css file), with an arrow to where each lives"
+  - id: selectors
+    phrases: ["css selector", "selectors", "class selector", "id selector", "element selector", "universal selector", "descendant selector", "attribute selector", "dot class"]
+    templates: [mockup, code-card, hf:code-highlight]
+    show: "the selector typed on the left, the matching elements on the page lighting up"
+  - id: class-vs-id
+    phrases: ["class and id", "class vs id", "id and class", "unique id", "same class"]
+    templates: [contrast, mockup, table]
+    show: "one id styling a single element, one class styling many at once"
+  - id: box-model
+    phrases: ["box model", "margin and padding", "padding", "margin", "border", "content box", "box sizing", "border box"]
+    templates: [blocks, mockup, contrast]
+    show: "the element's layers building outward: content, padding, border, margin, each labelled with its size"
+  - id: display
+    phrases: ["display property", "display block", "display inline", "display none", "inline block", "visibility hidden"]
+    templates: [contrast, mockup, blocks]
+    show: "the same three boxes re-flowing as display changes: stacked, side by side, gone"
+  - id: flexbox
+    phrases: ["flexbox", "flex box", "display flex", "flex container", "flex items", "justify content", "align items", "flex direction", "flex wrap", "space between", "flex grow"]
+    templates: [blocks, mockup, tiles]
+    show: "boxes in a container sliding into place as each property changes: row or column, centred, spaced out"
+  - id: css-grid
+    phrases: ["css grid", "display grid", "grid template", "grid template columns", "grid columns", "grid rows", "grid gap", "fr unit", "grid area"]
+    templates: [tiles, blocks, mockup]
+    show: "the container dividing into columns and rows, items dropping into their cells"
+  - id: position
+    phrases: ["position property", "position relative", "position absolute", "position fixed", "position sticky", "relative and absolute", "top left right bottom"]
+    templates: [blocks, mockup, contrast]
+    show: "a box moved by top/left: relative to its own spot, absolute to its parent, fixed staying put while the page scrolls"
+  - id: specificity
+    phrases: ["specificity", "cascade", "cascading", "which rule wins", "important keyword", "exclamation important", "overrides the style", "inline style"]
+    templates: [bars, table, contrast]
+    show: "the competing rules lined up with their scores (inline > id > class > element); the winner's colour reaching the element"
+  - id: css-units
+    phrases: ["css units", "px", "rem", "viewport width", "viewport height", "vh", "vw", "percentage width", "relative units", "absolute units"]
+    templates: [table, contrast, mockup]
+    show: "the same box sized in px, %, rem and vw; resizing the screen shows which ones scale"
+  - id: colours
+    phrases: ["hex code", "hex color", "hex colour", "rgb", "rgba", "color code", "colour code", "background color", "background colour", "opacity"]
+    templates: [tiles, mockup, form-card]
+    show: "swatches: the hex or rgb value typing in and the colour filling"
+  - id: responsive
+    phrases: ["responsive design", "media query", "breakpoint", "mobile first", "different screen sizes", "screen size", "responsive website", "responsive layout"]
+    templates: [mockup, blocks, hf:browser-device-stage]
+    show: "the same page reflowing from desktop to tablet to phone at each breakpoint"
+  - id: transitions
+    phrases: ["transition property", "css transition", "keyframes", "css animation", "hover effect", "transform property", "animation duration"]
+    templates: [mockup, curve, hf:press-ripple]
+    show: "the hover effect playing: colour and size easing over the transition time"
+  - id: pseudo-classes
+    phrases: ["pseudo class", "hover", "focus state", "nth child", "pseudo element", "before and after pseudo"]
+    templates: [mockup, code-card, hf:press-ripple]
+    show: "the element changing state (hover, focus) under the cursor, its pseudo-class rule lighting"
+  - id: z-index-overflow
+    phrases: ["z index", "stacking order", "overflow hidden", "overflow scroll", "css overflow"]
+    templates: [blocks, mockup, tiles]
+    show: "cards overlapping; raising the z-index brings one to the front, overflow clips what spills out"
+  - id: typography
+    phrases: ["font family", "font size", "font weight", "google fonts", "line height", "typography", "letter spacing", "text align"]
+    templates: [mockup, contrast, hf:kinetic-type-swap]
+    show: "the same heading changing family, size and weight as each property is typed"
+  - id: css-variables
+    phrases: ["css variables", "custom properties", "var function", "root selector"]
+    templates: [variables, mockup, code-card]
+    show: "one --brand variable changed and every element using it recolouring at once"
+  - id: css-frameworks
+    phrases: ["tailwind css", "utility classes", "css framework", "pre built classes", "bootstrap classes"]
+    templates: [contrast, mockup, hf:code-morph]
+    show: "a long hand-written CSS rule beside the few utility classes that do the same; the page looks identical"
+  - id: centering
+    phrases: ["center a div", "centre a div", "center the div", "vertically center", "horizontally center", "center the element"]
+    templates: [blocks, mockup, hf:code-morph]
+    show: "the box sliding to the exact centre as the two flexbox lines are added"
+  - id: decoration
+    phrases: ["border radius", "rounded corners", "box shadow", "text shadow", "linear gradient", "gradient background"]
+    templates: [mockup, tiles, contrast]
+    show: "a plain box gaining rounded corners, a shadow and a gradient, one property at a time"
+
+  # ======== JavaScript: let/const, equality, array methods, the DOM, events, event loop, promises, async/await, fetch
+  - id: js-intro
+    phrases: ["javascript runs in the browser", "scripting language", "makes the page interactive", "dynamic website", "dynamic web page", "dynamic webpage", "script tag"]
+    templates: [mockup, contrast, hf:press-ripple]
+    show: "a static page beside the same page coming alive: a button pressed, content changing"
+  - id: let-const-var
+    phrases: ["let and const", "let const var", "var let const", "const keyword", "let keyword", "var keyword", "reassign", "redeclare", "block scope"]
+    templates: [table, variables, contrast]
+    show: "three boxes var, let, const: reassigning the const one shakes red; a table of scope / redeclare / reassign ticks"
+  - id: equality
+    phrases: ["double equals", "triple equals", "strict equality", "loose equality", "type coercion", "strict equal"]
+    templates: [contrast, type-convert, table]
+    show: "'5' == 5 → true after the string converts; '5' === 5 → false because the types are compared too"
+  - id: truthy-falsy
+    phrases: ["truthy", "falsy", "truthy and falsy", "falsy values"]
+    templates: [tiles, table, type-cards]
+    show: "values sorted into two bins: falsy (0, '', null, undefined, NaN, false) and truthy"
+  - id: null-undefined
+    phrases: ["null and undefined", "undefined", "not defined", "nan", "not a number"]
+    templates: [contrast, variables, type-cards]
+    show: "an empty box (null: emptied on purpose) beside a box never filled (undefined)"
+  - id: array-methods
+    phrases: ["array methods", "map method", "filter method", "reduce method", "foreach", "for each", "find method", "dot map", "dot filter", "dot reduce", "push method"]
+    templates: [process-flow, tiles, hf:code-morph]
+    show: "tiles flowing through map (each transformed), filter (some dropped), reduce (folded into one total)"
+  - id: js-object
+    phrases: ["javascript object", "js object", "object literal", "dot notation", "bracket notation", "key and value", "object properties", "properties of the object"]
+    templates: [form-card, table, variables]
+    show: "the object as a card whose properties type in, each key with its value"
+  - id: json-convert
+    phrases: ["json parse", "json dot parse", "jsonparse", "json stringify", "json dot stringify", "jsonstringify"]
+    templates: [type-convert, process-flow, contrast]
+    show: "the object turning into a JSON string (stringify) and back (parse), the quotes appearing and disappearing"
+  - id: dom-manipulation
+    phrases: ["dom manipulation", "manipulate the dom", "query selector", "queryselector", "get element by id", "getelementbyid", "inner html", "innerhtml", "text content", "textcontent", "create element", "append child", "class list"]
+    templates: [mockup, blocks, code-card]
+    show: "the JS line selecting an element on the page (it lights) and changing its text or colour live"
+  - id: events
+    phrases: ["event listener", "add event listener", "addeventlistener", "click event", "onclick", "on click", "event handler", "keyboard event", "submit event", "event object"]
+    templates: [mockup, flowchart, hf:press-ripple]
+    show: "the user clicks; the event travels to its listener and the handler runs, changing the page"
+  - id: event-bubbling
+    phrases: ["event bubbling", "bubbling", "event delegation", "capturing phase", "stop propagation", "stoppropagation"]
+    templates: [flowchart, blocks, request-flow]
+    show: "the click rising from the button up through its parents to the document, each lighting as it passes"
+  - id: event-loop
+    phrases: ["event loop", "call stack", "callback queue", "task queue", "microtask", "microtask queue", "web apis", "single threaded", "non blocking"]
+    templates: [blocks, tiles, request-flow]
+    show: "the call stack, the web APIs and the queue as boxes; a setTimeout callback hopping from the API to the queue and waiting for the stack to empty"
+  - id: callbacks
+    phrases: ["callback", "callback function", "callback hell", "pass a function"]
+    templates: [flowchart, process-flow, code-card]
+    show: "a function handed to another and called back when the work finishes; nested callbacks drifting right into a pyramid"
+  - id: promises
+    phrases: ["promise", "resolve and reject", "pending state", "then and catch", "dot then", "dot catch", "promise is resolved", "promise is rejected", "javascript promise"]
+    templates: [flowchart, request-flow, hf:state-chip-rail]
+    show: "the promise in 'pending', then settling to fulfilled (green, the value to .then) or rejected (red, to .catch)"
+  - id: async-await
+    phrases: ["async await", "async function", "await keyword", "asynchronous", "synchronous", "synchronous and asynchronous", "async and await"]
+    templates: [request-flow, contrast, flowchart]
+    show: "sync: tasks waiting in one line; async: the slow task sent off, the others carrying on, its result returning at await"
+  - id: fetch-api
+    phrases: ["fetch api", "fetch function", "fetch request", "axios", "api call", "call the api", "calling the api", "make an api call"]
+    templates: [request-flow, blocks, mockup]
+    show: "the page sending a fetch to the API; the JSON coming back and filling the page"
+  - id: closures
+    phrases: ["closure", "lexical scope", "lexical environment", "remembers the variable", "outer function"]
+    templates: [blocks, variables, flowchart]
+    show: "the inner function carrying the outer variables it remembers, even after the outer function has finished"
+  - id: hoisting
+    phrases: ["hoisting", "hoisted", "temporal dead zone", "tdz"]
+    templates: [code-card, blocks, hf:code-morph]
+    show: "declarations floating to the top before the code runs; var reads undefined, let throws in the dead zone"
+  - id: this-keyword
+    phrases: ["this keyword", "value of this", "bind call apply", "bind method", "call and apply"]
+    templates: [blocks, flowchart, contrast]
+    show: "the same function called from different objects, an arrow showing which object 'this' points to each time"
+  - id: arrow-functions
+    phrases: ["arrow function", "fat arrow", "regular function", "normal function"]
+    templates: [contrast, code-card, hf:code-morph]
+    show: "the regular function becoming the arrow function: the function keyword dropping out, => appearing"
+  - id: template-literals
+    phrases: ["template literal", "backtick", "string interpolation", "dollar curly"]
+    templates: [process-flow, code-card, tiles]
+    show: "values dropping into the ${} holes of the backtick string and the finished sentence appearing"
+  - id: destructuring
+    phrases: ["destructuring", "destructure", "destructuring assignment", "object destructuring", "array destructuring"]
+    templates: [tiles, variables, hf:code-morph]
+    show: "values lifting out of the object or array straight into named variable boxes"
+  - id: spread-rest
+    phrases: ["spread operator", "rest operator", "three dots", "rest parameter", "spread the array"]
+    templates: [tiles, process-flow, hf:code-morph]
+    show: "the three dots spilling an array's tiles into a new one (spread), or gathering the leftovers (rest)"
+  - id: browser-storage
+    phrases: ["local storage", "localstorage", "session storage", "sessionstorage", "cookies", "cookie"]
+    templates: [data-flow, table, mockup]
+    show: "data saved from the page into the browser's storage box, still there after a reload"
+  - id: js-modules
+    phrases: ["import and export", "export default", "named export", "es6 modules", "require function", "module exports"]
+    templates: [blocks, flowchart, code-card]
+    show: "files as boxes: a function exported from one travelling along an arrow into the file that imports it"
+  - id: timers
+    phrases: ["settimeout", "set timeout", "setinterval", "set interval", "clear interval", "clearinterval"]
+    templates: [prop, tiles, flowchart]
+    show: "a timer counting down, then the function firing: once for a timeout, every tick for an interval"
+  - id: try-catch
+    phrases: ["try catch", "try and catch", "catch block", "throw error", "throw new error"]
+    templates: [flowchart, code-card, terminal]
+    show: "the error thrown inside try jumping to catch, the page carrying on instead of breaking"
+  - id: prototypes
+    phrases: ["prototype", "prototype chain", "prototypal inheritance"]
+    templates: [flowchart, blocks]
+    show: "an object looking up a property: not here → its prototype → the next, until it is found"
+  - id: node-npm
+    phrases: ["javascript runtime", "outside the browser", "server side javascript", "package json", "packagejson", "node modules", "npm", "npm install", "npm run"]
+    templates: [blocks, hub, hf:code-terminal-run]
+    show: "JavaScript leaving the browser to run on a server with Node; npm pulling packages into node_modules"
+  - id: typescript
+    phrases: ["type annotation", "type safety", "static typing", "typescript compiler"]
+    templates: [contrast, code-card, hf:code-diff]
+    show: "the same function with and without types; the wrong value caught in red before the code even runs"
+
+  # ======== React: components, props, state, re-rendering, hooks, the virtual DOM, routing, global state
+  - id: components
+    phrases: ["functional component", "reusable component", "react component", "build components", "component based", "create a component", "components in react"]
+    templates: [blocks, mockup, hub]
+    show: "the page splitting into labelled React component boxes (Navbar, Card, Footer); one Card reused three times"
+    gap: 90
+  - id: component-tree
+    phrases: ["component tree", "parent component", "child component", "parent and child component", "nested component"]
+    templates: [flowchart, blocks, tiles]
+    show: "App at the top, its children branching below, each as it is named"
+  - id: props
+    phrases: ["props", "pass props", "passing props", "data passed down", "read only props", "props object"]
+    templates: [request-flow, flowchart, form-card]
+    show: "a value travelling down from parent to child as a prop and landing in the child's card"
+  - id: props-vs-state
+    phrases: ["props and state", "props vs state", "state and props", "state vs props"]
     templates: [contrast, table]
-    show: "the two side by side"
+    show: "props: handed in from outside, read-only; state: the component's own memory, it can change"
+  - id: state
+    phrases: ["usestate", "use state", "state variable", "set state", "setstate", "update the state", "state changes", "state updates", "initial state", "setter function"]
+    templates: [variables, mockup, counter]
+    show: "the state box (count: 0) beside the page; each click updates the box and the page re-renders to match"
+  - id: re-render
+    phrases: ["re render", "rerender", "re rendering", "render again", "render method"]
+    templates: [flowchart, mockup, hf:state-chip-rail]
+    show: "state changes → the component runs again → new UI; only the changed part flashing"
+  - id: virtual-dom
+    phrases: ["virtual dom", "diffing", "diffing algorithm", "reconciliation", "real dom"]
+    templates: [blocks, contrast, flowchart]
+    show: "the old and new virtual DOM trees compared; only the changed node patched into the real DOM"
+  - id: jsx
+    phrases: ["jsx", "html inside javascript", "html in javascript", "return jsx", "babel", "react createelement"]
+    templates: [code-card, process-flow, hf:code-morph]
+    show: "the JSX line turning into React.createElement and then into the element on the page"
+  - id: use-effect
+    phrases: ["useeffect", "use effect", "side effect", "dependency array", "cleanup function", "on mount", "component mounts"]
+    templates: [flowchart, trace, hf:state-chip-rail]
+    show: "the effect timeline: render → effect runs; a dependency changes → cleanup, then it runs again; unmount → cleanup"
+  - id: lifecycle
+    phrases: ["component lifecycle", "lifecycle methods", "mounting", "unmounting", "updating phase", "componentdidmount"]
+    templates: [flowchart, hub, hf:state-chip-rail]
+    show: "mount → update → unmount as stages, the component's marker moving through them"
+  - id: react-events
+    phrases: ["onclick handler", "event handling in react", "handle click", "handleclick", "onchange", "on change", "onsubmit", "on submit", "synthetic event"]
+    templates: [mockup, flowchart, hf:press-ripple]
+    show: "the button pressed, the handler running, the state and the page updating"
+  - id: conditional-rendering
+    phrases: ["conditional rendering", "render conditionally", "show or hide", "show and hide", "logical and operator"]
+    templates: [mockup, contrast, flowchart]
+    show: "the condition flipping and the element appearing or disappearing on the page"
+  - id: lists-keys
+    phrases: ["key prop", "unique key prop", "keys in react", "rendering a list", "render a list", "map over", "list rendering"]
+    templates: [tiles, mockup, code-card]
+    show: "an array mapped into cards, each with its key badge; adding one slides only the new card in"
+  - id: controlled-forms
+    phrases: ["controlled component", "controlled input", "uncontrolled component", "form handling", "form in react", "two way binding"]
+    templates: [form-card, variables, mockup]
+    show: "typing in the input updates state on every key, and the state value flows back into the field"
+  - id: lifting-state
+    phrases: ["lifting state up", "lift the state", "lift state up", "shared state", "common parent", "closest common parent"]
+    templates: [flowchart, request-flow, blocks]
+    show: "the state moving up to the shared parent and flowing down to both children"
+  - id: context
+    phrases: ["prop drilling", "context api", "usecontext", "use context", "context provider", "global state"]
+    templates: [flowchart, request-flow, hub]
+    show: "a prop passed down through five layers (drilling) against one context the deep child reads directly"
+  - id: redux
+    phrases: ["redux", "redux toolkit", "reducer", "dispatch an action", "action and reducer", "zustand", "global store"]
+    templates: [flowchart, request-flow, blocks]
+    show: "an action dispatched → the reducer → the store updates → components re-render, a loop of arrows"
+  - id: routing
+    phrases: ["react router", "client side routing", "usenavigate", "use navigate", "link component", "single page application", "spa", "browser router"]
+    templates: [mockup, flowchart, hf:browser-device-stage]
+    show: "the URL changing in the address bar and the page swapping components without a full reload"
+  - id: hooks
+    phrases: ["react hooks", "custom hook", "rules of hooks", "hooks in react", "built in hooks"]
+    templates: [hub, type-cards, blocks]
+    show: "the component in the middle, each hook plugging in a power (state, effects, refs, context) as it is named"
+  - id: use-ref
+    phrases: ["useref", "use ref", "ref to the element", "dom reference", "ref object"]
+    templates: [blocks, variables, mockup]
+    show: "a ref pointing straight at the input on the page; changing it does not re-render"
+  - id: memoization
+    phrases: ["usememo", "use memo", "usecallback", "use callback", "react memo", "memoization", "memoize"]
+    templates: [contrast, bars, process-flow]
+    show: "the expensive calculation skipped on re-render because its inputs did not change: the cached result reused"
+  - id: data-fetching
+    phrases: ["fetch data in react", "loading state", "loading spinner", "data fetching", "react query", "tanstack query"]
+    templates: [mockup, request-flow, hf:state-chip-rail]
+    show: "the component showing a spinner, the request travelling, the cards filling with the data"
+  - id: create-app
+    phrases: ["create react app", "vite", "npm create vite", "npx create", "npm run dev", "development server", "dev server"]
+    templates: [mockup, flowchart, hf:code-terminal-run]
+    show: "the command running, the project folder appearing, then the starter page opening in the browser"
+  - id: next-js
+    phrases: ["server side rendering", "ssr", "static site generation", "server components", "client components", "app router"]
+    templates: [contrast, request-flow, blocks]
+    show: "the page built on the server and sent ready (SSR) against built in the browser after loading (client)"
+  - id: react-native
+    phrases: ["mobile app with react", "expo", "native components"]
+    templates: [mockup, hf:browser-device-stage]
+    show: "the same React code becoming a real phone app screen"
+
+  # ======== Backend & APIs (FastAPI, Flask, Django, Express): endpoints, HTTP methods, status codes, validation, auth, servers
+  - id: endpoint
+    phrases: ["endpoint", "api endpoint", "api route", "path operation", "route decorator", "app dot get", "app dot post", "appget", "apppost"]
+    templates: [request-flow, code-card, blocks]
+    show: "a URL path mapped to its function: the request arrives at /students and that function runs"
+  - id: http-methods
+    phrases: ["http methods", "get request", "post request", "put request", "patch request", "delete request", "get and post", "get method", "post method"]
+    templates: [table, request-flow, type-cards]
+    show: "GET / POST / PUT / DELETE chips, each mapped to read / create / update / delete on the same resource"
+  - id: status-codes
+    phrases: ["status code", "200 ok", "404", "404 not found", "not found error", "500 error", "internal server error", "201 created", "401 unauthorized", "403 forbidden"]
+    templates: [table, request-flow, type-cards]
+    show: "the response carrying its badge: 200 green, 201 created, 404 amber, 500 red, the meaning beside each"
+  - id: params
+    phrases: ["path parameter", "query parameter", "query string", "url parameter"]
+    templates: [form-card, request-flow, hf:code-highlight]
+    show: "the URL broken apart: /students/{id} filling the path parameter, ?page=2 filling the query parameter"
+  - id: validation
+    phrases: ["request body", "pydantic", "pydantic model", "base model", "basemodel", "data validation", "validation error", "422", "schema validation"]
+    templates: [form-card, flowchart, process-flow]
+    show: "the JSON body checked field by field against the model: good fields tick, a wrong type turns red with a 422"
+  - id: json-response
+    phrases: ["json response", "return json", "response model", "serialize", "serialization", "deserialize"]
+    templates: [process-flow, type-convert, code-card]
+    show: "the Python object going out of the endpoint and arriving as JSON in the browser"
+  - id: rest
+    phrases: ["restful", "rest principles", "rest architecture", "stateless", "resource based"]
+    templates: [blocks, table, request-flow]
+    show: "one resource (/students) with each method acting on it; every request carrying everything the server needs"
+  - id: api-docs
+    phrases: ["swagger", "swagger ui", "docs endpoint", "slash docs", "interactive docs", "openapi", "try it out", "redoc", "postman", "thunder client"]
+    templates: [mockup, form-card, hf:press-ripple]
+    show: "the /docs page: the endpoint expanding, Try it out, Execute, the response appearing below"
+  - id: async-backend
+    phrases: ["async def", "async endpoint", "concurrency", "concurrent requests", "handle many requests"]
+    templates: [request-flow, contrast, bars]
+    show: "many requests handled together: while one waits on the database, the server serves the others"
+  - id: middleware
+    phrases: ["middleware", "before the request reaches", "request pipeline"]
+    templates: [request-flow, flowchart, blocks]
+    show: "each request passing through middleware gates (logging, auth, CORS) before the endpoint, and back out"
+  - id: cors
+    phrases: ["cors", "cross origin", "allowed origins", "cors error", "cors policy"]
+    templates: [request-flow, contrast, mockup]
+    show: "the frontend's request blocked at the server's door until its origin is on the allowed list"
+  - id: auth
+    phrases: ["authentication", "authorization", "authentication and authorization", "jwt", "json web token", "access token", "bearer token", "login endpoint", "oauth", "token based", "refresh token"]
+    templates: [request-flow, flowchart, form-card]
+    show: "log in → the server issues a token → every later request carries it; the server checks it and lets the request through"
+  - id: password-hashing
+    phrases: ["password hashing", "hash the password", "hashed password", "bcrypt", "plain text password", "salting"]
+    templates: [type-convert, process-flow, contrast]
+    show: "the plain password going through the hash function and coming out as an unreadable string stored in the database"
+  - id: dependency-injection
+    phrases: ["dependency injection", "depends function", "fastapi depends", "get db function", "get db"]
+    templates: [blocks, flowchart, hub]
+    show: "the endpoint asking for what it needs (a database session, the current user) and FastAPI handing it in"
+  - id: orm
+    phrases: ["orm", "sqlalchemy", "sql alchemy", "object relational", "object relational mapping", "django orm", "models dot py", "query the database"]
+    templates: [process-flow, table, contrast]
+    show: "a Python object turning into a table row (and back) without writing SQL"
+  - id: run-server
+    phrases: ["uvicorn", "run the server", "start the server", "localhost", "local host", "port 8000", "port number", "auto reload"]
+    templates: [mockup, request-flow, hf:code-terminal-run]
+    show: "the server starting in the terminal, then the browser at localhost:8000 getting its first response"
+  - id: env-secrets
+    phrases: ["environment variable", "dot env", "env file", "secret key", "api key"]
+    templates: [blocks, variables, prop]
+    show: "the secrets kept in a locked .env file outside the code; the app reads them when it starts"
+  - id: crud-api
+    phrases: ["crud api", "crud operations", "crud endpoints", "crud app"]
+    templates: [hub, table, request-flow]
+    show: "one resource in the middle, its create / read / update / delete endpoints on spokes, each as named"
+  - id: mvc
+    phrases: ["mvc", "mvt", "model view controller", "model view template", "views and urls", "urls dot py", "views dot py"]
+    templates: [blocks, flowchart, type-cards]
+    show: "request → URL → view → model and template → response, each layer lighting in turn"
+  - id: express
+    phrases: ["express js", "expressjs", "express server", "app dot listen", "req and res", "request and response objects"]
+    templates: [request-flow, code-card, blocks]
+    show: "a request reaching the Express route, req carrying it in, res sending the answer back"
+  - id: realtime
+    phrases: ["websocket", "socket io", "live updates", "real time updates", "real time chat"]
+    templates: [request-flow, contrast, hf:chat-message]
+    show: "one open line between browser and server, messages flowing both ways continuously, against one-off requests"
+  - id: caching
+    phrases: ["caching", "cache", "redis", "cache hit", "cache miss", "in memory cache"]
+    templates: [request-flow, contrast, bars]
+    show: "the first request goes to the database (slow); the answer is kept in the cache; the next one returns instantly"
+  - id: pagination
+    phrases: ["pagination", "page size", "limit and offset", "paginate"]
+    templates: [table, tiles, mockup]
+    show: "a long list served page by page: rows 1–10, then 11–20 on 'next page'"
+  - id: file-upload
+    phrases: ["file upload", "upload a file", "uploadfile", "upload file", "multipart", "form data"]
+    templates: [data-flow, mockup, request-flow]
+    show: "the file chosen in the browser, travelling with the request and landing in the server's folder"
+  - id: microservices
+    phrases: ["microservices", "monolith", "monolithic", "service oriented"]
+    templates: [blocks, contrast, request-flow]
+    show: "one big app box splitting into small services that talk over the network"
+
+  # ======== Databases & SQL: storing data, tables, keys, queries, joins, normalisation, transactions
+  - id: collect-store
+    phrases: ["store the data", "stored in the database", "store in the database", "stores data", "save the data", "saved in the database", "collecting data", "collect all", "data organize", "records are stored", "database stores"]
+    templates: [data-flow, db-tables, db3d]
+    show: "the items flying into the database or table as they are named; the container filling"
+  - id: dbms
+    phrases: ["dbms", "database management system", "rdbms", "relational database", "relational database management system"]
+    templates: [hub, blocks, request-flow]
+    show: "the DBMS badge between the users and the data, its jobs (store, retrieve, secure, back up) appearing on spokes"
+    gap: 120
+  - id: crud
+    phrases: ["create, retrieve", "update and delete", "retrieve", "crud", "create read update delete"]
+    templates: [hub, table, data-flow]
+    show: "the system with its operations appearing around it, or each operation applied to a table row"
+  - id: tables-rows-columns
+    phrases: ["rows and columns", "each row", "each column", "record and field", "tuple and attribute", "columns are", "a table has"]
+    templates: [table, db-tables, form-card]
+    show: "the table drawing itself: column headers (fields) first, then each row (record) sliding in"
+  - id: file-system-vs-dbms
+    phrases: ["file system vs dbms", "traditional file system", "file based system", "manual records", "paper records", "registers and files"]
+    templates: [contrast, icon-grid, prop-scene]
+    show: "piles of paper files and a clerk searching, against one database answering instantly"
+  - id: primary-key
+    phrases: ["primary key", "unique identifier", "uniquely identify", "unique key", "candidate key", "super key", "composite key"]
+    templates: [table, tiles, db-tables]
+    show: "the ID column highlighting; two rows with the same ID → the second rejected in red"
+  - id: foreign-key
+    phrases: ["foreign key", "relationship between tables", "references another table", "one to many", "many to many", "one to one"]
+    templates: [db-tables, table, flowchart]
+    show: "two tables side by side, a line linking each order's student_id to its student row"
+  - id: joins
+    phrases: ["inner join", "left join", "right join", "outer join", "full join", "self join", "join two tables", "joining tables", "sql joins"]
+    templates: [table, db-tables, contrast]
+    show: "two tables sliding together, matching rows pairing into the result; a left join keeping the unmatched ones with NULLs"
+  - id: select-query
+    phrases: ["select statement", "select query", "select star", "select from", "where clause", "sql query", "write a query", "query the table"]
+    templates: [table, code-card, process-flow]
+    show: "the query typing in and the table filtering live: WHERE greys out the rows that don't match, SELECT keeps the named columns"
+  - id: sort-group-aggregate
+    phrases: ["order by", "group by", "having clause", "count function", "sum function", "avg function", "aggregate function", "max function", "min function"]
+    templates: [table, bars, tiles]
+    show: "rows sorting (ORDER BY) or gathering into groups that collapse to one total each (GROUP BY with SUM)"
+  - id: sql-commands
+    phrases: ["ddl", "dml", "dcl", "tcl", "sql commands", "types of sql commands"]
+    templates: [type-cards, hub, table]
+    show: "the command families as cards (DDL builds tables, DML changes rows, DCL gives access, TCL commits), each with its commands"
+  - id: create-table
+    phrases: ["create table", "alter table", "drop table", "truncate", "create database", "data definition"]
+    templates: [db-tables, table, code-card]
+    show: "the empty table frame appearing column by column as CREATE TABLE is typed"
+  - id: change-rows
+    phrases: ["insert into", "update query", "delete query", "update statement", "delete statement", "values clause"]
+    templates: [table, form-card, data-flow]
+    show: "the row being added, its cell changing, or the row sliding out, as each statement runs"
+  - id: normalization
+    phrases: ["normalization", "normalisation", "normal form", "first normal form", "second normal form", "third normal form", "1nf", "2nf", "3nf", "bcnf", "redundancy", "data redundancy", "duplicate data"]
+    templates: [table, db-tables, contrast]
+    show: "one messy table with repeated data splitting into clean related tables, the duplicates disappearing"
+  - id: db-index
+    phrases: ["database index", "create index", "indexing in database", "full table scan", "index on the column"]
+    templates: [icon-grid, contrast, table]
+    show: "without an index the magnifier scans every row; with one it jumps straight to the right row (like a book's index)"
+  - id: transactions
+    phrases: ["acid properties", "acid", "atomicity", "durability", "commit and rollback", "rollback", "database transaction", "transaction management"]
+    templates: [flowchart, process-flow, checklist]
+    show: "a money transfer as one transaction: debit and credit both succeed (commit) or the whole thing rolls back"
+  - id: sql-vs-nosql
+    phrases: ["sql and nosql", "sql vs nosql", "nosql", "document database", "collections and documents", "mongodb"]
+    templates: [contrast, table, form-card]
+    show: "rows in fixed columns on one side, flexible JSON documents on the other"
+  - id: er-diagram
+    phrases: ["er diagram", "entity relationship", "entity", "attributes of an entity", "cardinality"]
+    templates: [flowchart, blocks, db-tables]
+    show: "entities as boxes with their attributes, relationship lines drawing between them with their cardinality"
+  - id: constraints
+    phrases: ["not null", "unique constraint", "check constraint", "default constraint", "data integrity", "sql constraints", "table constraints"]
+    templates: [table, form-card, checklist]
+    show: "a new row checked against each rule: a blank where NOT NULL is set, or a repeat where UNIQUE is set, rejected in red"
+  - id: subquery
+    phrases: ["subquery", "sub query", "nested query", "inner query", "outer query"]
+    templates: [flowchart, table, code-card]
+    show: "the inner query running first and its answer dropping into the outer query"
+  - id: views-procedures
+    phrases: ["stored procedure", "create view", "view in sql", "sql trigger", "create trigger", "database trigger"]
+    templates: [blocks, flowchart, table]
+    show: "the saved query (view or procedure) as a box the app calls by name; a trigger firing when a row changes"
+  - id: backup-security
+    phrases: ["backup", "back up", "backup and recovery", "data loss", "data security", "data backup", "take a backup"]
+    templates: [data-flow, flowchart, prop]
+    show: "copies of the data flying to a safe second store; after a crash, they come back"
+  - id: db-users
+    phrases: ["database administrator", "dba", "end users", "application programmer", "database users"]
+    templates: [hub, prop-scene, type-cards]
+    show: "the database in the middle and the people who use it around it, each with what they do"
+
+  # ======== Developer tools: Git and GitHub, the terminal, installing tools, editors, deployment, Docker, CI/CD, SDLC
+  - id: version-control
+    phrases: ["version control", "version history", "track changes", "previous version", "git"]
+    templates: [flowchart, tiles, hf:state-chip-rail]
+    show: "snapshots on a timeline, each commit a dot; going back to any earlier one"
+  - id: git-stages
+    phrases: ["staging area", "git add", "working directory", "modified staged committed", "staged files", "untracked files"]
+    templates: [flowchart, blocks, hf:state-chip-rail]
+    show: "files moving: working folder → staging area (git add) → repository (git commit)"
+  - id: commit
+    phrases: ["git commit", "commit message", "make a commit", "commit the changes", "commit history", "git log"]
+    templates: [flowchart, tiles, hf:code-terminal-run]
+    show: "the change wrapped into a commit with its message, a new dot added to the history"
+  - id: branch
+    phrases: ["create a branch", "new branch", "git branch", "main branch", "master branch", "feature branch", "switch branch", "git checkout", "git switch"]
+    templates: [flowchart, blocks]
+    show: "the main line of commits with a branch splitting off and growing its own commits"
+  - id: merge
+    phrases: ["git merge", "merge the branch", "merge branches", "merge conflict", "resolve the conflict"]
+    templates: [flowchart, contrast, hf:code-diff]
+    show: "the branch joining back into main; a conflict shown as two versions of one line until one is chosen"
+  - id: push-pull
+    phrases: ["git push", "git pull", "git clone", "push to github", "push the code", "pull the changes", "remote repository", "local repository"]
+    templates: [request-flow, data-flow, blocks]
+    show: "commits travelling from the laptop up to GitHub (push) and down to a teammate's laptop (pull)"
+  - id: github
+    phrases: ["github", "github repository", "github repo", "create a repository", "public repository", "private repository", "fork the repo", "repository"]
+    templates: [mockup, blocks, hf:browser-device-stage]
+    show: "the repository page: files, commits and branches, each pointed out as it is named"
+  - id: pull-request
+    phrases: ["pull request", "open a pull request", "raise a pr", "code review", "review the code"]
+    templates: [flowchart, mockup, hf:code-diff]
+    show: "the branch's changes shown as a diff, a reviewer's comment, approval, then the merge"
+  - id: terminal
+    phrases: ["command line", "command prompt", "cmd", "bash", "run the command", "type the command", "cd command", "ls command", "mkdir", "open the terminal", "terminal commands"]
+    templates: [code-card, tiles, hf:code-terminal-run]
+    show: "the command typing at the prompt and its output printing line by line"
+  - id: install-setup
+    phrases: ["installation", "install python", "install node", "install vs code", "download and install", "set up the environment", "environment setup", "check the version"]
+    templates: [flowchart, checklist, hf:code-terminal-run]
+    show: "the install steps ticking off: download → install → check the version in the terminal"
+  - id: editor-ide
+    phrases: ["vs code", "vscode", "visual studio code", "code editor", "an ide", "jupyter notebook", "jupyter", "google colab", "colab", "pycharm", "vs code extensions"]
+    templates: [mockup, hub, hf:browser-device-stage]
+    show: "the editor's window with its parts (files, editor, terminal) lighting as they are named"
+  - id: deployment
+    phrases: ["deploy", "deployment", "deploying", "hosting", "host the website", "go live", "netlify", "vercel", "heroku", "live url"]
+    templates: [request-flow, flowchart, data-flow]
+    show: "the code travelling from the laptop to a server in the cloud, then the live URL opening on a phone"
+  - id: docker
+    phrases: ["docker", "docker image", "dockerfile", "containerization", "containerisation", "docker container"]
+    templates: [blocks, data-flow, contrast]
+    show: "the app packed with everything it needs into one box that runs the same on any machine"
+  - id: ci-cd
+    phrases: ["ci cd", "cicd", "continuous integration", "continuous deployment", "continuous delivery", "github actions", "ci cd pipeline", "deployment pipeline", "build pipeline"]
+    templates: [flowchart, checklist, hf:state-chip-rail]
+    show: "a push setting off the pipeline: build → test → deploy lighting in turn, a red stop if a test fails"
+  - id: linux-commands
+    phrases: ["linux commands", "file permissions", "chmod", "sudo", "root user"]
+    templates: [code-card, table, hf:code-terminal-run]
+    show: "the command and what it does side by side; permissions as r/w/x tiles turning on and off"
+  - id: sdlc
+    phrases: ["sdlc", "software development life cycle", "software development lifecycle", "agile", "scrum", "sprint", "waterfall model", "requirements gathering"]
+    templates: [flowchart, hub, hf:state-chip-rail]
+    show: "the stages (plan → design → build → test → deploy → maintain) in a loop, the current one lit"
+
+  # ======== AI & machine learning: training, prediction, model types, neural networks, evaluation, NLP, LLMs, prompting, RAG, agents
+  - id: ai-ml-dl
+    phrases: ["artificial intelligence", "machine learning", "deep learning", "ai ml dl", "ai vs ml", "subset of ai", "subset of machine learning"]
+    templates: [blocks, hub, contrast]
+    show: "nested rings: AI ⊃ machine learning ⊃ deep learning, each labelled as it is named"
+    gap: 120
+  - id: learn-from-data
+    phrases: ["learns from data", "learning from data", "learns patterns", "find patterns", "patterns in the data", "instead of rules", "without being explicitly programmed"]
+    templates: [contrast, process-flow, flowchart]
+    show: "traditional: rules + data → answers; machine learning: data + answers → the rules (the model), side by side"
+  - id: training
+    phrases: ["train the model", "training the model", "model training", "trained model", "training data", "fit the model", "model dot fit", "modelfit"]
+    templates: [process-flow, curve, hf:mk-line-graph]
+    show: "the training data streaming into the model box while a loss curve falls as it learns"
+  - id: prediction
+    phrases: ["make predictions", "predict", "prediction", "predicted value", "model dot predict", "modelpredict", "inference"]
+    templates: [process-flow, form-card, request-flow]
+    show: "a new example (the house's details) going into the trained model and the predicted price coming out"
+  - id: train-test-split
+    phrases: ["train test split", "training and testing", "test data", "testing data", "validation set", "80 20", "80 percent training", "unseen data"]
+    templates: [tiles, bars, icon-grid]
+    show: "the dataset's rows splitting 80 / 20: most into training, the rest held back for testing"
+  - id: features-labels
+    phrases: ["features and labels", "input features", "target variable", "independent variable", "dependent variable", "target label", "class label"]
+    templates: [table, form-card, process-flow]
+    show: "a data table: the feature columns highlighted blue, the label column green; X → model → y"
+  - id: supervised-unsupervised
+    phrases: ["supervised learning", "unsupervised learning", "supervised and unsupervised", "labelled data", "labeled data", "unlabelled data", "unlabeled data", "semi supervised"]
+    templates: [contrast, type-cards, icon-grid]
+    show: "labelled examples with their answers (supervised) against a pile of unlabelled points grouping themselves (unsupervised)"
+  - id: reinforcement
+    phrases: ["reinforcement learning", "reward and penalty", "agent and environment", "trial and error"]
+    templates: [flowchart, prop-scene, request-flow]
+    show: "the agent acts, the environment answers with a reward (+) or a penalty (−), and the loop repeats as it improves"
+  - id: classification
+    phrases: ["classification", "classify", "classifier", "spam or not spam", "spam detection", "binary classification", "multi class", "multiclass"]
+    templates: [process-flow, icon-grid, type-cards]
+    show: "emails flowing into the classifier and dropping into two bins: spam and not spam"
+  - id: regression
+    phrases: ["regression", "linear regression", "best fit line", "line of best fit", "predict the price", "house price", "continuous value", "logistic regression"]
+    templates: [curve, process-flow, table]
+    show: "dots on a chart, the best-fit line settling through them, a new x reading off its predicted y"
+  - id: clustering
+    phrases: ["clustering", "k means", "kmeans", "clusters", "group similar", "customer segmentation"]
+    templates: [icon-grid, tiles, hub]
+    show: "scattered points pulled into groups around their centres, each group taking its own colour"
+  - id: decision-tree
+    phrases: ["decision tree", "random forest", "split the data", "yes or no questions"]
+    templates: [flowchart, blocks, icon-grid]
+    show: "a tree of yes/no questions; one example walking down the branches to its leaf answer"
+  - id: knn
+    phrases: ["k nearest", "nearest neighbours", "nearest neighbors", "knn"]
+    templates: [icon-grid, tiles, curve]
+    show: "a new point; a circle grows to its k nearest neighbours and the majority colour wins"
+  - id: fitting
+    phrases: ["overfitting", "underfitting", "overfit", "underfit", "generalize", "generalise", "memorizes the data", "bias and variance", "bias variance"]
+    templates: [curve, contrast, hf:mk-line-graph]
+    show: "three fits on the same dots: too simple (underfit), just right, and wiggling through every dot (overfit)"
+  - id: loss
+    phrases: ["loss function", "cost function", "mean squared error", "mse", "error rate", "training loss", "loss value"]
+    templates: [curve, bars, table]
+    show: "the gap between each prediction and the true value drawn as a line, the gaps adding up to the loss"
+  - id: gradient-descent
+    phrases: ["gradient descent", "learning rate", "minimise the loss", "minimize the loss", "global minimum", "local minimum", "step size", "slope of the curve"]
+    templates: [curve, trace, hf:offset-path-traveler]
+    show: "a ball rolling down the loss curve in steps (the learning rate) to the lowest point"
+  - id: backpropagation
+    phrases: ["backpropagation", "back propagation", "update the weights", "weights are updated", "chain rule"]
+    templates: [request-flow, flowchart, blocks]
+    show: "the error travelling backwards through the layers, each weight nudging as it passes"
+  - id: neural-network
+    phrases: ["neural network", "neuron", "hidden layer", "input layer", "output layer"]
+    templates: [request-flow, blocks, flowchart]
+    show: "input, hidden and output layers as columns of nodes; signals flowing left to right, lighting each layer"
+  - id: neuron-math
+    phrases: ["weights and biases", "weights and bias", "activation function", "relu", "sigmoid", "softmax", "weighted sum"]
+    templates: [process-flow, curve, variables]
+    show: "one neuron: the inputs times their weights summed, passed through the activation curve, giving its output"
+  - id: epochs
+    phrases: ["epoch", "batch size", "mini batch", "training loop"]
+    templates: [tiles, curve, counter]
+    show: "the dataset passing through the model again and again, the epoch counter rising and the accuracy climbing"
+  - id: accuracy
+    phrases: ["accuracy", "model accuracy", "accuracy score", "evaluate the model", "evaluation metrics", "f1 score", "precision and recall"]
+    templates: [counter, bars, hf:conic-progress-ring]
+    show: "the score counting up as the test predictions are checked; precision and recall as two bars"
+  - id: confusion-matrix
+    phrases: ["confusion matrix", "true positive", "false positive", "true negative", "false negative"]
+    templates: [table, tiles, icon-grid]
+    show: "the 2 x 2 grid filling with counts as each prediction is checked; the correct diagonal glowing"
+  - id: computer-vision
+    phrases: ["computer vision", "image recognition", "image classification", "convolutional", "cnn", "object detection", "face recognition", "pixel values"]
+    templates: [tiles, process-flow, icon-grid]
+    show: "the image as a grid of pixel numbers; a small filter sliding over it picking out edges, then the label coming out"
+  - id: nlp-tokens
+    phrases: ["natural language processing", "nlp", "tokenization", "tokenisation", "tokenize", "stop words", "stemming", "lemmatization", "number of tokens", "split into tokens", "tokens in nlp"]
+    templates: [tiles, process-flow, counter]
+    show: "the sentence breaking into token tiles, each getting its number"
+  - id: sentiment
+    phrases: ["sentiment analysis", "sentiment", "positive or negative", "positive negative neutral"]
+    templates: [process-flow, type-cards, bars]
+    show: "reviews flowing in and landing as positive, negative or neutral, the counts as bars"
+  - id: embeddings
+    phrases: ["embedding", "vector database", "similarity search", "semantic search", "cosine similarity", "vector embeddings", "word vectors", "vector representation"]
+    templates: [tiles, blocks, icon-grid]
+    show: "each word turning into a row of numbers (its vector); similar words lighting together, and a query finding its nearest ones"
+  - id: llm
+    phrases: ["large language model", "llm", "gpt", "predict the next word", "next token", "language model"]
+    templates: [tiles, process-flow, hf:kinetic-type-swap]
+    show: "the sentence growing one word at a time: candidate next words with their probabilities, the top one dropping into place"
+  - id: transformer
+    phrases: ["transformer", "self attention", "attention mechanism", "encoder decoder", "encoder and decoder"]
+    templates: [request-flow, blocks, tiles]
+    show: "each word linked to every other word by lines whose thickness shows how much attention it pays"
+  - id: prompting
+    phrases: ["prompt engineering", "write a prompt", "good prompt", "system prompt", "few shot", "zero shot", "chain of thought", "ai prompt", "give a prompt", "prompt to the ai"]
+    templates: [contrast, form-card, hf:chat-message]
+    show: "a vague prompt and its vague answer beside a specific prompt (role, context, format) and its sharp answer"
+  - id: chatbot
+    phrases: ["chatbot", "chat bot", "conversational ai", "virtual assistant", "chatgpt"]
+    templates: [mockup, request-flow, hf:chat-message]
+    show: "a chat on a phone: the question sent, the bot typing, the answer arriving"
+  - id: rag
+    phrases: ["rag", "retrieval augmented", "retrieval augmented generation", "knowledge base", "your own documents", "pdf chatbot"]
+    templates: [request-flow, flowchart, data-flow]
+    show: "the question → search the documents → the relevant chunks and the question go to the LLM → an answer grounded in them"
+  - id: generative-ai
+    phrases: ["generative ai", "gen ai", "genai", "image generation", "text to image", "midjourney", "dalle", "dall e", "stable diffusion", "ai generated"]
+    templates: [process-flow, mockup, hf:kinetic-type-swap]
+    show: "a text prompt going in and a new image or text coming out: generated, not looked up"
+  - id: hallucination
+    phrases: ["hallucination", "hallucinate", "makes things up", "confidently wrong"]
+    templates: [contrast, callouts, mockup]
+    show: "a confident answer with the wrong fact circled in red, then the check against the source"
+  - id: fine-tuning
+    phrases: ["fine tuning", "fine tune", "pre trained", "pretrained", "transfer learning", "foundation model", "base model training"]
+    templates: [process-flow, blocks, contrast]
+    show: "a big pretrained model plus a small set of your own examples → a specialised model"
+  - id: recommendation
+    phrases: ["recommendation system", "recommendation engine", "recommended for you", "collaborative filtering", "netflix recommends", "youtube recommends"]
+    templates: [mockup, icon-grid, flowchart]
+    show: "a viewer's history going in and a row of recommended items sliding out: 'people like you also watched…'"
+  - id: ai-ethics
+    phrases: ["bias in ai", "biased data", "ai ethics", "responsible ai", "fairness", "deepfake", "privacy concerns"]
+    templates: [icon-grid, contrast, callouts]
+    show: "a training set where one group fills most of the grid, and the skewed predictions that follow"
+  - id: ai-agents
+    phrases: ["ai agent", "agentic", "tool calling", "function calling", "autonomous agent"]
+    templates: [flowchart, hub, request-flow]
+    show: "the agent's loop: goal → plan → use a tool → look at the result → next step, until done"
+  - id: ml-pipeline
+    phrases: ["machine learning pipeline", "ml pipeline", "ml workflow", "steps in machine learning", "data collection", "data preprocessing", "model deployment", "model evaluation"]
+    templates: [flowchart, agenda, hf:state-chip-rail]
+    show: "the pipeline stages lighting in turn: collect → clean → train → evaluate → deploy"
+  - id: ai-tools
+    phrases: ["ai tools", "use ai to", "with the help of ai", "gemini", "copilot", "claude", "perplexity"]
+    templates: [mockup, hub, hf:chat-message]
+    show: "the tool's screen: the request typed and the result appearing"
+  - id: confidence
+    phrases: ["confidence score", "probability score", "predicted probability", "percent confident", "probability of each class"]
+    templates: [bars, counter, hf:conic-progress-ring]
+    show: "each possible answer with its probability bar; the highest one chosen"
+
+  # ======== Data science & analytics: datasets, pandas, NumPy, cleaning, statistics, charts, Excel, dashboards, pipelines
+  - id: dataset
+    phrases: ["dataset", "data set", "csv", "kaggle", "rows and records"]
+    templates: [table, db-tables, icon-grid]
+    show: "the dataset as a table: columns named, rows streaming in, the row x column count shown"
+  - id: dataframe
+    phrases: ["pandas", "dataframe", "data frame", "read csv", "readcsv", "df dot head", "dfhead", "head function", "describe function", "pandas series"]
+    templates: [table, code-card, process-flow]
+    show: "the CSV loading into a table (DataFrame); head() showing the first five rows"
+  - id: numpy
+    phrases: ["numpy", "numpy array", "ndarray", "vectorization", "vectorisation", "vectorized", "broadcasting", "shape of the array"]
+    templates: [tiles, table, contrast]
+    show: "a whole grid of numbers transformed in one step (vectorised) against a loop touching each cell"
+  - id: data-cleaning
+    phrases: ["data cleaning", "clean the data", "cleaning the data", "missing values", "missing data", "null values", "fill the missing", "dropna", "fillna", "remove duplicates", "duplicate rows"]
+    templates: [table, process-flow, hf:comparison-split]
+    show: "the messy table: blank cells flash red and get filled, duplicate rows slide out, odd values are fixed"
+  - id: central-tendency
+    phrases: ["mean median mode", "mean and median", "the median", "median value", "central tendency", "arithmetic mean", "average value"]
+    templates: [tiles, bars, counter]
+    show: "the values lining up in order: the middle one lifts (median), the most frequent glows (mode), the balance point marks the mean"
+  - id: distribution
+    phrases: ["normal distribution", "bell curve", "histogram", "skewed", "standard deviation", "variance", "spread of the data", "data distribution", "frequency distribution"]
+    templates: [curve, bars, hf:chart-story]
+    show: "values dropping into histogram bins one by one, the bell curve drawing over them, ±1 standard deviation shaded"
+  - id: outliers
+    phrases: ["outlier", "extreme values", "anomaly", "anomaly detection"]
+    templates: [curve, icon-grid, bars]
+    show: "a cloud of ordinary values with one far away pulsing red"
+  - id: correlation
+    phrases: ["correlation", "correlated", "positive correlation", "negative correlation", "relationship between two variables", "scatter plot", "causation"]
+    templates: [curve, table, contrast]
+    show: "dots on a scatter chart lining up upward (positive) or downward (negative), the r value counting"
+  - id: visualisation
+    phrases: ["data visualization", "data visualisation", "visualize the data", "visualise the data", "bar chart", "pie chart", "line chart", "line graph", "bar graph", "matplotlib", "seaborn", "plot the graph"]
+    templates: [bars, curve, hf:chart-story, hf:data-chart]
+    show: "the chart the instructor names building from the data, its values labelled"
+  - id: eda
+    phrases: ["exploratory data analysis", "eda", "explore the data", "insights from data", "data insights"]
+    templates: [bars, table, hub]
+    show: "the dataset in the middle, each question asked of it producing a small chart around it"
+  - id: groupby-pivot
+    phrases: ["groupby", "group by function", "pivot table", "aggregate the data", "summarize the data", "summarise the data"]
+    templates: [table, bars, process-flow]
+    show: "rows gathering by category and collapsing into one total each, the summary table appearing"
+  - id: excel
+    phrases: ["excel", "microsoft excel", "spreadsheet", "google sheets", "cell reference", "absolute reference", "formula bar", "excel formula", "sum formula", "if formula", "countif", "sumif"]
+    templates: [table, form-card, mockup]
+    show: "the sheet with the formula typing into a cell and the result filling down the column"
+  - id: lookup
+    phrases: ["vlookup", "xlookup", "hlookup", "lookup value", "lookup table", "index match"]
+    templates: [table, flowchart, icon-grid]
+    show: "the lookup value travelling down the first column, finding its row and sliding across to return the answer"
+  - id: dashboards
+    phrases: ["power bi", "tableau", "kpi", "kpis", "key performance indicator", "looker studio", "analytics dashboard", "power bi dashboard", "kpi dashboard", "build a dashboard"]
+    templates: [bars, counter, curve, hf:chart-story]
+    show: "KPI tiles counting up and charts building into one dashboard"
+  - id: sampling
+    phrases: ["sampling", "population and sample", "random sample", "sample size", "survey data"]
+    templates: [icon-grid, process-flow, bars]
+    show: "a big population grid; a handful picked at random lighting up as the sample"
+  - id: hypothesis
+    phrases: ["hypothesis", "null hypothesis", "p value", "significance level", "statistically significant", "hypothesis testing"]
+    templates: [curve, contrast, flowchart]
+    show: "the result's spot on the curve; inside the shaded tail → significant, outside → not"
+  - id: big-data
+    phrases: ["big data", "volume velocity variety", "petabytes", "hadoop", "spark"]
+    templates: [icon-grid, counter, hub]
+    show: "data piling up faster than one machine can hold; the count racing into terabytes"
+  - id: etl
+    phrases: ["etl", "extract transform load", "data pipeline", "data warehouse", "data lake"]
+    templates: [process-flow, flowchart, data-flow]
+    show: "data pulled from its sources, cleaned in the middle, loaded into the warehouse"
+  - id: structured-data
+    phrases: ["structured data", "unstructured data", "semi structured data", "structured and unstructured"]
+    templates: [contrast, type-cards, table]
+    show: "neat rows and columns beside a pile of text, images and videos"
+  - id: percent-change
+    phrases: ["percentage change", "growth percentage", "year over year", "month over month", "increased by percent"]
+    templates: [bars, counter, curve]
+    show: "the old and new values as bars, the change between them counting up as a percentage"
+  - id: encoding
+    phrases: ["one hot encoding", "label encoding", "categorical data", "categorical variables", "dummy variables"]
+    templates: [table, type-convert, tiles]
+    show: "a text column (City) turning into number columns, one per category, the 1s lighting"
+  - id: scaling
+    phrases: ["feature scaling", "normalize the data", "normalise the data", "standardization", "standardisation", "min max scaling", "same scale"]
+    templates: [bars, contrast, process-flow]
+    show: "bars of very different sizes squeezed onto one 0–1 scale so they can be compared"
+  - id: feature-engineering
+    phrases: ["feature engineering", "feature selection", "new feature", "important features", "feature importance"]
+    templates: [table, bars, process-flow]
+    show: "a new column computed from the old ones; the features ranked by importance as bars"
+  - id: data-driven
+    phrases: ["data driven", "data driven decisions", "based on data", "decisions based on data"]
+    templates: [process-flow, bars, flowchart]
+    show: "the numbers going in and the decision coming out, instead of a guess"
+
+  # ======== Digital marketing: funnels, audiences, SEO, paid ads and metrics, social media, content, email, analytics, e-commerce
+  - id: digital-marketing
+    phrases: ["digital marketing", "online marketing", "internet marketing", "marketing channels"]
+    templates: [hub, contrast, icon-grid]
+    show: "the business in the middle, its channels (SEO, social, ads, email, content) appearing on spokes"
+    gap: 120
+  - id: traditional-vs-digital
+    phrases: ["traditional marketing", "offline marketing", "newspaper ads", "tv ads", "billboard", "pamphlets", "hoardings"]
+    templates: [contrast, prop-scene, bars]
+    show: "a billboard (everyone sees it, nothing measured) against a phone ad (targeted, every click counted)"
+  - id: funnel
+    phrases: ["marketing funnel", "sales funnel", "funnel", "top of the funnel", "bottom of the funnel", "middle of the funnel", "tofu mofu bofu", "aida", "awareness interest desire action"]
+    templates: [bars, flowchart, icon-grid]
+    show: "the funnel narrowing stage by stage (awareness → interest → decision → purchase), the number of people shrinking at each"
+  - id: target-audience
+    phrases: ["target audience", "target customers", "ideal customer", "buyer persona", "customer persona", "audience persona", "demographics", "age group", "niche audience"]
+    templates: [icon-grid, form-card, prop-scene]
+    show: "a crowd grid narrowing to the few who match the persona card (age, city, interests)"
+  - id: customer-journey
+    phrases: ["customer journey", "buyer journey", "user journey", "touchpoints", "touch points", "customer lifecycle"]
+    templates: [flowchart, prop-move, hf:offset-path-traveler]
+    show: "a customer walking the path: sees the ad → visits the site → adds to cart → buys → comes back, each touchpoint lighting"
+  - id: seo
+    phrases: ["seo", "search engine optimization", "search engine optimisation", "organic ranking", "seo strategy"]
+    templates: [hub, flowchart, bars]
+    show: "the website in the middle and what lifts it in search (keywords, content, links, speed) on spokes"
+  - id: crawl-index-rank
+    phrases: ["crawl", "crawling", "crawler", "google indexing", "indexed by google", "page indexing", "googlebot", "google bot", "crawl index rank", "search engine works"]
+    templates: [flowchart, request-flow, icon-grid]
+    show: "Google's bot following links across pages (crawl), filing them in its index, then ordering them for a search (rank)"
+  - id: serp
+    phrases: ["search results", "search result page", "serp", "first page of google", "rank on google", "rank higher", "ranking factors", "top position", "search ranking"]
+    templates: [mockup, bars, hf:browser-device-stage]
+    show: "a Google results page: our listing climbing from page 2 to the top spot as each factor is improved"
+  - id: keywords
+    phrases: ["keyword research", "search volume", "long tail keyword", "keyword planner", "keyword difficulty", "search intent", "seo keywords", "search keywords", "target keywords"]
+    templates: [table, bars, chips]
+    show: "a keyword table filling: search volume bars and difficulty, the chosen long-tail keyword highlighted"
+  - id: on-off-page
+    phrases: ["on page seo", "off page seo", "technical seo", "meta description", "meta title", "page speed", "site speed", "seo checklist"]
+    templates: [type-cards, checklist, mockup]
+    show: "on-page (inside the site), off-page (other sites pointing to it), technical (speed, mobile) as three cards, each with its checks"
+  - id: backlinks
+    phrases: ["backlink", "link building", "domain authority", "guest post", "guest posting"]
+    templates: [request-flow, hub, counter]
+    show: "other sites pointing arrows at ours; each backlink adding to the authority score"
+  - id: paid-search
+    phrases: ["ppc", "pay per click", "google ads", "search ads", "sponsored results", "sponsored", "sem", "search engine marketing", "paid ads"]
+    templates: [mockup, request-flow, counter]
+    show: "a search page with the sponsored ad on top; each click on it charging the advertiser"
+  - id: ad-auction
+    phrases: ["bidding", "ad auction", "bid amount", "quality score", "ad rank", "highest bidder"]
+    templates: [bars, table, process-flow]
+    show: "advertisers' bids as bars; bid × quality score decides the ad rank and the winner's ad shows first"
+  - id: ad-costs
+    phrases: ["cpc", "cost per click", "cpm", "cost per thousand", "cost per mille", "cpa", "cost per acquisition", "cost per lead", "cpl"]
+    templates: [process-flow, counter, table]
+    show: "the ad spend divided by the clicks (or per 1,000 views) landing as the cost per click"
+  - id: ctr
+    phrases: ["ctr", "click through rate", "impressions and clicks", "clicks divided by impressions"]
+    templates: [icon-grid, counter, hf:conic-progress-ring]
+    show: "1,000 impressions as a grid; the 20 that clicked light up → 2% CTR counting"
+  - id: conversion
+    phrases: ["conversion rate", "converting visitors", "convert visitors", "convert into customers", "conversion rate optimization", "cro", "sales conversion", "conversion tracking"]
+    templates: [icon-grid, bars, counter]
+    show: "100 visitor icons; the few that buy turn green and the rate counts up"
+  - id: roi
+    phrases: ["roi", "return on investment", "roas", "return on ad spend", "spent and earned", "profit from ads"]
+    templates: [process-flow, bars, counter]
+    show: "the money spent going in, the money earned coming out; the ratio (for example 4x) counting up"
+  - id: engagement
+    phrases: ["engagement", "engagement rate", "likes comments shares", "likes and comments", "likes and shares", "followers", "follower count"]
+    templates: [mockup, counter, hf:notification-stack]
+    show: "a post on a phone with likes, comments and shares ticking up and notifications stacking"
+  - id: reach-impressions
+    phrases: ["reach and impressions", "reach vs impressions", "organic reach", "paid reach", "unique viewers", "ad impressions", "number of impressions"]
+    templates: [icon-grid, contrast, counter]
+    show: "one person seeing the ad three times: reach counts 1, impressions count 3"
+  - id: organic-paid
+    phrases: ["organic and paid", "organic vs paid", "organic traffic", "paid traffic", "free traffic", "organic marketing", "paid marketing"]
+    templates: [contrast, curve, bars]
+    show: "paid traffic: a tap switched on and off with money; organic: a curve that grows slowly and keeps going"
+  - id: social-platforms
+    phrases: ["social media platforms", "meta ads", "facebook ads", "instagram marketing", "facebook marketing", "youtube marketing", "linkedin marketing"]
+    templates: [hub, icon-grid, mockup]
+    show: "the brand in the middle with each platform on a spoke and who it reaches best"
+  - id: platform-algorithm
+    phrases: ["instagram algorithm", "youtube algorithm", "social media algorithm", "the algorithm shows", "watch time", "algorithm pushes"]
+    templates: [flowchart, process-flow, bars]
+    show: "posts going into the algorithm; the ones with more watch time and engagement pushed to more people"
+  - id: hashtags
+    phrases: ["hashtag", "trending hashtag", "trending topic", "trending"]
+    templates: [chips, mockup, icon-grid]
+    show: "the hashtags popping under the post, and the post appearing in the hashtag's feed"
+  - id: viral
+    phrases: ["viral", "go viral", "goes viral", "viral video", "word of mouth", "shared by"]
+    templates: [request-flow, curve, counter]
+    show: "one share becomes 3, then 9, then 27: a tree of shares spreading while the view counter races"
+  - id: content-marketing
+    phrases: ["content marketing", "content strategy", "content calendar", "content plan", "blog post", "blogging", "evergreen content"]
+    templates: [hub, table, checklist]
+    show: "a content calendar filling up week by week: blog, reel, carousel, newsletter"
+  - id: video-marketing
+    phrases: ["reels", "instagram reels", "youtube shorts", "shorts", "short form video", "video marketing", "youtube channel", "thumbnail", "strong hook"]
+    templates: [mockup, counter, prop]
+    show: "a reel playing on a phone, its views climbing; the hook, the value and the call to action labelled"
+  - id: email-marketing
+    phrases: ["email marketing", "newsletter", "email list", "open rate", "subject line", "email campaign", "mailchimp", "email automation", "drip campaign"]
+    templates: [mockup, bars, hf:notification-stack]
+    show: "emails landing in the inbox; the open-rate and click-rate bars rising"
+  - id: messaging-marketing
+    phrases: ["whatsapp marketing", "whatsapp business", "broadcast list", "sms marketing", "push notification"]
+    templates: [mockup, request-flow, hf:notification-stack]
+    show: "one message sent from the business and landing on many phones at once, notifications stacking"
+  - id: landing-page
+    phrases: ["landing page", "call to action", "cta", "cta button", "buy now button", "sign up button"]
+    templates: [mockup, form-card, hf:press-ripple]
+    show: "the landing page building: headline, benefit, form, then the call-to-action button pressed"
+  - id: lead-generation
+    phrases: ["lead generation", "lead magnet", "generate leads", "lead form", "capture leads", "free ebook", "qualified leads", "collect leads"]
+    templates: [data-flow, form-card, icon-grid]
+    show: "visitors filling the form for the freebie; each lead flying into the list, the count rising"
+  - id: ab-testing
+    phrases: ["a b testing", "ab testing", "split testing", "version a and version b", "variant"]
+    templates: [contrast, bars, icon-grid]
+    show: "version A and version B side by side, visitors splitting between them, B's conversion bar winning"
+  - id: retargeting
+    phrases: ["retargeting", "remarketing", "tracking pixel", "meta pixel", "facebook pixel", "abandoned cart", "cart abandonment"]
+    templates: [flowchart, mockup, hf:offset-path-traveler]
+    show: "a visitor leaves without buying, the pixel remembers, the ad follows them to Instagram, they come back and buy"
+  - id: influencer
+    phrases: ["influencer marketing", "influencer", "brand collaboration", "collab", "sponsored post", "micro influencer"]
+    templates: [prop-scene, request-flow, counter]
+    show: "the brand → the influencer → their followers, trust and reach flowing along the arrows"
+  - id: branding
+    phrases: ["branding", "brand identity", "brand awareness", "brand image", "brand voice", "brand recall", "brand building"]
+    templates: [hub, type-cards, mockup]
+    show: "the brand at the centre and its parts (logo, colours, voice, values) appearing around it"
+  - id: usp
+    phrases: ["usp", "unique selling proposition", "unique selling point", "stand out from competitors", "differentiator"]
+    templates: [contrast, term-reveal, hub]
+    show: "a row of look-alike products; ours lifts out with the one thing only it offers"
+  - id: competitors
+    phrases: ["competitor analysis", "competitors", "compare with competitors", "market research", "competitor research"]
+    templates: [table, bars, contrast]
+    show: "a table of us against the competitors, row by row (price, reach, reviews), our wins highlighted"
+  - id: swot
+    phrases: ["swot", "swot analysis", "strengths and weaknesses", "opportunities and threats"]
+    templates: [table, type-cards, hub]
+    show: "the 2 x 2 SWOT grid filling one quadrant at a time"
+  - id: marketing-mix
+    phrases: ["4ps", "4 ps", "four ps", "marketing mix", "product price place promotion", "7ps"]
+    templates: [hub, type-cards, agenda]
+    show: "product, price, place and promotion appearing around the offer, each with its example"
+  - id: analytics
+    phrases: ["google analytics", "ga4", "traffic sources", "website traffic", "bounce rate", "session duration", "page views", "utm", "utm parameters", "track the performance"]
+    templates: [bars, curve, counter, hf:chart-story]
+    show: "the analytics dashboard: traffic by source as bars, visits over time as a line, the bounce rate counting"
+  - id: ecommerce
+    phrases: ["ecommerce", "e commerce", "online store", "shopify", "add to cart", "checkout page", "payment gateway", "order placed"]
+    templates: [mockup, flowchart, hf:state-chip-rail]
+    show: "the shop flow on a phone: product → add to cart → checkout → payment → order placed"
+  - id: budget
+    phrases: ["marketing budget", "ad budget", "daily budget", "budget allocation", "ad spend", "spend per day"]
+    templates: [bars, counter, hf:chart-story]
+    show: "the budget split across channels as bars (or a donut), the daily spend counting"
+  - id: local-seo
+    phrases: ["local seo", "google my business", "google business profile", "near me", "google maps listing", "customer reviews", "star rating", "reviews and ratings"]
+    templates: [mockup, counter, form-card]
+    show: "a 'near me' search on a phone, our listing with its stars and reviews rising to the top"
+  - id: copywriting
+    phrases: ["copywriting", "ad copy", "headline", "write the copy", "caption for the post"]
+    templates: [contrast, term-reveal, hf:kinetic-type-swap]
+    show: "a weak headline rewritten word by word into a strong one"
+  - id: affiliate
+    phrases: ["affiliate marketing", "affiliate link", "commission", "affiliates"]
+    templates: [request-flow, process-flow, counter]
+    show: "a buyer clicks the affiliate's link → buys from the brand → the commission travels back to the affiliate"
+  - id: retention
+    phrases: ["customer lifetime value", "clv", "ltv", "repeat customers", "customer retention", "loyalty program", "retention rate"]
+    templates: [curve, bars, counter]
+    show: "one customer buying again and again over time, the lifetime value adding up"
+  - id: crm
+    phrases: ["crm", "customer relationship management", "hubspot", "salesforce", "marketing automation"]
+    templates: [hub, flowchart, table]
+    show: "every customer's details and history in one place, the next message going out automatically"
+
+  # ======== Aptitude & reasoning: percentages, ratios, profit and loss, interest, speed and work, series, probability, puzzles
+  - id: percentages
+    phrases: ["percentage", "percent increase", "percentage increase", "percentage decrease", "find the percentage", "what percent", "per hundred"]
+    templates: [icon-grid, bars, counter]
+    show: "a 10 x 10 grid: the percentage lighting cell by cell, the value worked out beside it"
+  - id: ratio
+    phrases: ["ratio", "ratio and proportion", "proportion", "in the ratio", "direct proportion", "inverse proportion"]
+    templates: [tiles, bars, prop-scene]
+    show: "the total splitting into parts in the ratio (2 : 3), coloured blocks showing each share"
+  - id: profit-loss
+    phrases: ["profit and loss", "cost price", "selling price", "profit percentage", "loss percentage", "marked price", "discount", "profit margin"]
+    templates: [process-flow, contrast, bars]
+    show: "cost price → selling price: the gap glowing green (profit) or red (loss) with its percentage"
+  - id: interest
+    phrases: ["simple interest", "compound interest", "principal amount", "rate of interest", "compounded annually", "compounded half yearly"]
+    templates: [curve, bars, process-flow]
+    show: "the amount growing year by year: equal steps for simple interest, a curve bending upward for compound"
+  - id: averages
+    phrases: ["average", "average of the", "average age", "average marks", "average of five"]
+    templates: [bars, tiles, counter]
+    show: "uneven bars levelling out to the same height: the average"
+  - id: speed-distance
+    phrases: ["speed distance time", "time speed distance", "speed time distance", "distance equals speed", "km per hour", "kmph", "km per hr", "average speed", "meters per second", "metres per second"]
+    templates: [prop-move, curve, process-flow]
+    show: "a car driving along the road with distance markers ticking; speed × time = distance filling in"
+  - id: trains
+    phrases: ["relative speed", "two trains", "train crosses", "crossing a pole", "crosses a platform", "opposite direction", "same direction"]
+    templates: [prop-move, prop-scene, contrast]
+    show: "two trains on the track, moving towards each other (speeds add) or the same way (speeds subtract)"
+  - id: boats-streams
+    phrases: ["boats and streams", "speed of the stream", "still water", "upstream and downstream", "speed upstream", "speed downstream"]
+    templates: [contrast, process-flow, flowchart]
+    show: "with the stream the speeds add (downstream), against it they subtract (upstream), the arrows sized to match"
+  - id: time-work
+    phrases: ["time and work", "work done", "one day work", "complete the work", "together they can", "working together", "men and days"]
+    templates: [bars, prop-scene, tiles]
+    show: "a task bar filling: A's share per day and B's share per day stacking until the work is complete"
+  - id: pipes-cisterns
+    phrases: ["pipes and cisterns", "fill the tank", "empty the tank", "inlet pipe", "outlet pipe", "the tank"]
+    templates: [bars, process-flow, counter]
+    show: "a tank filling from one pipe and draining through another, the level rising at the net rate"
+  - id: number-series
+    phrases: ["number series", "next number", "find the next number", "missing number", "pattern in the series", "the difference is"]
+    templates: [tiles, trace, table]
+    show: "the series as tiles with the differences written under the gaps, revealing the pattern and the missing number"
+  - id: lcm-hcf
+    phrases: ["lcm", "hcf", "gcd", "lcm and hcf", "least common multiple", "highest common factor", "greatest common divisor"]
+    templates: [tiles, table, process-flow]
+    show: "the multiples of each number in rows, the first shared one lighting (LCM); the shared factors circled (HCF)"
+  - id: probability
+    phrases: ["probability of", "probability", "coin toss", "toss a coin", "roll a die", "rolling a dice", "dice", "deck of cards", "favourable outcomes", "favorable outcomes", "total outcomes", "sample space"]
+    templates: [icon-grid, tiles, bars]
+    show: "every outcome laid out as a grid; the favourable ones light up: favourable ÷ total"
+  - id: permutations
+    phrases: ["permutation", "ways to arrange", "how many ways", "ncr", "npr", "permutations and combinations"]
+    templates: [tiles, table, counter]
+    show: "seats filling: 5 choices for the first, 4 for the next…, the multiplication building the count"
+  - id: mixtures
+    phrases: ["mixture", "alligation", "mixed in the ratio", "rule of alligation"]
+    templates: [bars, process-flow, contrast]
+    show: "two quantities pouring together, the mixture's level and price landing between them"
+  - id: ages
+    phrases: ["problems on ages", "present age", "years hence", "after 5 years", "father's age", "ages of"]
+    templates: [table, tiles, curve]
+    show: "a table of ages now, n years ago and n years later, the difference staying the same"
+  - id: clocks-calendars
+    phrases: ["angle between the hands", "hour hand", "minute hand", "clock problems", "calendar problems", "odd days", "day of the week"]
+    templates: [prop, tiles, curve]
+    show: "a clock face with the hands moving, the angle between them sweeping and labelled"
+  - id: partnership
+    phrases: ["partnership", "partners invest", "share of profit", "profit sharing"]
+    templates: [bars, tiles, process-flow]
+    show: "each partner's money × time as a bar; the profit splitting in the same ratio"
+  - id: blood-relations
+    phrases: ["blood relation", "family tree", "is the father of", "is the mother of", "brother of", "sister of", "how is related"]
+    templates: [flowchart, prop-scene, blocks]
+    show: "the family tree drawing person by person as each relation is read out"
+  - id: directions
+    phrases: ["direction sense", "north south east west", "turns left", "turns right", "walks north", "facing north", "how far is he from"]
+    templates: [prop-move, flowchart, blocks]
+    show: "a walker on a compass grid tracing each turn; the straight-line distance back to the start drawn at the end"
+  - id: seating
+    phrases: ["seating arrangement", "sitting in a row", "circular arrangement", "sitting around a table", "immediate left", "immediate right", "sits to the left", "sits to the right"]
+    templates: [tiles, prop-scene, blocks]
+    show: "seats as tiles; each clue places one person until the row is filled"
+  - id: syllogism
+    phrases: ["syllogism", "all a are b", "some a are b", "no a is b", "statements and conclusions", "conclusion follows", "venn diagram"]
+    templates: [blocks, flowchart, contrast]
+    show: "circles drawn for each statement; the conclusion checked against them: follows, or doesn't"
+  - id: coding-decoding
+    phrases: ["coding decoding", "coding and decoding", "is coded as", "code language", "letter shifting"]
+    templates: [tiles, type-convert, process-flow]
+    show: "each letter shifting along the alphabet tiles to its coded letter"
+  - id: data-interpretation
+    phrases: ["data interpretation", "di questions", "from the chart", "from the table", "the bar graph shows", "the pie chart shows"]
+    templates: [bars, table, hf:chart-story]
+    show: "the chart from the question building, then the values the answer needs circled and worked out"
+  - id: odd-one-out
+    phrases: ["odd one out", "find the odd one", "verbal analogy", "analogies", "classification questions"]
+    templates: [tiles, icon-grid, type-cards]
+    show: "the items in a row, the shared rule revealed, the one that breaks it lifting out"
+  - id: shortcut
+    phrases: ["shortcut method", "quick trick", "trick to solve", "shortcut trick"]
+    templates: [contrast, rule-stack, card]
+    show: "the long method and the shortcut side by side, the shortcut finishing in fewer steps"
+
+  # ======== Career & soft skills: resumes, interviews, communication, time management, teamwork, networking, job search
+  - id: resume
+    phrases: ["cv", "curriculum vitae", "resume format", "resume template", "objective section", "projects section", "skills section", "work experience", "your resume", "build a resume", "build your resume"]
+    templates: [form-card, mockup, checklist]
+    show: "the resume building section by section: header, summary, skills, projects, experience, education"
+  - id: ats
+    phrases: ["ats", "applicant tracking system", "ats friendly", "resume screening", "shortlisted", "shortlisting"]
+    templates: [process-flow, icon-grid, flowchart]
+    show: "hundreds of resumes entering the ATS; the keyword-matched ones pass through, the rest filtered out"
+  - id: interview-rounds
+    phrases: ["interview process", "interview rounds", "technical round", "hr round", "aptitude round", "group discussion round", "final round", "selection process"]
+    templates: [flowchart, agenda, hf:state-chip-rail]
+    show: "the rounds as steps (aptitude → GD → technical → HR → offer), the candidate's marker advancing"
+  - id: self-introduction
+    phrases: ["tell me about yourself", "introduce yourself", "self introduction", "elevator pitch"]
+    templates: [agenda, rule-stack, prop-scene]
+    show: "the answer's structure building: present → past → future, one line each"
+  - id: star-method
+    phrases: ["star method", "situation task action result", "behavioural questions", "behavioral questions", "behavioural interview"]
+    templates: [flowchart, agenda, type-cards]
+    show: "four blocks S → T → A → R filling with the example story as it is told"
+  - id: communication
+    phrases: ["communication skills", "communication process", "sender and receiver", "sender receiver", "verbal and non verbal", "non verbal communication", "barriers to communication"]
+    templates: [request-flow, flowchart, prop-scene]
+    show: "a sender and a receiver; the message travels, gets distorted by noise, and the feedback returns"
+  - id: body-language
+    phrases: ["body language", "eye contact", "posture", "hand gestures", "facial expressions", "firm handshake"]
+    templates: [prop-scene, contrast, checklist]
+    show: "two figures: slouched with arms crossed against upright with eye contact and open hands; ticks on the good one"
+  - id: listening
+    phrases: ["active listening", "listening skills", "listen carefully", "paraphrase", "don't interrupt"]
+    templates: [checklist, prop-scene, flowchart]
+    show: "one person speaking, the other nodding and paraphrasing back; the habits ticking off"
+  - id: time-management
+    phrases: ["time management", "manage your time", "prioritize", "prioritise", "priorities", "eisenhower matrix", "urgent and important", "to do list", "procrastination", "pomodoro"]
+    templates: [table, checklist, prop]
+    show: "tasks dropping into the urgent / important 2 x 2 grid: do, schedule, delegate, drop"
+  - id: goal-setting
+    phrases: ["smart goals", "goal setting", "specific measurable achievable", "short term goals", "long term goals", "set a goal"]
+    templates: [agenda, checklist, flowchart]
+    show: "S-M-A-R-T building down the side, each letter expanding with the example goal"
+  - id: teamwork
+    phrases: ["teamwork", "team work", "team player", "working in a team", "collaboration", "collaborate", "team members"]
+    templates: [hub, prop-scene, request-flow]
+    show: "team members around a shared goal, each adding a piece that slots into the whole"
+  - id: leadership
+    phrases: ["leadership", "leadership skills", "lead a team", "take ownership", "leadership qualities"]
+    templates: [hub, prop-scene, flowchart]
+    show: "the leader in the middle, the qualities (vision, decisions, support) appearing around them"
+  - id: professional-email
+    phrases: ["email etiquette", "professional email", "formal email", "cc and bcc", "reply all", "email writing"]
+    templates: [form-card, mockup, checklist]
+    show: "a professional email assembling: a clear subject, the greeting, a short body, the sign-off; mistakes struck out"
+  - id: group-discussion
+    phrases: ["group discussion", "gd", "initiate the discussion", "summarize the discussion", "conclude the discussion"]
+    templates: [prop-scene, flowchart, checklist]
+    show: "people around a table; the one who starts, adds points and sums up lighting in turn"
+  - id: networking-linkedin
+    phrases: ["linkedin profile", "professional networking", "build your network", "network with people", "personal branding", "personal brand", "connections on linkedin"]
+    templates: [mockup, hub, counter]
+    show: "the LinkedIn profile completing section by section while the connections count rises"
+  - id: presentation-skills
+    phrases: ["presentation skills", "public speaking", "stage fear", "give a presentation", "speaking confidently"]
+    templates: [prop-scene, checklist, rule-stack]
+    show: "a speaker at the front, the tips (eye contact, pace, pauses) ticking off beside them"
+  - id: problem-solving
+    phrases: ["problem solving", "critical thinking", "think logically", "root cause", "break the problem", "break down the problem"]
+    templates: [flowchart, process-flow, hub]
+    show: "the big problem breaking into smaller parts, each solved, then put back together"
+  - id: mindset
+    phrases: ["growth mindset", "fixed mindset", "mindset", "learn from mistakes", "comfort zone"]
+    templates: [contrast, curve, prop-scene]
+    show: "fixed against growth: 'I can't do this' becoming 'I can't do this yet', a curve climbing with practice"
+  - id: feedback
+    phrases: ["constructive feedback", "give feedback", "take feedback", "receiving feedback", "criticism"]
+    templates: [contrast, rule-stack, flowchart]
+    show: "the same comment said harshly and constructively, side by side"
+  - id: salary-offer
+    phrases: ["salary negotiation", "negotiate", "negotiation", "ctc", "in hand salary", "take home salary", "offer letter"]
+    templates: [bars, process-flow, form-card]
+    show: "the CTC breaking into its parts (basic, allowances, PF, bonus) and the in-hand amount left"
+  - id: job-search
+    phrases: ["job search", "job portals", "naukri", "apply for jobs", "job application", "cover letter", "referral", "off campus", "on campus"]
+    templates: [mockup, flowchart, hf:notification-stack]
+    show: "applications going out to the portals; replies, interview calls and an offer coming back as notifications"
+  - id: freelancing
+    phrases: ["freelancing", "freelancer", "freelance", "upwork", "fiverr", "portfolio"]
+    templates: [request-flow, mockup, counter]
+    show: "a client posts work, the freelancer delivers, the payment and the review come back"
+  - id: stress
+    phrases: ["stress management", "work life balance", "manage stress", "burnout", "anxiety"]
+    templates: [contrast, prop-scene, checklist]
+    show: "a scale tipping from too much work back to balance as each habit is added"
+  - id: decision-making
+    phrases: ["decision making", "make a decision", "take a decision", "pros and cons list"]
+    templates: [flowchart, contrast, table]
+    show: "the options as branches, each weighed by its pros and cons, the chosen one lighting"
+  - id: emotional-intelligence
+    phrases: ["emotional intelligence", "empathy", "self awareness", "self regulation"]
+    templates: [hub, prop-scene, type-cards]
+    show: "the parts of emotional intelligence around a person, each lighting with its everyday example"
+  - id: workplace-etiquette
+    phrases: ["workplace etiquette", "office etiquette", "dress code", "punctuality", "professionalism", "professional behaviour"]
+    templates: [checklist, prop-scene, contrast]
+    show: "the do's ticking on one side and the don'ts crossed out on the other"
+
+  # ======== Spoken English & grammar: tenses, voice, parts of speech, sentence structure, vocabulary, pronunciation
+  - id: tenses
+    phrases: ["tenses", "present tense", "past tense", "future tense", "present continuous", "past continuous", "present perfect", "simple present", "simple past"]
+    templates: [table, flowchart, contrast]
+    show: "a timeline (past, now, future) with the same sentence changing form as it moves along"
+  - id: voice
+    phrases: ["active voice", "passive voice", "active and passive", "active to passive", "passive to active"]
+    templates: [contrast, process-flow, hf:kinetic-type-swap]
+    show: "the words of the sentence sliding to their new places as it turns from active to passive"
+  - id: parts-of-speech
+    phrases: ["parts of speech", "noun", "pronoun", "verb", "adjective", "adverb", "preposition", "conjunction"]
+    templates: [tiles, type-cards, table]
+    show: "the sentence as word tiles, each taking the colour of its part of speech as it is named"
+  - id: sentence-structure
+    phrases: ["subject verb object", "sentence structure", "sentence formation", "subject and predicate", "subject verb agreement"]
+    templates: [tiles, blocks, process-flow]
+    show: "subject, verb and object snapping into place to form the sentence"
+  - id: articles
+    phrases: ["a an the", "definite article", "indefinite article", "articles in english", "use of articles"]
+    templates: [tiles, table, contrast]
+    show: "the right article dropping in front of each noun, with the rule (vowel sound, specific or not)"
+  - id: vocabulary
+    phrases: ["vocabulary", "synonym", "antonym", "word meaning", "new words"]
+    templates: [chips, contrast, hf:kinetic-type-swap]
+    show: "the word with its synonyms rolling through the same sentence, then its opposite"
+  - id: pronunciation
+    phrases: ["pronunciation", "pronounce", "silent letter", "stress on the syllable", "syllable"]
+    templates: [tiles, big-word, card]
+    show: "the word split into syllables, the stressed one rising, the silent letters greyed out"
+  - id: reported-speech
+    phrases: ["direct speech", "indirect speech", "reported speech", "direct and indirect"]
+    templates: [contrast, process-flow, hf:kinetic-type-swap]
+    show: "the quoted sentence turning into reported speech: quotes dropping, the tense and pronouns shifting"
+  - id: common-errors
+    phrases: ["common errors", "grammar mistakes", "wrong sentence", "correct sentence", "spot the error", "error spotting"]
+    templates: [contrast, tiles, checklist]
+    show: "the wrong sentence with the error struck through in red, the corrected sentence below with a tick"
+  - id: phrases-idioms
+    phrases: ["idiom", "phrasal verb", "useful phrases"]
+    templates: [card, chips, prop-scene]
+    show: "the idiom, then a small scene showing what it really means"

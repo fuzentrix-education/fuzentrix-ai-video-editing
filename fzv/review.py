@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import html
 import json
+import shutil
 import queue
 import subprocess
 import time
@@ -174,7 +175,9 @@ def storyboard(proj, workers: int = 3, redo_all: bool = False, log=print) -> dic
         sheet([(D / f"{b}.jpg", cap(order.index(b) + 1, b)) for b in order if b in changed], part, min(3, len(changed)), 640)
     elif part.exists():
         part.unlink()
-    log(f"storyboard: {len(order)} beat(s), {len(changed)} new frame(s) in {time.time() - t0:.0f}s -> {out}")
+    keep = proj.folder / f"{title_of(proj)} - Storyboard.jpg"     # a copy in the video's own folder, beside the rough cut and the final
+    shutil.copy2(out, keep)
+    log(f"storyboard: {len(order)} beat(s), {len(changed)} new frame(s) in {time.time() - t0:.0f}s -> {keep}")
     return meta
 
 
@@ -208,26 +211,31 @@ def next_step(st: dict, has_final: bool, legacy: bool) -> tuple[str, str | None]
     if legacy:
         return "This edit was made before beat sheets. Watch the final video and ask for changes at any time.", None
     b, s = st["beats"], st["storyboard"]
+    gated = st.get("beats_gate", "required") != "off"            # off (default): the storyboard is the editor's one approval
     if b in ("missing", "draft"):
-        return "Claude is preparing the beat sheet.", None
-    if b == "proposed":
+        return "Claude is planning the edit (the beat sheet).", None
+    if gated and b == "proposed":
         return "Read the beat sheet: one row per idea, with what we show and on which words. Write changes under any beat, or approve it.", "beats"
-    if b == "changed":
+    if gated and b == "changed":
         return "The beat sheet changed after you approved it. Check the changes, then approve it again.", "beats"
     if s in ("missing", "stale"):
-        return "Beat sheet approved. Claude is building the storyboard (one frame per beat).", None
-    if s == "ready" and st.get("preview_mode") == "browser":
-        return ("Open the live preview (the whole edit playing in HyperFrames Studio, with the real sound; nothing is rendered yet) and look "
-                "through the storyboard. Write changes under any frame, or approve to render the final video."), "storyboard"
-    if s == "ready" and st.get("preview") in ("missing", "stale") and st.get("preview_on"):
-        return "The storyboard is ready (one frame per beat); the preview video is rendering. You can already look through the frames.", None
-    if s == "ready":
-        if st.get("preview_on"):
-            return ("Watch the preview video (the whole edit with its real timing and sound; motion is choppier than the final) and look through "
-                    "the storyboard. Write changes under any frame or at a time in the video, or approve to render the final video."), "storyboard"
-        return "Check the storyboard: one frame per beat over the real footage. Write changes under any beat, or approve it to render the final video.", "storyboard"
+        return ("Beat sheet approved. " if gated else "") + "Claude is building the storyboard (one frame per beat).", None
+    if s == "ready":                                             # step 1 of 2: the frames
+        return ("Look through the storyboard: one frame per beat, the graphics over the real footage. Write changes under any frame, or "
+                "approve it" + (". After that you watch the preview (the whole edit playing with its sound) before anything is rendered."
+                                if st.get("preview_on") else " to render the final video.")), "storyboard"
+    pv = st.get("preview_approval", "off")
+    if pv == "missing":
+        return ("Storyboard approved. Claude is preparing the preview: the whole edit playing with its real sound, before anything is "
+                "rendered."), None
+    if pv == "ready":                                            # step 2 of 2: the whole edit playing with its sound
+        if st.get("preview_mode") == "browser":
+            return ("Storyboard approved. Now open the live preview (the whole edit playing in HyperFrames Studio with the real sound; "
+                    "nothing is rendered yet). Approve it to render the final video, or write a change at any time."), "preview"
+        return ("Storyboard approved. Now watch the preview video (the whole edit with its real timing and sound; motion is choppier than "
+                "the final). Approve it to render the final video, or write a change at a time in the video."), "preview"
     if not has_final:
-        return "Storyboard approved. The final video is rendering.", None
+        return ("Storyboard and preview approved. " if pv == "approved" else "Storyboard approved. ") + "The final video is rendering.", None
     return "The final video is ready. Watch it, check the list to confirm, and ask for changes at any time.", None
 
 
@@ -277,7 +285,8 @@ def page(proj, settings: dict | None = None, log=print) -> Path:
     from .draft import preview_state
     from .cli import preview_mode
     st = {"beats": B.beats_state(proj), "storyboard": B.storyboard_state(proj), "preview": preview_state(proj),
-          "preview_on": preview_mode(settings) != "off", "preview_mode": preview_mode(settings)}
+          "preview_on": preview_mode(settings) != "off", "preview_mode": preview_mode(settings), "beats_gate": B.gate_mode(settings, "beats"),
+          "preview_approval": B.preview_approval_state(proj, settings)}
     sj = proj.edit / "studio" / "studio.json"
     live = json.loads(sj.read_text()) if sj.exists() else {}
     legacy = B.legacy(proj)
@@ -306,7 +315,8 @@ def page(proj, settings: dict | None = None, log=print) -> Path:
         "generated": time.strftime("%Y-%m-%d %H:%M"), "state": st, "legacy": legacy, "next": msg, "approve": approve,
         "approvals": pdata.get("approvals") or {},
         "final": {"src": "../../" + quote(final.name), "name": final.name, "v": stamp(final),
-                  "checks": {k: v.get("ok") for k, v in (ver or {}).get("checks", {}).items()}} if has_final else None,
+                  "checks": {k: v.get("ok") for k, v in (ver or {}).get("checks", {}).items()},
+                  "sound": ((ver or {}).get("checks", {}).get("sound") or {}).get("notes") or []} if has_final else None,
         "preview": {"src": f"preview.mp4?v={stamp(R / 'preview.mp4')}", "current": st["preview"] == "ready",
                     "fps": (json.loads((R / "preview.json").read_text()).get("fps") if (R / "preview.json").exists() else None)}
                    if (R / "preview.mp4").exists() and not has_final else None,
@@ -402,9 +412,13 @@ const cls = s => s === "approved" ? "ok" : (s === "proposed" || s === "ready" ||
 function steps() {
   if (D.legacy) return "";
   const f = D.final ? (Object.values(D.final.checks).every(Boolean) ? "ok" : "warn") : "";
-  return `<div class="steps"><span class="step ${cls(D.state.beats)}"><i class="dot"></i>1 · Beat sheet: ${label[D.state.beats]}</span>
-    <span class="step ${cls(D.state.storyboard)}"><i class="dot"></i>2 · ${D.state.preview_on ? "Storyboard & preview" : "Storyboard"}: ${D.state.beats === "approved" ? label[D.state.storyboard] : "after the beat sheet"}</span>
-    <span class="step ${f}"><i class="dot"></i>3 · Final video: ${D.final ? "ready" : "not rendered yet"}</span></div>`;
+  const gated = D.state.beats_gate !== "off", planning = D.state.beats === "missing" || D.state.beats === "draft";
+  const s1 = gated ? `<span class="step ${cls(D.state.beats)}"><i class="dot"></i>1 · Beat sheet: ${label[D.state.beats]}</span>`
+                   : `<span class="step ${planning ? "" : "ok"}"><i class="dot"></i>1 · Plan: ${planning ? "being written" : "done"}</span>`;
+  return `<div class="steps">${s1}
+    <span class="step ${cls(D.state.storyboard)}"><i class="dot"></i>2 · Storyboard: ${!gated || D.state.beats === "approved" ? label[D.state.storyboard] : "after the beat sheet"}</span>
+    ${D.state.preview_on ? `<span class="step ${cls(D.state.preview_approval)}"><i class="dot"></i>3 · Preview: ${{waiting: "after the storyboard", missing: "being prepared", ready: "waiting for you", approved: "approved"}[D.state.preview_approval] || ""}</span>` : ""}
+    <span class="step ${f}"><i class="dot"></i>${D.state.preview_on ? 4 : 3} · Final video: ${D.final ? "ready" : "not rendered yet"}</span></div>`;
 }
 function beatCard(b) {
   const fig = (k, cap) => b.frames[k] ? `<figure><a href="${b.frames[k].split("?")[0]}" target="_blank"><img loading="lazy" src="${b.frames[k]}" alt="${cap} at ${mmss(b.key)}"></a><figcaption>${cap}</figcaption></figure>` : "";
@@ -473,7 +487,7 @@ function render() {
   const app = $("#app");
   let h = `<h1>${esc(D.title)}</h1><div class="sub">${esc(D.folder)} · ${esc(D.mode || "")} · ${mmss(D.duration)} · page made ${esc(D.generated)}</div>`;
   h += steps();
-  h += `<div class="next"><p>${esc(D.next)}</p>${D.live ? `<a class="btn" href="${esc(D.live.url)}" target="_blank">▶ Open the live preview</a>` : ""}${D.approve ? `<button class="primary" id="approve">Copy approval for Claude</button>` : ""}</div>`;
+  h += `<div class="next"><p>${esc(D.next)}</p>${D.live ? `<a class="btn" href="${esc(D.live.url)}" target="_blank">▶ Open the live preview</a>` : ""}${D.approve ? `<button class="primary" id="approve">${{beats: "Approve the beat sheet", storyboard: "Approve the storyboard", preview: "Approve the preview"}[D.approve] || "Approve"} · copy for Claude</button>` : ""}</div>`;
   if (!D.live && D.state.preview_mode === "browser" && !D.final) h += `<div class="sub" style="margin-top:6px">Live preview not running: ask Claude “open the live preview”.</div>`;
   const player = (src, extra) => `<div class="player"><video id="video" controls preload="metadata" src="${src}"></video>${extra}${musicRow()}
       <div class="here"><input id="hereText" placeholder="Pause the video where something should change, write it here…"><button id="hereAdd">Add at <span id="hereT">0:00</span></button></div></div>`;
@@ -486,6 +500,7 @@ function render() {
     h += `<h2>Final video</h2><div class="player"><video id="video" controls preload="metadata" src="${D.final.src}?v=${D.final.v}"></video>${musicRow()}
       <div class="checks">${Object.entries(D.final.checks).map(([k, ok]) => `<span class="chip ${ok ? "" : "bad"}">${esc(k)} ${ok ? "ok" : "check"}</span>`).join("")}</div>
       <div class="here"><input id="hereText" placeholder="Pause the video where something should change, write it here…"><button id="hereAdd">Add at <span id="hereT">0:00</span></button></div></div>`;
+    if (D.final.sound && D.final.sound.length) h += `<h2>Listening check</h2><ul class="confirm">${D.final.sound.map(n => `<li>${esc(n)}</li>`).join("")}</ul>`;
   }
   h += board();
   if (D.confirm.length) h += `<h2>To confirm</h2><ul class="confirm">${D.confirm.map(c => `<li>${esc(c)}</li>`).join("")}</ul>`;

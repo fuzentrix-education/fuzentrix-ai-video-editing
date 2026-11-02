@@ -2,7 +2,7 @@
 
 **Family:** core · **Layers:** plate
 
-Full-frame backdrop for a short full-screen moment (rule L3: at most 12 s each, 10% of runtime). Put the scenes that belong to it after it, with box set inside the full frame.
+Only when the prompt asks (rule L11: the background stays the brand plate). Full-frame backdrop for a short full-screen moment (rule L3: at most 12 s each, 10% of runtime). Put the scenes that belong to it after it, with box set inside the full frame.
 
 | Parameter | Meaning |
 |---|---|

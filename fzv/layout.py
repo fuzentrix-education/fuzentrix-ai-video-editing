@@ -57,10 +57,10 @@ def plate_reference(plate_frames: np.ndarray) -> np.ndarray:
     """The empty plate. Editors composite onto a brand plate image, so use it when it matches the footage; otherwise the
     per-pixel 95th percentile (the light plate shows through whenever the instructor moves)."""
     from PIL import Image
-    from .config import BRANDS
+    from .config import BRANDS, editor_plates
     sub = plate_frames[::5].astype(np.float32)
     med = np.median(sub, 0)
-    for f in sorted(BRANDS.glob("*/plate/*.png")) + sorted(BRANDS.glob("*/*plate*.png")):
+    for f in editor_plates():
         cand = np.asarray(Image.open(f).convert("RGB").resize((W, H), Image.LANCZOS), np.float32)
         if np.median(np.abs(cand[: int(H * 0.4), : int(W * 0.6)] - med[: int(H * 0.4), : int(W * 0.6)]).max(-1)) < 8:
             global PLATE_FILE

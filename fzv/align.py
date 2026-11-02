@@ -75,11 +75,11 @@ def crop_from_frame(med: np.ndarray, W: int, H: int, plates: list[np.ndarray] = 
     """Content box of a (median) recording frame, in W x H pixels. The margins must match a known background: the raw cut's
     plate, a brand plate image, or a uniform border colour (desktop, bars). Full frame if none fits."""
     from PIL import Image
-    from .config import BRANDS
+    from .config import editor_plates
     med = med.astype(np.float32)
     h, w = med.shape[:2]
     refs = [np.asarray(Image.fromarray(np.clip(p, 0, 255).astype(np.uint8)).resize((w, h), Image.BICUBIC), np.float32) for p in plates]
-    refs += [np.asarray(Image.open(f).convert("RGB").resize((w, h), Image.LANCZOS), np.float32) for f in sorted(BRANDS.glob("*/plate/*.png"))]
+    refs += [np.asarray(Image.open(f).convert("RGB").resize((w, h), Image.LANCZOS), np.float32) for f in editor_plates()]
     border = np.concatenate([med[0], med[-1], med[:, 0], med[:, -1]])
     refs.append(np.broadcast_to(np.median(border, 0), med.shape))
     for ref in refs:

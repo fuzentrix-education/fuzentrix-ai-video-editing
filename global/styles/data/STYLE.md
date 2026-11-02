@@ -7,7 +7,7 @@ All colours, fonts and timings come from the brand kit (CSS variables `--fz-*`),
 ## Look
 
 - Flat bars and lines in brand colours (`--fz-accent`, semantic colours for good/bad).
-- Values in Outfit 800; labels in Inter 600 `--fz-text2`.
+- Values in Bricolage Grotesque 800; labels in Manrope 600 `--fz-text2`.
 
 ## Motion
 

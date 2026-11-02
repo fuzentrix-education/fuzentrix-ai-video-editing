@@ -88,7 +88,8 @@ def build_compose(proj, settings, pdata, sp, cuts, tx, log) -> int:
         return 1
     with open(proj.p("edit.resolved.yaml"), "w", encoding="utf-8") as f:
         yaml.safe_dump(res, f, sort_keys=False, allow_unicode=True)
-    clips = S.plan_clips(res, [{"kind": "plate", "start": 0, "end": pdata["duration"]}], settings["graphics_fps"], ["plate"])
+    clips = S.plan_clips(res, [{"kind": "plate", "start": 0, "end": pdata["duration"]}], settings["graphics_fps"],
+                         [l for l in ("plate",) if l in (settings.get("bug") or {}).get("layers", [])], settings.get("chrome"), pdata["duration"])
     poses = (res.get("presenter") or {}).get("poses") or [{"name": "wide", "at": 0}]
     pset = dict(settings.get("presenter") or {})
     pset.update({k: v for k, v in (res.get("presenter") or {}).items() if k != "poses"})   # the spec may override per video

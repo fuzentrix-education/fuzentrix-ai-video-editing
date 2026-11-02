@@ -1,19 +1,21 @@
 # Global defaults for every video. A video's prompt can override any of these (design D9); overrides are logged in edit/decisions.md.
-brand: career-orbit                 # which kit in global/brand/ when the prompt doesn't name one
+brand: career-orbit                 # the one brand kit (global/brand/brand.yaml); prompts can't change it
 mode: auto                          # overlay (editor's rough cut) | compose (raw footage) | auto (detected at ingest)
 
 styles:
   base: [core, code]                # always available
   content: [kinetic, diagram, data] # the planner adds these where the content calls for them
   props: true                       # characters and props library (global/props)
-  on_request: [sketch]              # only when the prompt asks ("sketch edit")
+  on_request: [sketch, 3d]          # only when the prompt asks ("sketch edit", "use 3D animations"); otherwise never used
   max_content_families_per_section: 2
 
 subtitles: { enabled: false, language: en, max_chars: 42, max_lines: 2, sidecar_srt: true }
 music:     { enabled: false, track: null, rel_lufs: -18, fade_s: 2.0 }   # audible bed 18 LU under the voice ("low" -22, "high" -14), gently ducked
+listen:    { enabled: true }        # the listening check after the final mix: buried / too-loud effects, clipping, noise, music balance
+voice:     { cleanup: true }        # rumble filter, speech denoiser, EQ, gentle levelling, de-esser; prompt "Voice: untouched" turns it off
 sfx:                                # rule A5: every visual event has its sound, never the same sound twice in a row
   enabled: true                     # the team's library in global/sfx/ (fzv sfx add) is used first; files rotate per category
-  level_db: -4                      # all SFX a little quieter than the house levels
+  level_db: 0                       # house levels: 18-26 dB under the voice by kind (fzv/audio.py UNDER), dipping 3 dB while she speaks
   minor: true                       # element entrances (pop, swish, blip, tick); prompt "SFX: minimal" turns them off
   minor_gap_s: 0.35                 # an entrance sound is skipped only when another sound lands within 0.35 s (no stacking)
   whoosh_gap_s: 1.5                 # whooshes never pile up
@@ -24,7 +26,8 @@ recordings: { use: show, corrections: tidy }
   # corrections (reference mode): tidy = fix typos, spacing and false starts in the rebuilt code | exact = copy it as typed
 name_card: when_introduced          # only when the instructor introduces themself in the audio
 outro: none                         # no end cards: the editors' intro animation brands the video
-bug:       { layers: [plate, studio] }
+bug:       { layers: [] }             # no logo burned in: the team adds the Career Orbit logo after the final render (2026-11-02); prompt "Logo: on" puts it top right
+chrome:    { progress: false, chapters: true }  # the chapter pill top left (sections with `chapter:`); no progress bar (user, 2026-11-02)
 presenter:                          # compose mode (raw / green-screen footage); rough cuts keep the editor's framing (rule L1)
   corner_box: true                  # bottom-right pose sits in a rounded brand box (rule L5); prompt "Presenter box: off" turns it off
   box: { w: 500, h: 420, margin: 40, radius: 28 }
@@ -32,9 +35,12 @@ presenter:                          # compose mode (raw / green-screen footage);
 cutaways: { max_each_s: 12, max_total_pct: 10 }
 clutter:  { max_blocks: 4, max_words: 40, max_code_lines: 12, max_focus: 1, studio_max_blocks: 1, studio_max_words: 12 }
 empty:    { max_gap_s: 2.0 }        # never a plain-instructor stretch (rule L4)
-visuals:  { max_text_only_s: 15, min_section_s: 30 }   # rules V1/V2: show the process; at most 15 s of words-only screen
+visuals:  { max_text_only_s: 15, min_section_s: 30,    # rules V1/V2: show the process; at most 15 s of words-only screen
+            max_repeat_share: 0.2 }                 # rule V5: no animation in more than 20% of a video's animations (and never twice in a row)
 review:                             # the editor sees and approves before the slow steps (design §9f); prompt "Review: off" for none
-  beats: required                   # required | off: edit.yaml is written and built only from a beat sheet the editor approved
+  beats: "off"                      # off (default since 2026-10-28): Claude plans the beat sheet and goes straight on to the storyboard,
+                                    # the editor's one approval | required: build waits for the editor to approve the beat sheet too
+                                    # (prompt "Review: beats, storyboard")
   storyboard: required              # required | off: render waits until the editor approves the storyboard (one frame per beat)
   preview: browser                  # before that approval the editor watches the whole edit: browser (live in HyperFrames Studio, no
                                     # rendering) | video (a quick low-frame-rate draft render, edit/review/preview.mp4) | off
@@ -50,7 +56,7 @@ layout:                             # 1920x1080 slots; ingest trims them so they
   recording: { x: 100,  y: 104, w: 1720, h: 600 }
   studio:    { x: 96,   y: 120, w: 760,  h: 300 }
   namecard:  { x: 1452, y: 820 }
-  bug:       { right: 56, top: 24 }
+  bug:       { right: 64, top: 20 }   # level with the chapter pill
 
 transcription: { model: large-v3-turbo, language: en, chunk_max_s: 14, chunk_min_s: 5 }
 render:  { workers: auto, ram_per_worker_gb: 1.0, reserve_gb: 2.0 }

@@ -10,9 +10,10 @@ from pathlib import Path
 import yaml
 
 from . import media
-from .config import GLOBAL, RUNTIME, brand_css, brand_js, dump_json, load_brand, load_yaml
+from .config import GLOBAL, RUNTIME, backdrop_key, brand_css, brand_js, dump_json, load_brand, load_yaml, render_backdrop
 
-TEMPLATE_FILES = ["core.js", "code.js", "content.js", "explainer.js", "registry.js", "props.js", "sketch.js", "presenter.js"]
+TEMPLATE_FILES = ["core.js", "code.js", "content.js", "explainer.js", "registry.js", "props.js", "sketch.js", "presenter.js", "scene3d.js"]
+THREE_TEMPLATES = {"db3d", "network3d", "loop3d"}          # these need three.js (loaded only by clips that use them)
 
 PAGE = """<!doctype html>
 <html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=1920, height=1080" />
@@ -35,7 +36,7 @@ window.FZ_RECORDINGS = {recs};
 </body></html>
 """
 
-REC_MARKUP = """<div id="rec-{id}" class="fz-rec hide"><div class="bar"><div class="dot" style="background:#FF6058"></div><div class="dot" style="background:#FFBD2E"></div><div class="dot" style="background:#28CA42"></div>
+REC_MARKUP = """<div id="rec-{id}" class="fz-rec hide"><div class="bar"><div class="dot"></div><div class="dot"></div><div class="dot"></div>
 <div class="ttl" style="margin-left:16px;font:500 18px/1 var(--fz-font-mono);color:var(--fz-text2)"></div><div class="fz-steps"></div>
 <div style="margin-left:28px;display:flex;align-items:center;gap:8px;font:700 15px/1 var(--fz-font-mono);letter-spacing:.14em;color:var(--fz-danger)"><span style="width:10px;height:10px;border-radius:50%;background:var(--fz-danger);display:block"></span>SCREEN</div></div>
 <div class="view"><div class="cam" style="width:{w}px;height:{h}px"><video id="rec-video-{id}" src="assets/rec/{file}" muted playsinline data-start="{start}" data-duration="{dur}" data-track-index="1" style="width:{w}px;height:{h}px"></video></div></div></div>"""
@@ -56,19 +57,21 @@ def link_or_copy(src: Path, dst: Path):
 def prepare_assets(proj, brand: dict) -> Path:
     """edit/comp/assets: runtime, brand.css + fonts, brand logo and plate. Idempotent."""
     A = proj.edit / "comp" / "assets"
-    for f in ["lib.js", "base.css"] + [f"templates/{t}" for t in TEMPLATE_FILES] + ["vendor/gsap.min.js"]:
+    for f in ["lib.js", "base.css"] + [f"templates/{t}" for t in TEMPLATE_FILES] + ["vendor/gsap.min.js", "vendor/three.min.js"]:
         link_or_copy(RUNTIME / f, A / "runtime" / f)
         if (A / "runtime" / f).stat().st_mtime < (RUNTIME / f).stat().st_mtime:     # runtime edited: refresh the copy
             (A / "runtime" / f).unlink(); shutil.copy2(RUNTIME / f, A / "runtime" / f)
     shared = Path(brand["_shared"])
     for f in (shared / "fonts").glob("*.woff2"):
         link_or_copy(f, A / "fonts" / f.name)
-    bug = Path(brand["_dir"]) / brand.get("bug", {}).get("logo", "")
-    if bug.is_file():
-        link_or_copy(bug, A / "brand" / bug.name)
-    plate = (Path(brand["_dir"]) / brand.get("plate", "")) if brand.get("plate") else None
-    plate = plate if plate and plate.is_file() else shared / "plate" / "slide_background.png"
-    link_or_copy(plate, A / "brand" / "plate.png")
+    for key in ("logo", "on-dark"):                         # the corner logo, and its version for dark scenes
+        bug = Path(brand["_dir"]) / brand.get("bug", {}).get(key, "")
+        if bug.is_file():
+            link_or_copy(bug, A / "brand" / bug.name)
+    stamp = A / "brand" / "plate.key"                       # the dotted backdrop, rendered from the kit (the background of every frame)
+    if not (A / "brand" / "plate.png").is_file() or not stamp.is_file() or stamp.read_text() != backdrop_key(brand):
+        render_backdrop(brand, A / "brand" / "plate.png")
+        stamp.write_text(backdrop_key(brand))
     (A / "brand.css").write_text(brand_css(brand, "fonts/"), encoding="utf-8")
     reg = GLOBAL / "registry"                                # vendored HyperFrames registry items (the `hf` template)
     for f in reg.rglob("*"):
@@ -157,7 +160,8 @@ def build_clip(proj, clip: dict, brand: dict, layout: dict, recordings: dict, fp
     static, recs = recording_assets(proj, clip, recordings, A, fps)
     static = clip.get("static", "") + static + registry_hosts(clip)
     html = PAGE.format(
-        template_tags="".join(f'<script src="assets/runtime/templates/{t}"></script>' for t in TEMPLATE_FILES),
+        template_tags=('<script src="assets/runtime/vendor/three.min.js"></script>' if THREE_TEMPLATES & {s["template"] for s in clip["scenes"]} else "")
+                      + "".join(f'<script src="assets/runtime/templates/{t}"></script>' for t in TEMPLATE_FILES),
         icons=(RUNTIME / "icons.svg").read_text(encoding="utf-8"), static=static,
         dur=round(clip["end"] - clip["start"], 3), fps=fps, off=clip["start"],
         props=dump_json(props_js(props_used(clip))), recs=dump_json(recs),

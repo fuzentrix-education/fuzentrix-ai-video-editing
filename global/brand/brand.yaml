@@ -1,0 +1,143 @@
+# The brand kit: the ONE kit every Fuzentrix video uses (Career Orbit, the Fuzentrix LMS). There are no per-brand kits.
+# Colours, fonts and shapes follow the Career Orbit LMS design (its default theme: navy and one blue, Manrope and
+# Bricolage Grotesque, soft 22 px cards). The colour budget keeps every video calm and consistent:
+#   - neutrals (navy text, slate, white cards, the pale dotted backdrop)
+#   - ONE brand colour: blue
+#   - three colours that only ever carry meaning: green = correct / True / output, red = error / False, amber = look here
+# There are no per-topic colours. Teal appears only inside the logo artwork.
+id: career-orbit
+name: Career Orbit
+product: Fuzentrix LMS
+parent: Fuzentrix Education
+
+logo:
+  stacked: logo/careerorbit_logo.svg                     # master
+  horizontal: logo/careerorbit_logo_horizontal.svg       # icon beside the wordmark: the video corner logo, wide spaces
+  icon: logo/careerorbit_icon.svg
+  on-dark:                                               # white CAREER, teal ORBIT, icon tone-lifted so its navy reads on dark
+    stacked: logo/careerorbit_logo_on-dark.svg
+    horizontal: logo/careerorbit_logo_horizontal_on-dark.svg
+    icon: logo/careerorbit_icon_on-dark.svg
+  white:                                                 # single-colour white: photos, busy or coloured backgrounds
+    stacked: logo/careerorbit_logo_white.svg
+    horizontal: logo/careerorbit_logo_horizontal_white.svg
+    icon: logo/careerorbit_icon_white.svg
+  clear-space: height of the "C" in CAREER, on every side
+  min-width: { stacked: 160px, horizontal: 200px, icon: 32px }
+
+colors:                                # from the LMS design's default theme
+  navy:      "#102A56"                 # LMS secondary: headings and body text (14:1 on white)
+  slate:     "#3B5079"                 # LMS muted: secondary text (8:1 on white)
+  mist:      "#8A9BBA"                 # quiet labels, step numbers, dimmed items (never body text)
+  blue:      "#2563EB"                 # LMS primary: THE brand colour. Fills, icons, progress, active states, highlights
+  blue-text: "#1D4ED8"                 # LMS primary text: blue words and buttons with white text (6.7:1)
+  blue-soft: "#E3EDFF"                 # LMS primary soft: pills, icon wells, tinted fills
+  sky:       "#78B7FF"                 # LMS gradient start: blue on dark backgrounds
+  deep:      "#0B1D37"                 # LMS deep: dark panels
+  surface:   "#FFFFFF"                 # cards
+  line:      "#DCE7FA"                 # LMS surface-3: card borders, dividers, wires at rest
+  dim:       "#F1F4F9"                 # inactive chips and tiles
+  page:      "#F4F7FC"                 # the backdrop's base
+
+semantic:                              # meaning only, never decoration
+  success:        "#15803D"            # correct, True, found, output OK (LMS success; text-safe on white)
+  success-soft:   "#E3F4EA"
+  danger:         "#C42020"            # error, False, wrong, stop (LMS danger; text-safe on white)
+  danger-soft:    "#FDECEC"
+  highlight:      "#F59E0B"            # amber: "look here". Rings and warnings. Never text on white (pointer wires are blue)
+  highlight-soft: "#FEF3DC"
+  highlight-text: "#9A4A06"            # amber words on white (LMS warning)
+  on-dark: { success: "#86EFAC", danger: "#FCA5A5", highlight: "#FBBF24" }
+
+gradients:
+  brand: ["#102A56", "#2563EB"]        # navy to blue (the LMS button and fill gradient): hero titles, badges, progress
+  deep:  ["#102A56", "#0B1D37"]        # dark panels
+
+roles:
+  text: navy
+  text-secondary: slate
+  title-emphasis: blue-text            # two-tone titles: "Tuples in **Python**"
+  small-emphasis: blue-text
+  accent: blue
+  action: blue-text                    # buttons and chips with white text
+  highlight: highlight
+  card: surface
+  card-border: line
+  pill: blue-soft
+  page: page
+  dark-panel: deep
+  on-dark-text: "#FFFFFF"
+  on-dark-accent: sky
+  on-dark-soft: "#A4B6D6"              # LMS dark-mode muted
+
+backdrop:                              # behind every graphic for the whole video (rule L11). Rendered from these values at build
+  base: page
+  dots: { color: navy, opacity: 0.15, pitch: 34, radius: 1.8 }
+  glows:                               # two very soft light pools, fixed (no drift, so clips join seamlessly)
+    - { color: blue, x: 0.10, y: 0.08, radius: 0.55, opacity: 0.06 }
+    - { color: sky,  x: 0.95, y: 0.96, radius: 0.60, opacity: 0.12 }
+
+plates: plates/                        # the editors' slide backgrounds: only to recognise and key rough cuts made on them
+
+fonts:                                 # all SIL Open Font Licence; files in ./fonts
+  display: { family: Bricolage Grotesque, weights: [500, 600, 700, 800], use: titles, headings, big numbers }
+  body:    { family: Manrope,             weights: [500, 600, 700, 800], use: body text, chips, labels }
+  mono:    { family: JetBrains Mono,      weights: [400, 500, 700],      use: code, values, terminals, ligatures: false }
+  hand:    { family: Caveat,              weights: [600, 700],           use: Sketch style labels only }
+  aliases: { Inter: body, Outfit: display }   # registry animations ask for these by name; they get the kit's fonts
+
+type-scale:                            # px at 1920x1080
+  hero: 92
+  h1: 60
+  h2: 44
+  body: 30
+  small: 26                            # never smaller for on-screen text
+  label: 20                            # mono, uppercase, 0.2em tracking
+  code-card: [34, 46]
+  terminal: 30
+
+shape:                                 # the LMS card language
+  card-radius: 22
+  chip-radius: 999
+  code-radius: 22
+  card-border: 1px solid line
+  card-shadow: "0 2px 4px rgba(16,42,86,.06), 0 26px 50px -18px rgba(16,42,86,.30)"
+
+code:                                  # the dark editor and terminal: the LMS code editor's own theme, so videos match what students type in
+  bg: ["#0D1A3A", "#0A1530"]
+  text: "#E1EBFF"                      # names and operators
+  gutter: "rgba(225,235,255,.30)"
+  keyword: "#A5B6FF"                   # def, for, if, in, True, None ... and print, len, range, str, int, dict, list, set (as the LMS editor)
+  string: "#7EE0B5"
+  number: "#F7B267"
+  function: "#5CC8FF"                  # any other call: input(), float(), date.count()
+  type: "#FFD580"                      # Capitalised names (classes)
+  operator: "#E1EBFF"
+  comment: "#7483AD"
+  on-light: { keyword: "#3546B8", string: "#0E7A50", number: "#B4530A", function: "#0B6FBF", type: "#8A5A00", comment: "#6B7794" }   # code inside white cards
+
+motion:
+  enter:     { duration: 0.55, ease: power3.out }
+  exit:      { duration: 0.35, ease: power2.in }
+  pop:       { duration: 0.5,  ease: "back.out(1.8)" }
+  stagger: 0.04
+  wire-draw: 0.45
+  draw-on:   { speed-px-per-s: 900 }   # Sketch strokes
+
+audio:
+  target-lufs: -14
+  true-peak: -1
+  voice-highpass-hz: 70
+  sfx-under-voice-db: [18, 26]         # by kind (fzv/audio.py UNDER), dipping 3 dB while she speaks
+  music: none
+
+layout:                                # 1920x1080
+  margin-left: 96
+  header-band: [78, 180]
+  edge-safe: 40
+  bug: { position: top-right, inset: [20, 64], pill: false }   # the logo sits straight on the backdrop
+
+outro: none                            # no end cards unless the prompt asks
+
+bug:       { logo: logo/careerorbit_logo_horizontal_2000w.png, on-dark: logo/careerorbit_logo_horizontal_on-dark_2000w.png, height: 40 }   # top right, no box
+name-card: { title: "Instructor · Career Orbit" }

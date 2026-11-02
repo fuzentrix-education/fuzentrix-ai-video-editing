@@ -584,3 +584,129 @@ sounds:
   gain_db: 0.0
   source: https://freesound.org/s/179779/
   licence: 'CC0 1.0 (Freesound: Sclolex)'
+- id: type-type-565645-00
+  category: type
+  file: type/type-565645-00.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/khenshom/sounds/565645/
+  licence: 'CC0 1.0 (Freesound: khenshom)'
+- id: type-type-565645-02
+  category: type
+  file: type/type-565645-02.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/khenshom/sounds/565645/
+  licence: 'CC0 1.0 (Freesound: khenshom)'
+- id: type-type-565645-03
+  category: type
+  file: type/type-565645-03.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/khenshom/sounds/565645/
+  licence: 'CC0 1.0 (Freesound: khenshom)'
+- id: type-type-565645-04
+  category: type
+  file: type/type-565645-04.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/khenshom/sounds/565645/
+  licence: 'CC0 1.0 (Freesound: khenshom)'
+- id: type-type-565645-05
+  category: type
+  file: type/type-565645-05.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/khenshom/sounds/565645/
+  licence: 'CC0 1.0 (Freesound: khenshom)'
+- id: type-type-565645-07
+  category: type
+  file: type/type-565645-07.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/khenshom/sounds/565645/
+  licence: 'CC0 1.0 (Freesound: khenshom)'
+- id: type-type-565645-08
+  category: type
+  file: type/type-565645-08.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/khenshom/sounds/565645/
+  licence: 'CC0 1.0 (Freesound: khenshom)'
+- id: type-type-565645-10
+  category: type
+  file: type/type-565645-10.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/khenshom/sounds/565645/
+  licence: 'CC0 1.0 (Freesound: khenshom)'
+- id: pop-pop-47498
+  category: pop
+  file: pop/pop-47498.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/carlSablowEdwards/sounds/47498/
+  licence: 'CC0 1.0 (Freesound: carlSablowEdwards)'
+- id: pop-pop-431532
+  category: pop
+  file: pop/pop-431532.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/supersound23/sounds/431532/
+  licence: 'CC0 1.0 (Freesound: supersound23)'
+- id: pop-pop-188381-0
+  category: pop
+  file: pop/pop-188381-0.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/wubitog/sounds/188381/
+  licence: 'CC0 1.0 (Freesound: wubitog)'
+- id: pop-pop-188381-2
+  category: pop
+  file: pop/pop-188381-2.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/wubitog/sounds/188381/
+  licence: 'CC0 1.0 (Freesound: wubitog)'
+- id: click-click-678248
+  category: click
+  file: click/click-678248.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/Pixeliota/sounds/678248/
+  licence: 'CC0 1.0 (Freesound: Pixeliota)'
+- id: click-click-213004-0
+  category: click
+  file: click/click-213004-0.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/abstraktgeneriert/sounds/213004/
+  licence: 'CC0 1.0 (Freesound: abstraktgeneriert)'
+- id: ding-ding-149268
+  category: ding
+  file: ding/ding-149268.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/organicmanpl/sounds/149268/
+  licence: 'CC0 1.0 (Freesound: organicmanpl)'
+- id: ding-ding-685111
+  category: ding
+  file: ding/ding-685111.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/tonmayster/sounds/685111/
+  licence: 'CC0 1.0 (Freesound: tonmayster)'
+- id: good-ding-116779
+  category: good
+  file: good/ding-116779.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/domrodrig/sounds/116779/
+  licence: 'CC0 1.0 (Freesound: domrodrig)'
+- id: thud-thud-405705
+  category: thud
+  file: thud/thud-405705.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/apinasaundi/sounds/405705/
+  licence: 'CC0 1.0 (Freesound: apinasaundi)'
+- id: swish-swish-683101
+  category: swish
+  file: swish/swish-683101.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/florianreichelt/sounds/683101/
+  licence: 'CC0 1.0 (Freesound: florianreichelt)'
+- id: swish-swish-389590
+  category: swish
+  file: swish/swish-389590.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/Jofae/sounds/389590/
+  licence: 'CC0 1.0 (Freesound: Jofae)'
+- id: swish-swish-352719
+  category: swish
+  file: swish/swish-352719.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/Dalesome/sounds/352719/
+  licence: 'CC0 1.0 (Freesound: Dalesome)'

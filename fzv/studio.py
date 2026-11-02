@@ -147,6 +147,10 @@ def build(proj, settings: dict, log=print) -> Path:
     if not compose:
         link(raw, S / "media" / f"footage{raw.suffix.lower()}")
         footage = (f'<video id="footage" src="media/footage{raw.suffix.lower()}" data-start="0" data-duration="{dur}" muted playsinline></video>\n')
+    # the real sound before the final render: without a mix the live preview would be silent until `fzv finish`
+    if sound_stale(proj, settings):
+        from .audio import mix
+        mix(proj, raw, dur, settings, log)
     st = export_stems(proj, proj.edit / "review")
     tracks = []
     if st.get("voice_sfx") and st.get("music"):
@@ -166,12 +170,22 @@ def build(proj, settings: dict, log=print) -> Path:
     return S
 
 
+def sound_stale(proj, settings: dict | None = None) -> bool:
+    """The mix the preview plays (voice, the recorded SFX cues, music) is missing or older than the cues the last validate recorded."""
+    A = proj.edit / "audio"
+    cues = A / "cues.json"
+    made = A / ("stem_voice_sfx.wav" if ((settings or proj.settings()).get("music") or {}).get("enabled") else "mix.wav")
+    return cues.exists() and (not made.exists() or made.stat().st_mtime < cues.stat().st_mtime)
+
+
 def state(proj) -> str:
-    """missing | stale | ready: whether edit/studio/ shows the current build."""
+    """missing | stale | ready: whether edit/studio/ shows the current build, with its sound."""
     f = proj.edit / "studio" / "studio.json"
     if not f.exists():
         return "missing"
-    return "ready" if json.loads(f.read_text()).get("build") == B.build_signature(proj) else "stale"
+    if json.loads(f.read_text()).get("build") != B.build_signature(proj):
+        return "stale"
+    return "stale" if sound_stale(proj) else "ready"
 
 
 def serve(S: Path, port: int | None = None, stop: bool = False, open_browser: bool = True, log=print) -> str | None:
