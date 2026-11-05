@@ -19,7 +19,9 @@ directly as a grid), then the **preview** (the whole edit playing with the real 
 rule V4), but you don't stop for its approval: the editor sees the plan as the storyboard. Only when the prompt says
 `Review: beats, storyboard` does the editor approve the beat sheet first (`fzv build` waits for it, rule R1). `Review: off` turns both off.
 
-1. Run `bin/fzv ingest "<folder>"`, then `bin/fzv plan "<folder>"`. Plan writes the brief and drafts `edit/beats.yaml`.
+1. Run `bin/fzv ingest "<folder>"`, then `bin/fzv plan "<folder>"`. Plan writes the brief and drafts `edit/beats.yaml`. Ingest keeps the
+   Mac awake and starts the **Telugu transcript** in the background after the English one (`edit/transcript_te.jsonl`, about 2.5x the
+   video's length; setting `transcription.telugu`); the brief shows it once done. Long keyings log the time left.
 2. Read **only** `<folder>/edit/plan_brief.md` and look at `edit/out/footage.jpg` (the footage every 10 s). The brief has:
    - the prompt and the settings
    - the shots and the layout slots
@@ -37,7 +39,7 @@ rule V4), but you don't stop for its approval: the editor sees the plan as the s
    template that **shows** it happening, not a card that names it:
    - data being stored / collected → `data-flow`; processed into information → `process-flow`; `int(input())` → `type-convert`;
      "1 to n" / `range` → `range-gen`; each iteration → `trace` + `tiles`; request / fetch / back end → `request-flow`;
-     searching many records → `icon-grid` with `scan`; a system's operations → `hub`; logging in / using an app → `mockup`;
+     a date / "imagine a calendar" → `calendar` (Rani's); searching many records → `icon-grid` with `scan`; a system's operations → `hub`; logging in / using an app → `mockup`;
      a record or form → `form-card`; tables in a database → `db-tables`; problems / benefits → `callouts` / `checklist`;
      sets, union / intersection / difference → `venn`; checking each character (`isalpha`, `isdigit`…) → `char-scan`.
    - Give **every step its own anchor** on the word that names it (the chip flies into the database on "database").
@@ -71,17 +73,54 @@ rule V4), but you don't stop for its approval: the editor sees the plan as the s
    - **`chapter:`** on every section after the intro: a short name (2–3 words, e.g. "Indexing"); neighbouring sections share one. The
      build adds the chapter pill (top left: number, chapter · lesson title) to every clip; don't add it yourself.
    - **`studio`:** at least one `studio-tag` (or another studio-layer scene) for **every** studio shot. Never leave a plain-instructor stretch (rule L4).
-   - **Times:** use word anchors (`at: "@phrase the instructor says"`, `"@phrase#2"` for the second occurrence) or seconds read from the transcript; `+0.5` is relative to the scene's `at`.
+   - **Times are her words (rules S2–S5):** write every `at` as a word anchor (`at: "@phrase the instructor says"`, `"@phrase#2"` for
+     the second occurrence; `+0.5` is relative to the scene's `at`). Seconds only for things that aren't said (a pause, a shot change).
+     `bin/fzv words "<folder>" <from>-<to>` prints her exact words and times; numbers match exactly, so write the number the
+     transcript has (Whisper may hear "8" as "80"). Give every item of a group its own word: tiles `appear:`, agenda items, chips,
+     card fields, `focus` entries. **On her word, to the frame** (2026-11-05, from the Career Orbit kit): nothing more than 0.15 s
+     before she says it (a title: 1 s), no value more than 0.3 s after (S5): anchor a value on its own word, not the start of the
+     phrase. Where the English transcript misheard her Telugu, anchor on the Telugu one (`"@te:…"`, `fzv words <folder> --te`).
+     **Follow her:** when she repeats a value on screen, add a `focus` (tiles, form-card) or a code `highlights` entry on that word.
+     **Never frozen:** while she explains, something changes at least every 8 s.
+   - **Tutor (compose mode):** `presenter.poses` starts `{name: studio, at: 0}` (her studio shot: laptop and desk, life-size, centred),
+     then `{name: corner, at: <end of the intro>}`; the frame shrinks into the box in 0.8 s, and she stays there (no other moves unless
+     the prompt asks). Put intro titles on the wall to her left (x 96–700) and the first graphic about 1 s after the move.
+   - **Explore (2026-11-05, user: "allow some exploration and free flow"):** the template lists here are suggestions. For each beat,
+     think what a great editor would show, try a different composition than the last similar moment, and use `freeform` (your own
+     markup + steps on her words) when no template does it well. Only the checked rules are fixed.
+   - **Layout (rules L13, L14):** start every block at x 96 (the left margin) or exactly under / beside another block; stack cards
+     top-down under the header (y 230+) in the column left of the tutor box; let the templates size text and code (the kit's type
+     scale: don't pass small `fs`, `size` or fonts); one main graphic plus at most one supporting element (Rani's layout). Titles and
+     headings on one line (L15): the templates shrink them to fit; write `*word*` for the marker, `**word**` for the blue gradient.
+   - **Enrich (rule P2):** go beyond what she says outright when it helps students (Rani's edit): question openers (`title-hero` with a
+     question, while she stays in the box), extra real-world examples (a `form-card` "Same in programming" list), "accessing
+     values" rows (`variables` with `label`), key-property titles. Each addition goes under `confirm:`.
+   - **Pictures (rule P1):** at an analogy or real-world example, a `picture` on her word (`- picture: {asset: il-calendar, box: {…},
+     at: "@calendar", caption: {text: "A date: day · month · year"}}`). Find it: `bin/fzv illus search <words>` (library), then
+     `bin/fzv illus search <words> --online --sheet` and **look at the contact sheet** before choosing; import the best with
+     `bin/fzv illus add <url> --id il-<name> --title "…" --tags "…" --source <its page> --licence "<as stated there>"` (it strips
+     scripts and crops the background away; pictures keep their own natural colours, 2026-11-05). Prefer the curated flat sets (Lukasz Adam, illlustrations.co,
+     the library's Open Peeps student); Commons results vary in style. Nothing fits: draw one yourself in the house style
+     (global/props/ILLUSTRATION-STYLE.md), save the SVG in the video's edit/ folder, add it with `--source generated --licence
+     "Fuzentrix (original)"`, and check it in a preview. List every new picture under `confirm:`.
+   - **Sounds:** templates play the editors' house set by themselves (global/RULES.md §6). Add a `sound` scene only for a moment no
+     template covers (`- sound: {kind: boing, at: "@no"}`), rarely. If a video needs a sound the library doesn't have, find CC0
+     look-alikes (Freesound with the CC0 filter, Kenney, Openverse; licence checked on the sound's own page), add the best with
+     `bin/fzv sfx add <file> --category <kind> --source <url> --licence CC0`, and list it under `confirm:` so the editor hears it.
    - **`decisions:`** a few lines on the styles you chose and why. **`confirm:`** anything shown that wasn't said outright. **`overrides:`** any rule the prompt overrides. **`props_to_add:`** props the prompt asks for that aren't in the library.
 6. Run `bin/fzv plan "<folder>" --check`, then `bin/fzv build`, then `bin/fzv validate`. Fix every problem it reports (V4: every beat is
    built with the templates it was approved with; L12: no block covers another, so place the next card below the previous one's real
-   height), and act on the V3 and V5 advice.
+   height; S2: something shows before she says it; S4: nothing changes for 8+ s while she explains), and act on the V3, V5 and S3
+   (repeats with nothing reacting) advice.
 7. Preview tricky sections with `bin/fzv preview "<folder>" <clip> <t1,t2,…>` when needed.
    - **Compose mode:** zoom into the instructor's edges in a preview snapshot. If a desk, laptop or plant travels with the instructor, add
      `key: {exclude: [[x, y, w, h]], exclude_poly: [[[x, y], …]], cut_below: y}` (find coordinates with `fzv look "<folder>" raw t-t`),
      run `fzv ingest "<folder>" --rekey`, and rebuild. Keep graphics clear of the instructor's poses (validate checks the real silhouette, rule L2).
-8. **Storyboard first.** Run `bin/fzv storyboard "<folder>"` and look at `edit/out/storyboard.jpg` yourself; fix wrong visuals, overlaps
-   and empty or cluttered frames first. The grid is also saved in the video's folder as `<Title> - Storyboard.jpg`. Then
+8. **Storyboard first, after a self-review.** Wait for the Telugu transcript and fix every S6 disagreement validate lists (anchor on the
+   Telugu word when it's the right one). Run `bin/fzv storyboard "<folder>"` and `bin/fzv storyboard "<folder>" --every 5` (a frame
+   every 5 s with her words: it shows early or late items, frozen stretches, a title over a header, which per-beat frames hide).
+   Look at both yourself, frame by frame; fix wrong visuals, overlaps, crowding, empty or frozen frames and titles that don't match
+   her words, rebuild, and look again. The grids are also saved in the video's folder as `<Title> - Storyboard.jpg`. Then
    `bin/fzv review "<folder>" --open` and show the editor the storyboard directly (no preview yet). **Wait.** On approval:
    `bin/fzv approve "<folder>" storyboard --note "<their words>"`; changes go back through the build and a new storyboard.
 9. **Then the preview, before rendering** (`review.preview`): `browser` (default) → `bin/fzv studio "<folder>"` opens the **live preview**
@@ -123,6 +162,11 @@ in every video's brief. The ones that matter most:
 ## Revising after delivery
 
 Requests name a time (`7:41 …`) or a beat (`beat 7: …`); the review page's **Copy for Claude** produces both.
+
+**Change only what's asked (2026-11-05).** Do exactly what the request says, nothing on top (no tutor moves, new colours, removed
+boxes or restyles they didn't ask for). When it could mean two things ("keep it freely": remove the box, or widen it?), ask one
+short question before changing anything. A request about one video is not a house-wide change unless they say so ("always", "for
+every video"); then change the kit or the rules and say what else it affects. Log each request and its status in `edit/revisions.md`.
 1. Run `bin/fzv revise "<folder>" "<the request>"`. It prints the affected scenes and the speech around each time or beat, and logs the request in `edit/revisions.md`.
 2. Edit only those scenes in `edit.yaml`. When what a beat shows changes, update its row in `edit/beats.yaml` too and add the editor's words to
    `feedback`. With the beat-sheet gate on (`Review: beats, storyboard`), their request approves the rows it touches:

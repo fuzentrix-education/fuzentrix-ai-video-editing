@@ -108,22 +108,23 @@ def scope_ids(svg: str, prefix: str) -> str:
 
 
 def add_prop(svg: str, prop_id: str, kind: str, tags: str, source: str, licence: str, style: str = "flat", recolour: bool = True,
-             log=print) -> dict:
-    """Clean, recolour and register one prop SVG in global/props (manifest + svg/)."""
+             log=print, extra: dict | None = None, natural: bool = False) -> dict:
+    """Clean, recolour and register one prop SVG in global/props (manifest + svg/). `natural`: a picture keeps its own colours
+    (user, 2026-11-05: "images and other properties should have natural colors"; only text and UI use the kit's blue)."""
     man_f = GLOBAL / "props" / "manifest.yaml"
     man = yaml.safe_load(man_f.read_text(encoding="utf-8")) or {}
     if any(x["id"] == prop_id for x in man.get("assets") or []):
         raise ValueError(f"'{prop_id}' already exists")
-    if source != "in-house":
+    if source not in ("in-house", "generated"):
         if p := licence_problem(licence):
             raise ValueError(p)
         if w := attribution_warning(licence):
             log(f"warning: {w}")
     svg = scope_ids(clean_svg(svg), prop_id)
-    if recolour:
+    if recolour and not natural:
         svg, mapping = recolor(svg)
     bad = sorted({c.upper() for c in re.findall(r'(?:fill|stroke|stop-color)\s*[=:]\s*"?(#[0-9A-Fa-f]{3,6})', svg)} - ALLOWED)
-    if bad or ("var(--fz-" not in svg and not recolour):
+    if not natural and (bad or ("var(--fz-" not in svg and not recolour)):
         raise ValueError(f"colour the SVG with brand variables (var(--fz-text), var(--fz-accent)…) or recolour it; fixed colours: {bad}")
     vb = re.search(r'viewBox="([^"]+)"', svg)
     if not vb:
@@ -131,7 +132,7 @@ def add_prop(svg: str, prop_id: str, kind: str, tags: str, source: str, licence:
     w, h = (float(x) for x in vb.group(1).split()[2:])
     k = 200 / max(w, h) if max(w, h) < 120 else 1.0          # icon-grid SVGs (24/32 px) scale up to the library's prop size
     entry = {"id": prop_id, "kind": kind, "style": style, "tags": tags, "size": [round(w * k), round(h * k)], "anchor": "bottom-center",
-             "source": source, "licence": licence}
+             **(extra or {}), **({"palette": "natural"} if natural else {}), "source": source, "licence": licence}
     (GLOBAL / "props" / "svg" / f"{prop_id}.svg").write_text(svg, encoding="utf-8")
     with open(man_f, "a", encoding="utf-8") as f:
         f.write("  - " + yaml.safe_dump(entry, default_flow_style=True, sort_keys=False, width=400, allow_unicode=True).strip() + "\n")
@@ -149,7 +150,7 @@ def licence_problem(lic: str) -> str | None:
 
 
 def attribution_warning(lic: str) -> str | None:
-    if re.search(r"cc[ -]?by(?![ -]?0)|attribution|\bby-sa\b", lic.lower()):
+    if re.search(r"cc[ -]?by(?![ -]?0)|(?<!no )attribution(?! required)|\bby-sa\b", lic.lower()) and not re.search(r"no (attribution|credit)", lic.lower()):
         return "this licence needs a credit; Fuzentrix videos have no credits roll, so prefer CC0/MIT/ISC/Apache or a paid licence"
     return None
 
@@ -170,11 +171,13 @@ def add_icon(src: Path, icon_id: str, source: str, licence: str) -> str:
     return sym
 
 
-SFX_CATEGORIES = ["whoosh", "swish", "pop", "blip", "tick", "click", "ding", "good", "bad", "thud", "impact", "chime", "type"]
+SFX_CATEGORIES = ["whoosh", "swish", "pop", "blip", "tick", "click", "ding", "good", "bad", "thud", "impact", "chime", "type",
+                  "decision", "ticks", "stop", "page", "boing"]           # since 2026-11-04: the editors' sound names (house set)
 SFX_GUESS = [("whoosh", "whoosh swoosh woosh transition swipe sweep"), ("swish", "swish slide"), ("pop", "pop bubble appear"), ("blip", "blip beep ui"),
              ("tick", "tick tock"), ("click", "click tap press mouse button"), ("ding", "ding bell notification"), ("good", "success correct right positive"),
              ("bad", "error wrong fail negative buzz"), ("thud", "thud drop hit"), ("impact", "impact boom hit-big riser reveal"), ("chime", "chime sparkle magic"),
-             ("type", "type typing keyboard key")]
+             ("type", "type typing keyboard key"), ("decision", "decision choose select"), ("ticks", "ticks repeat counting"),
+             ("stop", "stop halt end"), ("page", "page flip paper turn"), ("boing", "boing spring cartoon")]
 
 
 def guess_sfx_category(name: str) -> str | None:
@@ -185,8 +188,10 @@ def guess_sfx_category(name: str) -> str | None:
     return None
 
 
-def add_sfx(src: Path, category: str | None, source: str, licence: str, gain_db: float = 0.0) -> list[dict]:
-    """Copy one sound or a folder of sounds into global/sfx/<category>/ and list them in the manifest."""
+def add_sfx(src: Path, category: str | None, source: str, licence: str, gain_db: float = 0.0, role: str | None = None,
+            name: str | None = None) -> list[dict]:
+    """Copy one sound or a folder of sounds into global/sfx/<category>/ and list them in the manifest. `role`: primary (the house
+    sound the editors picked for this kind: most cues use it) or alt (its variety partner); without a role, files just rotate."""
     man_f = GLOBAL / "sfx" / "manifest.yaml"
     text = man_f.read_text(encoding="utf-8") if man_f.exists() else "# The team's SFX library (rule A5). fzv uses these before its synthesised sounds.\n"
     data = yaml.safe_load(text) or {}
@@ -197,12 +202,15 @@ def add_sfx(src: Path, category: str | None, source: str, licence: str, gain_db:
         cat = category or guess_sfx_category(f.stem)
         if cat not in SFX_CATEGORIES:
             continue
-        dst = GLOBAL / "sfx" / cat / f.name
+        fname = (name + f.suffix) if name and len(files) == 1 else f.name
+        dst = GLOBAL / "sfx" / cat / fname
         dst.parent.mkdir(parents=True, exist_ok=True)
-        if any(s["file"] == f"{cat}/{f.name}" for s in sounds):
+        if any(s["file"] == f"{cat}/{fname}" for s in sounds):
             continue
         shutil.copy2(f, dst)
-        e = {"id": f"{cat}-{f.stem}".lower().replace(" ", "-"), "category": cat, "file": f"{cat}/{f.name}", "gain_db": gain_db, "source": source, "licence": licence}
+        e = {"id": f"{cat}-{Path(fname).stem}".lower().replace(" ", "-"), "category": cat, "file": f"{cat}/{fname}", "gain_db": gain_db, "source": source, "licence": licence}
+        if role:
+            e["role"] = role
         sounds.append(e)
         added.append(e)
     header = "".join(l + "\n" for l in text.splitlines() if l.startswith("#"))

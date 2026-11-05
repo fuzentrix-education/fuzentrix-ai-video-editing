@@ -23,7 +23,8 @@ def test_one_brand_kit_makes_css():
         assert v[k]
     css = config.brand_css(b)
     assert "@font-face" in css and "--fz-text:" in css
-    assert 'font-family: "Inter"; src: url("fonts/manrope-' in css     # registry items asking for Inter get the kit's body font
+    assert 'font-family: "Inter"; src: url("fonts/inter-' in css       # the body font since 2026-11-05 (cards, labels, values)
+    assert 'font-family: "Manrope"; src: url("fonts/inter-' in css     # older edits asking for Manrope get it too
     for fam in ("bricolage-grotesque", "manrope", "jetbrains-mono"):
         assert list((config.BRANDS / "fonts").glob(f"{fam}-latin-*-normal.woff2"))
 
@@ -284,9 +285,10 @@ def test_thin_cues_spacing_and_cap():
     assert all(k not in ("pop", "swish") for k, _ in thin_cues(cues, {"minor": False}))
 
 
-def test_synth_sfx_varies_repeated_cues(tmp_path):
+def test_synth_sfx_varies_repeated_cues(tmp_path, monkeypatch):
     import wave
     from fzv import audio
+    monkeypatch.setattr(audio, "GLOBAL", tmp_path / "no-library")        # synthesised fallback only
     out = audio.synth_sfx([["pop", 0.5], ["pop", 1.5]], 2.5, tmp_path / "s.wav", cfg={"fallback": "synth"})
     with wave.open(str(out)) as w:
         x = np.frombuffer(w.readframes(w.getnframes()), np.int16).reshape(-1, 2)[:, 0].astype(float)
@@ -661,3 +663,146 @@ def test_listening_check_notes():
         assert want in text, want
     assert listen.notes_from({"effects": 3, "buried": [], "too_loud": [], "voice_to_noise_db": 34, "music_under_voice_db": 20,
                               "clipping": {"runs": 0, "times": []}, "true_peak_dbtp": -1.0}) == []
+
+
+def test_anchor_numbers_match_exactly(tmp_path):
+    """Rule S2: "8" lands on her "8", never on "80" or "18"; a number Whisper split ("20, 26") still matches 2026."""
+    tx = Transcript(write_tx(tmp_path, [("15,", 1.0), ("80,", 2.0), ("18", 3.0), ("8.", 4.0), ("20,", 5.0), ("26", 5.6), ("range", 7.0), ("1", 7.3),
+                                        ("to", 7.5), ("100", 7.8), ("range", 9.0), ("1", 9.3), ("to", 9.5), ("10", 9.8)]))
+    assert tx.find("8") == 4.0
+    assert tx.find("15") == 1.0
+    assert tx.find("2026") == 5.0
+    assert tx.find("range 1 to 10") == 9.0
+    assert tx.mentions("2026", 0, 10) == [5.0]
+    assert tx.mentions("8", 0, 10) == [4.0]
+
+
+def test_anchor_short_phrases_match_every_word(tmp_path):
+    """Tuples 2026-11-05: "value2" landed on "value1" and "the name is" on "the data is" (Run fired 4 s before print was typed)."""
+    tx = Transcript(write_tx(tmp_path, [("value1,", 1.0), ("value2,", 2.5), ("value3.", 4.0), ("the", 6.0), ("data", 6.2), ("is", 6.4),
+                                        ("3", 6.8), ("values.", 7.0), ("So,", 10.0), ("the", 10.3), ("name", 10.4), ("is", 10.5), ("15", 10.8)]))
+    assert tx.find("value2") == 2.5
+    assert tx.find("value3") == 4.0
+    assert tx.find("the name is") == 10.3
+    assert tx.find("3 values") == 6.8
+
+
+def test_sync_strict_late_negative_and_refined_times(tmp_path):
+    """The kit's audit (2026-11-05): 0.15 s early / 0.3 s late, timed to the frame; "-1" is said "minus 1"; `@te:` times are trusted."""
+    from fzv import sync as S
+    words = [("the", 1.0), ("value", 1.2), ("15", 2.0), ("is", 2.4), ("here", 2.8), ("minus", 6.0), ("1", 6.6), ("and", 7.0), ("8", 10.05),
+             ("year", 12.0)]
+    tx = Transcript(write_tx(tmp_path, words))
+    spec = {"sections": [{"id": "s", "range": [0.0, 20.0], "scenes": []}], "_anchoring": {"te_times": [12.6]}}
+    store = {}
+    for t, items in [(3.0, [{"id": "a", "tpl": "tiles", "role": "part", "txt": "15"}]), (6.5, [{"id": "b", "tpl": "tiles", "role": "part", "txt": "-1"}]),
+                     (10.5, [{"id": "c", "tpl": "tiles", "role": "part", "txt": "8"}]), (12.6, [{"id": "d", "tpl": "chips", "role": "part", "txt": "year"}])]:
+        S.collect(store, "c1", "plate", t, items)
+    S.refine(store, "c1", 0.0, {"a": {"@": 2.9, "15": 2.9}, "b": {"@": 6.02, "1": 6.02}, "c": {"@": 10.02, "8": 10.02}})
+    probs, _, summ = S.check(store, spec, tx, [], [], {})
+    sync = [p for p in probs if p["rule"] in ("S2", "S5")]
+    assert [p["rule"] for p in sync] == ["S5"] and "0.9s after" in sync[0]["msg"]         # "15" 0.9 s late; "-1" on "minus"; "8" on time
+    assert summ["late"] == 1 and summ["early"] == 0                                       # "year" at 12.6 is on a Telugu word: trusted
+
+
+def test_two_transcripts_disagreement_report(tmp_path):
+    """S6 (advice): where the Telugu-mode transcript hears an anchored word >0.5 s away from the English one (Tuples: "Student is
+    equal" 3 s early); a word she says twice is not a drift; `@te:` anchors are already on her Telugu word."""
+    from fzv import sync as S
+    en = [("student", 246.2), ("is", 246.7), ("equal", 247.1), ("first", 321.8), ("index", 322.6), ("first", 323.3), ("fixed", 72.0)]
+    te = [("Student", 249.1), ("is", 249.6), ("equal", 249.9), ("1st", 321.9), ("ఫర్స్", 323.3), ("పిక్సుడు", 72.7)]
+    f = tmp_path / "transcript.jsonl"
+    f.write_text(json.dumps({"start": 0, "end": 400, "text": "", "words": [{"w": w, "s": t} for w, t in en]}) + "\n")
+    (tmp_path / "transcript_te.jsonl").write_text(json.dumps({"start": 0, "end": 400, "text": "", "words": [{"w": w, "s": t} for w, t in te]}) + "\n")
+    tx = Transcript(f)
+    assert S.roman("పిక్సుడు") == "piksudu"
+    adv = S.disagreements([("@Student is equal", 246.2), ("@first index", 321.8), ("@fixed values", 72.0), ("@te:పిక్సుడు", 72.7)], tx)
+    msgs = " ".join(x["msg"] for x in adv)
+    assert len(adv) == 2 and "249.1" in msgs and "72.7" in msgs and "first" not in msgs
+
+
+def test_sync_checks_early_holds_repeats(tmp_path):
+    """S2: a tile shown 10 s before its word is flagged; S4: 12 s of talk with nothing changing; S3: a repeat with no reaction."""
+    from fzv import sync as S
+    words = [("intro", 0.5)] + [(f"w{k}", 1.0 + k * 0.5) for k in range(28)] + [("2026", 15.0), ("then", 15.5), ("2026", 18.0)]
+    words += [(f"x{k}", 19.0 + k * 0.5) for k in range(26)]
+    tx = Transcript(write_tx(tmp_path, words))
+    spec = {"sections": [{"id": "s", "range": [0.0, 34.0], "scenes": [
+        {"tiles": {"id": "v", "values": [2026], "at": 5.0, "until": 34.0, "states": [{"i": 0, "state": "dim", "at": 5.0}]}}]}]}
+    store = {}
+    for t in [5.0 + 0.5 * k for k in range(58)]:
+        S.collect(store, "c1", "plate", t, [{"id": "fz1", "tpl": "tiles", "role": "part", "txt": "2026"}])
+    probs, adv, summ = S.check(store, spec, tx, [], [], {})
+    rules = [p["rule"] for p in probs]
+    assert any(p["rule"] == "S2" and "10.0s before" in p["msg"] for p in probs)   # shown at 5.0, said at 15.0
+    assert any(p["rule"] == "S2" and "faded" in p["msg"] for p in probs)
+    assert "S4" in rules and summ["holds"] >= 1
+    assert any(a["rule"] == "S3" and a["t"] == 18.0 for a in adv)                  # she says 2026 again at 18.0, nothing reacts
+    # on her word, in focus when she repeats it: no S2, no S3
+    spec2 = {"sections": [{"id": "s", "range": [0.0, 34.0], "scenes": [
+        {"tiles": {"id": "v", "values": [2026], "at": 15.0, "until": 34.0, "states": [{"i": 0, "state": "focus", "at": 18.0}]}}]}]}
+    store2 = {}
+    for t in [15.0 + 0.5 * k for k in range(38)]:
+        S.collect(store2, "c1", "plate", t, [{"id": "fz1", "tpl": "tiles", "role": "part", "txt": "2026"}])
+    probs2, adv2, _ = S.check(store2, spec2, tx, [], [], {})
+    assert not [p for p in probs2 if p["rule"] == "S2"]
+    assert not [a for a in adv2 if a["rule"] == "S3"]
+
+
+def test_house_sound_primary_and_alt(tmp_path, monkeypatch):
+    """The editors' pick (role primary) plays for most cues of its kind; its alt partner every third; other files never."""
+    import subprocess, wave
+    from fzv import audio
+    g = tmp_path / "global"
+    (g / "sfx" / "pop").mkdir(parents=True)
+    for name, f in (("house", 400), ("alt", 1600), ("other", 3000)):
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", f"sine=f={f}:d=0.2", str(g / "sfx" / "pop" / f"{name}.wav")], check=True)
+    (g / "sfx" / "manifest.yaml").write_text("sounds:\n- {id: p-other, category: pop, file: pop/other.wav}\n"
+                                             "- {id: p-house, category: pop, file: pop/house.wav, role: primary}\n"
+                                             "- {id: p-alt, category: pop, file: pop/alt.wav, role: alt}\n")
+    monkeypatch.setattr(audio, "GLOBAL", g)
+    audio._decoded.clear()
+    out = audio.synth_sfx([["pop", t] for t in (0.5, 1.5, 2.5, 3.5)], 4.5, tmp_path / "s.wav", cfg={})
+    with wave.open(str(out)) as w:
+        x = np.frombuffer(w.readframes(w.getnframes()), np.int16).reshape(-1, 2)[:, 0].astype(float)
+    def freq(t):
+        seg = x[int(t * 48000):int((t + 0.15) * 48000)]
+        return np.argmax(np.abs(np.fft.rfft(seg))) * 48000 / len(seg)
+    got = [round(freq(t), -2) for t in (0.5, 1.5, 2.5, 3.5)]
+    assert got == [400, 400, 1600, 400]
+    audio._decoded.clear()
+
+
+def test_illustrations_library_search_and_sanitize():
+    """Rule P1: the library answers first; web SVGs lose scripts, handlers and external images; no-credit licences don't warn."""
+    from fzv import illustrations as I
+    from fzv.assets import attribution_warning
+    hits = I.local("calendar date")
+    assert hits and hits[0]["kind"] == "illustration" and "calendar" in hits[0]["id"]
+    dirty = '<svg viewBox="0 0 10 10" onload="x()"><script>alert(1)</script><image href="https://evil/x.png"/><rect width="5" height="5" onclick="y()"/></svg>'
+    clean = I.sanitize(dirty)
+    assert "<script" not in clean and "onload" not in clean and "onclick" not in clean and "evil" not in clean and "<rect" in clean
+    assert attribution_warning("CC0 1.0 (Lukasz Adam; no attribution required)") is None
+    assert attribution_warning("Free for commercial use, no credit (Open Doodles)") is None
+    assert attribution_warning("CC BY 4.0") is not None
+
+
+def test_picture_template_and_house_sounds_registered():
+    from fzv.plan import catalogue
+    from fzv.audio import KINDS, UNDER
+    cat = catalogue()
+    assert "picture" in cat and "caption" in cat["picture"]["params"] and "sound" in cat
+    assert "calendar" in cat and "select" in cat["calendar"]["params"]                  # Rani's calendar (2026-11-05)
+    for k in ("decision", "ticks", "stop", "page", "boing"):
+        assert k in KINDS and k in UNDER
+
+
+def test_library_pictures_keep_natural_colours():
+    """User 2026-11-05: "images and other properties should have natural colors": pictures are no longer recoloured to the kit blue."""
+    import yaml
+    from fzv.assets import GLOBAL
+    man = yaml.safe_load((GLOBAL / "props" / "manifest.yaml").read_text())["assets"]
+    ill = [a for a in man if a["kind"] == "illustration"]
+    assert ill and all(a.get("palette") == "natural" for a in ill)
+    box = (GLOBAL / "props" / "svg" / "il-box-sealed-check.svg").read_text()
+    assert "var(--fz-" not in box and "#" in box                                           # its own orange box and green tick

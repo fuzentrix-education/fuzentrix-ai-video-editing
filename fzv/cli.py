@@ -8,7 +8,7 @@
   fzv build    <folder>                   resolve anchors, compile clips (edit/built/)
   fzv preview  <folder> <clip> <t,t,...>  contact sheet of a clip over the real footage
   fzv validate <folder>                   rule checks before rendering
-  fzv storyboard <folder> [--all]         one frame per beat over the real footage, before rendering (only changed frames redone)
+  fzv storyboard <folder> [--all|--every 5]  one frame per beat over the real footage (or one every 5 s), before rendering
   fzv mix      <folder> off|on|<track> [--level low|normal|high]   background music for this video; re-mixes only
   fzv studio   <folder> [--stop]          the live preview: the whole edit in HyperFrames Studio (no rendering)
   fzv draft    <folder>                   the preview video: the whole edit at a low frame rate with the real sound, before the final render
@@ -26,11 +26,15 @@
   fzv registry search <words> | add <name…> | list   HyperFrames registry animations (mount with the `hf` template)
   fzv brands                              show the brand kit
   fzv look     <folder> raw|rec1 t0-t1    tile frames over a raw-cut time range (--fps, --box x,y,w,h)
+  fzv words    <folder> [t0-t1]           the instructor's words with their times, to anchor scenes on (rules S2-S4)
+  fzv illus search <words> [--online] [--sheet] | add <url|svg> --id ID --title T --tags "…" --source URL --licence L | list
+                                          illustrations for picture moments (rule P1): the library, then free sources on the web
 """
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -126,6 +130,9 @@ def cmd_ingest(a) -> int:
     if not a.no_transcribe and not transcript_complete(proj):
         wait_transcript(proj, log)
         log(f"ingest: transcript {'done' if transcript_complete(proj) else 'FAILED (see edit/transcribe.log)'}")
+    if not a.no_transcribe and settings["transcription"].get("telugu", True) and transcript_complete(proj) and telugu_status(proj) == "missing":
+        start_transcription(proj, te=True)          # her Telugu words, for `@te:` anchors: runs on in the background (plan doesn't wait)
+        log("ingest: Telugu transcript started in the background (about 2.5x the video's length; `fzv words <folder> --te` when done)")
     try:
         from .review import footage
         footage(proj, log=log)
@@ -138,9 +145,38 @@ def cmd_ingest(a) -> int:
 def cmd__transcribe(a) -> int:
     proj = Project(a.folder)
     from .transcribe import transcribe
-    transcribe(proj.edit / "audio" / "a16.wav", proj.p("transcript.jsonl"), proj.settings()["transcription"], log=log)
-    proj.p("transcript.done").write_text(time.strftime("%Y-%m-%d %H:%M:%S\n"))
+    cfg = dict(proj.settings()["transcription"])
+    if getattr(a, "te", False):                   # the Telugu-mode pass: her Telugu words where the English one mishears them (`@te:`)
+        cfg.update(language="te", chunk_min_s=cfg.get("te_chunk_min_s", 4), chunk_max_s=cfg.get("te_chunk_max_s", 10))
+    transcribe(proj.edit / "audio" / "a16.wav", proj.p(TX[bool(getattr(a, "te", False))][0]), cfg, log=log)
+    proj.p(TX[bool(getattr(a, "te", False))][1]).write_text(time.strftime("%Y-%m-%d %H:%M:%S\n"))
     return 0
+
+
+# (transcript, done marker, log, pid) for the English-mode pass and the Telugu-mode one
+TX = {False: ("transcript.jsonl", "transcript.done", "transcribe.log", "transcribe.pid"),
+      True: ("transcript_te.jsonl", "transcript_te.done", "transcribe_te.log", "transcribe_te.pid")}
+
+
+def keep_awake(cmd: list[str] | None = None) -> list[str]:
+    """macOS: keep the Mac from idle-sleeping while long work runs (the box keying took 11.6 h on 2026-11-04 because it slept).
+    With `cmd`, return it wrapped in `caffeinate -i`; without, hold this process awake until it exits."""
+    import shutil
+    if sys.platform != "darwin" or not shutil.which("caffeinate"):
+        return cmd or []
+    if cmd:
+        return ["caffeinate", "-i", *cmd]
+    subprocess.Popen(["caffeinate", "-i", "-w", str(os.getpid())], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return []
+
+
+def telugu_status(proj: Project) -> str:
+    """'done', 'running', 'off' or 'missing' for the Telugu-mode transcript."""
+    if proj.p(TX[True][1]).exists():
+        return "done"
+    if transcription_running(proj, te=True):
+        return "running"
+    return "off" if not proj.settings()["transcription"].get("telugu", True) else "missing"
 
 
 def transcript_complete(proj: Project) -> bool:
@@ -149,9 +185,8 @@ def transcript_complete(proj: Project) -> bool:
     return tx.exists() and (proj.p("transcript.done").exists() or not proj.p("transcribe.log").exists())
 
 
-def transcription_running(proj: Project) -> bool:
-    import os
-    f = proj.p("transcribe.pid")
+def transcription_running(proj: Project, te: bool = False) -> bool:
+    f = proj.p(TX[te][3])
     try:
         os.kill(int(f.read_text()), 0)
         return True
@@ -159,11 +194,12 @@ def transcription_running(proj: Project) -> bool:
         return False
 
 
-def start_transcription(proj: Project) -> subprocess.Popen:
-    proj.p("transcript.done").unlink(missing_ok=True)
-    p = subprocess.Popen([sys.executable, "-m", "fzv", "_transcribe", str(proj.folder)], cwd=REPO,
-                         stdout=open(proj.p("transcribe.log"), "w"), stderr=subprocess.STDOUT)
-    proj.p("transcribe.pid").write_text(str(p.pid))
+def start_transcription(proj: Project, te: bool = False) -> subprocess.Popen:
+    _, done, logf, pid = TX[te]
+    proj.p(done).unlink(missing_ok=True)
+    p = subprocess.Popen(keep_awake([sys.executable, "-m", "fzv", "_transcribe", str(proj.folder), *(["--te"] if te else [])]), cwd=REPO,
+                         stdout=open(proj.p(logf), "a" if te else "w"), stderr=subprocess.STDOUT, start_new_session=te)
+    proj.p(pid).write_text(str(p.pid))
     return p
 
 
@@ -372,7 +408,12 @@ def cmd_storyboard(a) -> int:
         log("storyboard: needs a beat sheet (edit/beats.yaml)"); return 1
     if not (proj.edit / "built" / "clips.json").exists():
         log("storyboard: build the edit first (`fzv build`)"); return 1
-    storyboard(proj, workers=max(1, min(3, probe(proj.settings())["render_workers"])), redo_all=a.all, log=log)
+    workers = max(1, min(3, probe(proj.settings())["render_workers"]))
+    if a.every:                                            # a frame every N seconds: how each screen builds up on her words
+        from .review import storyboard_every
+        storyboard_every(proj, a.every, workers=workers, log=log)
+        return 0
+    storyboard(proj, workers=workers, redo_all=a.all, log=log)
     log(f"review page: {page(proj, log=log)}")
     return 0
 
@@ -824,7 +865,7 @@ def cmd_sfx(a) -> int:
         log(f"sfx add: {p}"); return 1
     if w := attribution_warning(a.licence):
         log(f"sfx add: warning: {w}")
-    added = add_sfx(Path(a.path), a.category, a.source, a.licence, a.gain)
+    added = add_sfx(Path(a.path), a.category, a.source, a.licence, a.gain, role=a.role, name=a.name)
     log(f"sfx add: {len(added)} sound(s) added" + ("" if added else " (no recognised category: pass --category)"))
     for e in added[:20]:
         log(f"  {e['category']:8s} {e['file']}")
@@ -879,6 +920,60 @@ def cmd_doctor(a) -> int:
     return 0
 
 
+def cmd_words(a) -> int:
+    """Her words with their start times, one transcript chunk per line: what `@anchors` match (numbers exactly)."""
+    import json as _json
+    proj = Project(a.folder)
+    f = proj.p("transcript_te.jsonl" if a.te else "transcript.jsonl")
+    if not f.exists():
+        log("words: no Telugu transcript yet (it is made in the background at ingest)" if a.te else "words: no transcript yet (fzv ingest)"); return 1
+    if a.te and telugu_status(proj) == "running":
+        log("words: the Telugu transcript is still being made; this is the part done so far")
+    t0, t1 = (float(x) for x in a.range.split("-")) if a.range else (0.0, 1e9)
+    for line in f.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        r = _json.loads(line)
+        ws = [w for w in r.get("words", []) if t0 <= float(w["s"]) < t1]
+        if ws:
+            print(f"[{r['start']:7.1f}] " + " ".join(f"{w['w']}@{float(w['s']):.1f}" for w in ws))
+    return 0
+
+
+def cmd_illus(a) -> int:
+    """Picture moments (rule P1): search the library, then free sources on the web; import the chosen one."""
+    from . import illustrations as I
+    if a.action == "list":
+        for x in I.library():
+            if x.get("kind") == "illustration":
+                log(f"{x['id']:30s} {x.get('set', ''):18s} {x.get('title', '')}")
+        return 0
+    if a.action == "search":
+        words = " ".join(a.args)
+        loc = I.local(words)
+        log(f"illus: library ({len(loc)}):")
+        for x in loc[:15]:
+            log(f"  {x['id']:30s} {x['kind']:12s} {x.get('title') or x.get('tags', '')}")
+        cands = I.online(words, log=log) if a.online else []
+        if a.online:
+            log(f"illus: web ({len(cands)}), free licences only:")
+            for i, c in enumerate(cands, 1):
+                log(f"  {i:2d}. {c['title'][:44]:44s} {c['source']:22s} {c['url']}")
+        if a.sheet:
+            rows = cands or [dict(x, file=str(GLOBAL / "props" / "svg" / f"{x['id']}.svg")) for x in loc[:18]]
+            out = I.sheet(rows, REPO / ".cache" / "illustrations" / ("sheet-" + re.sub(r"[^a-z0-9]+", "-", words.lower())[:40]))
+            log(f"illus: contact sheet {out} (numbers match the list)")
+        return 0
+    if not a.args or not a.id or not a.source or not a.licence:
+        log("illus add: give the SVG (url or file), --id, --source and --licence (and --title, --tags)"); return 1
+    try:
+        e = I.add(a.args[0], a.id, a.title or a.id, a.tags or "", a.source, a.licence, a.set or "", log=log)
+    except (ValueError, OSError) as err:
+        log(f"illus add: {err}"); return 1
+    log(f"illus add: {e['id']} added ({e.get('set', '')}, size {e['size']}); use it with `- picture: {{asset: {e['id']}, …}}`")
+    return 0
+
+
 def cmd_look(a) -> int:
     """Tile frames of the raw cut or a recording over a raw-cut time range, labelled with raw-cut times."""
     from PIL import Image, ImageDraw
@@ -926,11 +1021,12 @@ def main(argv=None):
     add("doctor", cmd_doctor, folder=False)
     p = add("ingest", cmd_ingest); p.add_argument("--raw"); p.add_argument("--no-transcribe", action="store_true"); p.add_argument("--force", action="store_true")
     p.add_argument("--rekey", action="store_true", help="compose mode: key the instructor again (e.g. after changing `key:` options)")
-    add("_transcribe", cmd__transcribe)
+    p = add("_transcribe", cmd__transcribe); p.add_argument("--te", action="store_true")
     p = add("plan", cmd_plan); p.add_argument("--check", action="store_true")
     p = add("beats", cmd_beats); p.add_argument("--redraft", action="store_true", help="start a new draft (the old sheet goes to edit/_prev/)")
     p = add("approve", cmd_approve); p.add_argument("what", choices=["beats", "storyboard", "preview"]); p.add_argument("--note", help="the editor's words")
     p = add("storyboard", cmd_storyboard); p.add_argument("--all", action="store_true", help="redo every frame")
+    p.add_argument("--every", type=float, help="also: a frame every N seconds (e.g. 5) across the whole edit, captioned with what she says")
     p = add("mix", cmd_mix, help="music on/off, track and level; re-mixes the final (or the preview) without rendering graphics again")
     p.add_argument("music", help="off | on | <track id>"); p.add_argument("--level", choices=["low", "normal", "high"])
     p = add("studio", cmd_studio, help="the live preview: the whole edit in HyperFrames Studio, no rendering (--stop to close it)")
@@ -955,8 +1051,10 @@ def main(argv=None):
     p.add_argument("--source", required=True); p.add_argument("--licence", required=True)
     p = add("sfx", cmd_sfx, folder=False); p.add_argument("action", choices=["list", "add", "audition", "remove"]); p.add_argument("path", nargs="?")
     p.add_argument("more", nargs="*", help="remove: more files or category:number from the audition list")
-    p.add_argument("--category", help="whoosh, swish, pop, blip, tick, click, ding, good, bad, thud, impact, chime, type (guessed from file names if omitted)")
+    p.add_argument("--category", help="whoosh, swish, pop, blip, tick, click, ding, good, bad, thud, impact, chime, type, decision, ticks, stop, page, boing (guessed from file names if omitted)")
     p.add_argument("--source"); p.add_argument("--licence", default=""); p.add_argument("--gain", type=float, default=0.0)
+    p.add_argument("--role", choices=["primary", "alt"], help="primary: the house sound for its kind (most cues); alt: its variety partner")
+    p.add_argument("--name", help="file name in the library (one file only)")
     p = add("registry", cmd_registry, folder=False, help="HyperFrames registry items: search, add, list")
     p.add_argument("action", choices=["search", "add", "list"]); p.add_argument("names", nargs="*")
     p = add("music", cmd_music, folder=False); p.add_argument("action", choices=["list", "add"]); p.add_argument("file", nargs="?")
@@ -965,5 +1063,14 @@ def main(argv=None):
     p = add("look", cmd_look, help="tile frames of the raw cut or a recording over a raw-cut time range")
     p.add_argument("source", help="raw | rec1 | rec2 ..."); p.add_argument("range", help="t0-t1 in raw-cut seconds")
     p.add_argument("--fps", type=float, default=1.0); p.add_argument("--box", help="x,y,w,h crop in source pixels"); p.add_argument("--cols", type=int, default=4)
+    p = add("illus", cmd_illus, folder=False, help="illustrations for picture moments: library, web search (free licences), import")
+    p.add_argument("action", choices=["search", "add", "list"]); p.add_argument("args", nargs="*", help="search: words · add: url or file")
+    p.add_argument("--online", action="store_true", help="search the free sources on the web too"); p.add_argument("--sheet", action="store_true", help="contact sheet of the results")
+    p.add_argument("--id"); p.add_argument("--title"); p.add_argument("--tags"); p.add_argument("--source"); p.add_argument("--licence"); p.add_argument("--set")
+    p = add("words", cmd_words, help="the instructor's words with their times (what @anchors match)")
+    p.add_argument("range", nargs="?", help="t0-t1 in raw-cut seconds (default: all)")
+    p.add_argument("--te", action="store_true", help="the Telugu-mode transcript: what she says in Telugu, for @te: anchors")
     a = ap.parse_args(argv)
+    if a.cmd in ("ingest", "edit", "render", "finish", "draft", "storyboard", "validate", "_transcribe"):
+        keep_awake()                                # long work: the Mac stays awake until the command ends
     sys.exit(a.fn(a) or 0)

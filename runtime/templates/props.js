@@ -11,7 +11,7 @@
   const enter = (a, e, kind, g) => {
     if (kind === "slide") a.inn(e, g, { x: -80 }, 0.6);
     else if (kind === "fade") a.inn(e, g, {}, 0.5, "power1.out");
-    else a.inn(e, g, { scale: 0.6, y: 20 }, 0.55, "back.out(1.8)");
+    else a.inn(e, g, { scale: 0.6, y: 20 }, 0.55, a.M.pop[1]);
   };
   const idle = (a, e, kind, g, until) => {
     if (kind !== "bob" || until == null) return;
@@ -38,12 +38,30 @@
     a.refs[p.id || p.asset] = { kind: "prop", el: e };
   });
 
+  R({ name: "picture", family: "props", layers: ["plate", "studio"],
+      doc: "A picture moment (rule P1): an illustration from the library (kind illustration, or any prop/character) on the word that names the analogy or example, with an optional caption bubble under it, like the manual edit's water-bottle and calendar pictures. One at a time, only at key points.",
+      params: { asset: "library id (fzv illus search <words>)", box: "x, y, w, h of the picture", at: "on her word", until: "", enter: "pop | fade | slide (default pop)",
+                caption: "{text, at} a short line in a soft bubble under the picture (markdown, 12 words max)", react: "[{kind: shake|pulse|tick|cross, at}]", flip: "mirror" } }, (a, p) => {
+    const bx = a.box(p, "main"), U = a.until(p), e = make(a, p.asset, bx);
+    if (p.flip) e.querySelector("svg").style.transform = "scaleX(-1)";
+    enter(a, e, p.enter || "pop", p.at); a.out(e, U); a.sfx("pop", p.at);
+    (p.react || []).map((r) => react(a, e, r.kind, r.at)).filter(Boolean).forEach((m) => a.out(m, U));
+    if (p.caption) {
+      const w = Math.max(280, bx.w + 120);
+      const c = a.el(a.md(p.caption.text), "abs hide", { left: bx.x + bx.w / 2 - w / 2, top: bx.y + bx.h + 18, width: w, textAlign: "center", padding: "14px 22px",
+        borderRadius: 18, background: "var(--fz-card)", boxShadow: "0 1px 2px rgba(16,42,86,.05), 0 14px 34px rgba(16,42,86,.09)", color: "var(--fz-text)",
+        font: "600 30px/1.3 var(--fz-font-body)", boxSizing: "border-box" }, a.root, "text");   // a white card: no blue tint (2026-11-05)
+      a.show(c, p.caption.at != null ? p.caption.at : p.at + 0.3, U, { y: 12 }, 0.45);
+    }
+    a.refs[p.id || p.asset] = { kind: "prop", el: e };
+  });
+
   R({ name: "prop-move", family: "props", layers: ["plate"], doc: "Move a prop along a path (a car driving past, a ball rolling), with easing and optional speed lines.",
       params: { asset: "", box: "start x, y and size w, h", path: "[[x, y]...] later positions (absolute px)", times: "[arrival time per point]", at: "appear", until: "",
                 enter: "pop | slide | fade", flip: "", speed_lines: "true for motion streaks" } }, (a, p) => {
     const bx = a.box(p, "main"), e = make(a, p.asset, bx);
     if (p.flip) e.querySelector("svg").style.transform = "scaleX(-1)";
-    enter(a, e, p.enter || "slide", p.at); a.sfx("swish", p.at);
+    enter(a, e, p.enter || "slide", p.at); a.sfx("pop", p.at);
     let prev = p.at, px0 = bx.x, py0 = bx.y;
     (p.path || []).forEach((pt, i) => {
       const t = (p.times || [])[i]; if (t == null) return;

@@ -15,8 +15,8 @@ Dark editor card. Lines type in spoken chunks or at a steady speed; highlights, 
 | `at` |  |
 | `until` |  |
 | `box` | default: main slot (left) |
-| `fs` | font px (default 38) |
-| `type` | [{line, at, cps} | {line, parts: [[lastCharIndex, at], ...]}] |
+| `fs` | font px (default: the kit's code size, 52, fitted to the box; never below 40) |
+| `type` | [{line, at, cps} | {line, parts: [[lastCharIndex, at], ...]}] (parts: each segment on its word, 45 ms/char + 40 ms, max 0.55 s) |
 | `reveal` | [{lines: [n...], at}] show whole lines |
 | `highlights` | [{line, cols: [c0, c1], at, until, tone: ''|green|red}] |
 | `active` | [{line, at}] |

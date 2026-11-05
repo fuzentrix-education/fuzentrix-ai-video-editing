@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="79.39 171.71 63.66 65.23" version="1.1" style="">
+    
+    <title>Group 2</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <linearGradient x1="0.0255427842%" y1="50%" x2="100%" y2="50%" id="il-light-bulb-linearGradient-1">
+            <stop stop-color="#F27B40" offset="4%"/>
+            <stop stop-color="#EC697D" offset="100%"/>
+        </linearGradient>
+        <linearGradient x1="52.316197%" y1="53.6689202%" x2="45.3368438%" y2="46.8996395%" id="il-light-bulb-linearGradient-2">
+            <stop stop-color="#F27B40" offset="4%"/>
+            <stop stop-color="#EC697D" offset="100%"/>
+        </linearGradient>
+        <linearGradient x1="0%" y1="50.0338983%" x2="100%" y2="50.0338983%" id="il-light-bulb-linearGradient-3">
+            <stop stop-color="#F27B40" offset="4%"/>
+            <stop stop-color="#EC697D" offset="100%"/>
+        </linearGradient>
+        <linearGradient x1="0%" y1="50.0087796%" x2="100%" y2="50.0087796%" id="il-light-bulb-linearGradient-4">
+            <stop stop-color="#F27B40" offset="4%"/>
+            <stop stop-color="#EC697D" offset="100%"/>
+        </linearGradient>
+        <linearGradient x1="0%" y1="50%" x2="100%" y2="50%" id="il-light-bulb-linearGradient-5">
+            <stop stop-color="#F27B40" offset="4%"/>
+            <stop stop-color="#EC697D" offset="100%"/>
+        </linearGradient>
+        <linearGradient x1="0%" y1="50%" x2="100%" y2="50%" id="il-light-bulb-linearGradient-6">
+            <stop stop-color="#F27B40" offset="4%"/>
+            <stop stop-color="#EC697D" offset="100%"/>
+        </linearGradient>
+        <linearGradient x1="2.61228947e-14%" y1="50%" x2="100%" y2="50%" id="il-light-bulb-linearGradient-7">
+            <stop stop-color="#F27B40" offset="4%"/>
+            <stop stop-color="#EC697D" offset="100%"/>
+        </linearGradient>
+        <linearGradient x1="0%" y1="50%" x2="99.9488137%" y2="50%" id="il-light-bulb-linearGradient-8">
+            <stop stop-color="#F27B40" offset="4%"/>
+            <stop stop-color="#EC697D" offset="100%"/>
+        </linearGradient>
+        <linearGradient x1="0%" y1="49.9745547%" x2="100%" y2="49.9745547%" id="il-light-bulb-linearGradient-9">
+            <stop stop-color="#F27B40" offset="4%"/>
+            <stop stop-color="#EC697D" offset="100%"/>
+        </linearGradient>
+        <linearGradient x1="0%" y1="49.9807322%" x2="100.0342%" y2="49.9807322%" id="il-light-bulb-linearGradient-10">
+            <stop stop-color="#F27B40" offset="4%"/>
+            <stop stop-color="#EC697D" offset="100%"/>
+        </linearGradient>
+        <linearGradient x1="0%" y1="50%" x2="100.064683%" y2="50%" id="il-light-bulb-linearGradient-11">
+            <stop stop-color="#F27B40" offset="4%"/>
+            <stop stop-color="#EC697D" offset="100%"/>
+        </linearGradient>
+        <linearGradient x1="50%" y1="100%" x2="50%" y2="7.31011045e-14%" id="il-light-bulb-linearGradient-12">
+            <stop stop-color="#F27B40" offset="4%"/>
+            <stop stop-color="#EC697D" offset="100%"/>
+        </linearGradient>
+        <linearGradient x1="50%" y1="-7.31011045e-14%" x2="50%" y2="99.8971193%" id="il-light-bulb-linearGradient-13">
+            <stop stop-color="#F27B40" offset="4%"/>
+            <stop stop-color="#EC697D" offset="100%"/>
+        </linearGradient>
+    </defs>
+    <g id="il-light-bulb-Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="il-light-bulb-Group-2">
+            <g id="il-light-bulb-Group" transform="translate(52.000000, 37.640000)">
+                <g id="il-light-bulb-Asset-18" transform="translate(33.000000, 15.360000)">
+                    </g>
+                <g id="il-light-bulb-Asset-19" transform="translate(146.000000, 16.360000)">
+                    </g>
+                <g id="il-light-bulb-Asset-20" transform="translate(246.000000, 28.360000)">
+                    </g>
+                <g id="il-light-bulb-Asset-21" transform="translate(146.000000, 126.360000)">
+                    </g>
+                <g id="il-light-bulb-Asset-22" transform="translate(253.000000, 134.360000)">
+                    </g>
+                <g id="il-light-bulb-Asset-23" transform="translate(29.000000, 127.360000)">
+                    <path d="M53.92,30.79 L33.85,43.84 C32.6341479,44.5090886 31.107832,44.1225738 30.3569717,42.9554471 C29.6061114,41.7883204 29.8870895,40.2390995 31,39.41 L51,26.36 C51.7913433,25.8455375 52.7970371,25.7923312 53.6382463,26.2204234 C54.4794555,26.6485155 55.0283804,27.4928688 55.0782463,28.4354234 C55.1281122,29.377978 54.6713433,30.2755376 53.88,30.79 L53.92,30.79 Z" id="il-light-bulb-Path" fill="#389BF3" fill-rule="nonzero" opacity="0.8"/>
+                    <path d="M27.1,48.23 L13.68,57 C12.4566893,57.79529 10.82029,57.4483107 10.025,56.225 C9.22970996,55.0016893 9.57668928,53.36529 10.8,52.57 L24.22,43.8 C25.4433107,43.00471 27.07971,43.3516893 27.875,44.575 C28.67029,45.7983107 28.3233107,47.43471 27.1,48.23 L27.1,48.23 Z" id="il-light-bulb-Path" fill="#FF9D23" fill-rule="nonzero" opacity="0.8"/>
+                    <path d="M44.5,27.73 L24.43,40.73 C23.6386567,41.2444625 22.6329629,41.2976688 21.7917537,40.8695766 C20.9505445,40.4414845 20.4016196,39.5971312 20.3517537,38.6545766 C20.3018878,37.712022 20.7586567,36.8144624 21.55,36.3 L41.61,23.29 C42.8336418,22.5438272 44.4287976,22.9057278 45.2106376,24.1068936 C45.9924775,25.3080594 45.6776505,26.9131694 44.5,27.73 L44.5,27.73 Z" id="il-light-bulb-Path" fill="#AA7DFF" fill-rule="nonzero"/>
+                    <path d="M17.67,45.16 L4.26,53.89 C3.03635822,54.6361728 1.44120236,54.2742722 0.65936245,53.0731064 C-0.122477465,51.8719406 0.192349461,50.2668306 1.37,49.45 L14.79,40.73 C15.5813433,40.2155375 16.5870371,40.1623312 17.4282463,40.5904234 C18.2694555,41.0185155 18.8183804,41.8628688 18.8682463,42.8054234 C18.9181122,43.747978 18.4613433,44.6455376 17.67,45.16 L17.67,45.16 Z" id="il-light-bulb-Path" fill="#389BF3" fill-rule="nonzero"/>
+                    <path d="M50.55,23.79 L50.43,23.87 C49.6386567,24.3862488 48.6320099,24.4411057 47.7892537,24.0139067 C46.9464975,23.5867077 46.3956666,22.7423545 46.3442537,21.7989067 C46.2928408,20.8554589 46.7486567,19.9562488 47.54,19.44 L47.67,19.36 C48.8933107,18.56471 50.5297099,18.9116893 51.325,20.135 C52.12029,21.3583107 51.7733107,22.99471 50.55,23.79 Z" id="il-light-bulb-Path" fill="#FF9D23" fill-rule="nonzero"/>
+                    <path d="M52.9,40.65 L32.83,53.7 C31.6183738,54.322606 30.1319709,53.9211027 29.3986109,52.7731222 C28.6652508,51.6251416 28.9257595,50.1076656 30,49.27 L50,36.22 C51.2233107,35.42471 52.8597099,35.7716894 53.6549999,36.995 C54.4502899,38.2183107 54.1033107,39.8547099 52.88,40.65 L52.9,40.65 Z" id="il-light-bulb-Path" fill="#389BF3" fill-rule="nonzero" opacity="0.5"/>
+                    <path d="M26.08,58.09 L12.66,66.81 C11.4366893,67.60529 9.80029004,67.2583107 9.005,66.035 C8.20970996,64.8116893 8.55668928,63.17529 9.78,62.38 L23.2,53.66 C24.4233107,52.86471 26.0597099,53.2116894 26.8549999,54.4350001 C27.6502899,55.6583107 27.3033106,57.2947099 26.08,58.09 L26.08,58.09 Z" id="il-light-bulb-Path" fill="#AA7DFF" fill-rule="nonzero" opacity="0.5"/>
+                    <path d="M59,36.72 L58.88,36.8 C58.0886567,37.3144625 57.0829629,37.3676688 56.2417537,36.9395766 C55.4005445,36.5114845 54.8516196,35.6671312 54.8017537,34.7245766 C54.7518878,33.782022 55.2086567,32.8844624 56,32.37 L56.12,32.29 C56.9113433,31.7755375 57.9170371,31.7223312 58.7582463,32.1504234 C59.5994555,32.5785155 60.1483804,33.4228688 60.1982463,34.3654234 C60.2481122,35.307978 59.7913433,36.2055376 59,36.72 L59,36.72 Z" id="il-light-bulb-Path" fill="#FF9D23" fill-rule="nonzero" opacity="0.5"/>
+                    <path d="M6.59,36.71 C7.85,39.71 9.79,42.37 11.41,45.2 C13.03,48.03 14.41,51.2 14.22,54.43 L33.22,54.43 C33.07,51.17 34.4,48.03 36.02,45.2 C37.64,42.37 39.58,39.7 40.85,36.71 C46.1,24.27 38,8.49 23.73,8.71 C9.44,8.49 1.36,24.27 6.59,36.71 Z" id="il-light-bulb-Path" fill="#FFFFFF" fill-rule="nonzero"/>
+                    <path d="M23.94,8.56 L23.94,54.28 L33.45,54.28 C33.3,51.02 34.63,47.88 36.25,45.05 C37.87,42.22 39.82,39.55 41.08,36.56 C46.31,24.12 38.23,8.34 23.94,8.56 Z" id="il-light-bulb-Path" fill="#CEC1BC" fill-rule="nonzero"/>
+                    <path d="M6.73,37 C8,40 9.94,42.66 11.56,45.49 C12.9940325,47.8023717 13.933757,50.3866139 14.32,53.08 C14.4324117,54.0243393 15.2390667,54.73178 16.19,54.720145 L31.56,54.720145 C32.5109333,54.73178 33.3175883,54.0243393 33.43,53.08 C33.8070693,50.3843228 34.7474648,47.798235 36.19,45.49 C37.81,42.66 39.75,40 41,37 C46.23,24.56 38.15,8.78 23.86,9 C9.59,8.78 1.5,24.56 6.73,37 Z" id="il-light-bulb-Path" stroke="#732E54" stroke-width="2"/>
+                    <path d="M16.8,62.78 L30.4,62.78 L30.4,63.08 C30.4,64.8834721 29.6835735,66.6130787 28.4083261,67.8883261 C27.1330787,69.1635735 25.4034721,69.88 23.6,69.88 L23.6,69.88 C19.8444637,69.88 16.8,66.8355363 16.8,63.08 L16.8,62.78 L16.8,62.78 Z" id="il-light-bulb-Path" fill="url(#il-light-bulb-linearGradient-7)" fill-rule="nonzero"/>
+                    <path d="M17,63 L30.63,63 L30.63,63.3 C30.63,65.1034721 29.9135735,66.8330787 28.6383261,68.1083261 C27.3630787,69.3835735 25.6334721,70.1000663 23.83,70.1000663 L23.83,70.1000663 C22.0213356,70.1079795 20.2840119,69.3950771 19.0022688,68.1189639 C17.7205256,66.8428506 17,65.108682 17,63.3 L17,63 Z" id="il-light-bulb-Path" stroke="#732E54" stroke-width="2"/>
+                    <path d="M9.98,62.97 L37.34,62.97" id="il-light-bulb-Path" stroke="#732E54" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M14.84,59.07 L31.2,59.07" id="il-light-bulb-Path" stroke="#732E54" stroke-width="2" stroke-linecap="round"/>
+                    
+                    
+                    <path d="M23.94,54.28 L23.94,46.14" id="il-light-bulb-Path" stroke="#732E54" stroke-width="2" stroke-linecap="round"/>
+                    <polyline id="il-light-bulb-Path" stroke="#732E54" stroke-width="2" stroke-linecap="round" points="27.49 41.03 25.73 43.48 23.97 45.93 22.22 43.48 20.46 41.03"/>
+                    <path d="M35.58,35.61 C35.3089492,36.3572309 34.9743931,37.0798721 34.58,37.77" id="il-light-bulb-Path" stroke="#FFFFFF" stroke-linecap="round"/>
+                    <path d="M37,28.93 C36.9693153,29.7746106 36.8622113,30.6147076 36.68,31.44" id="il-light-bulb-Path" stroke="#FFFFFF" opacity="0.3" stroke-linecap="round"/>
+                    <path d="M29.85,14.76 C33.5397012,16.7680004 36.1772523,20.277439 37.08,24.38" id="il-light-bulb-Path" stroke="#FFFFFF" stroke-linecap="round"/>
+                    <path d="M14.1,15.94 C15.7678491,14.6640445 17.6972587,13.7727597 19.75,13.33 C21.5932609,12.9202495 23.4985952,12.8727011 25.36,13.19" id="il-light-bulb-Path" stroke="#FFFFFF" opacity="0.7" stroke-linecap="round"/>
+                    <path d="M11.09,20.5 C12.1554517,18.5672019 13.6463518,16.9019075 15.45,15.63" id="il-light-bulb-Path" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M14.51,38.67 C9.91373462,34.8407405 8.12527526,28.5910466 10,22.91" id="il-light-bulb-Path" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+                </g>
+                <g id="il-light-bulb-Asset-24" transform="translate(0.000000, 236.360000)">
+                    </g>
+                <g id="il-light-bulb-Asset-25" transform="translate(149.000000, 235.360000)">
+                    </g>
+                <g id="il-light-bulb-Asset-26" transform="translate(253.000000, 242.360000)">
+                    </g>
+            </g>
+        </g>
+    </g>
+</svg>

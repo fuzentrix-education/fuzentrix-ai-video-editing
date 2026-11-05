@@ -1,6 +1,9 @@
 # The team's SFX library (rule A5). fzv uses these before its synthesised sounds. Add with `fzv sfx add <file|folder> --source … --licence …`.
-# Categories: whoosh (scene change), swish, pop, blip, tick (element entrances), click (button press), ding / good / bad (results),
-# thud, impact (big reveal), chime, type (typing). Several files per category rotate deterministically.
+# House set (2026-11-04): the editors picked one CC0 look-alike per Premiere Pro sound they use (files house-*.wav, role: primary).
+# Where a kind has a primary, it plays for most cues and its `alt` (Alternative UI Tone for pop) every third; kinds without one rotate.
+# Kinds: pop (card / picture appears), blip (value, chip), click (Run, select), decision (highlight picks an option), tick (a step,
+# a focus move), ticks (counting run), stop (loop break, end), whoosh (chapter / presenter move), page (new topic), bad (error),
+# good (correct output), chime (final answer), type (typing), boing (playful "no", rare); older: swish, ding, thud, impact.
 sounds:
 - id: chime-bong_001
   category: chime
@@ -710,3 +713,108 @@ sounds:
   gain_db: 0.0
   source: https://freesound.org/people/Dalesome/sounds/352719/
   licence: 'CC0 1.0 (Freesound: Dalesome)'
+- id: pop-house-soft-pop
+  category: pop
+  file: pop/house-soft-pop.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/jcallison/sounds/258269/
+  licence: Creative Commons 0 (CC0 1.0) (jcallison, “Mouth pop”)
+  role: primary
+- id: blip-house-digital-blip
+  category: blip
+  file: blip/house-digital-blip.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/LilMati/sounds/657948/
+  licence: Creative Commons 0 (CC0 1.0) (LilMati, “Family Friendly Inspect Sound, UI, or In-Game Notification.wav”)
+  role: primary
+- id: click-house-ui-click
+  category: click
+  file: click/house-ui-click.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/aphom000/sounds/687107/
+  licence: Creative Commons 0 (CC0 1.0) (aphom000, “Mouse 2 Button Fast Click”)
+  role: primary
+- id: decision-house-decision-click
+  category: decision
+  file: decision/house-decision-click.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/Christopherderp/sounds/342200/
+  licence: Creative Commons 0 (CC0 1.0) (Christopherderp, “Videogame Menu BUTTON CLICK”)
+  role: primary
+- id: pop-house-alt-ui-tone
+  category: pop
+  file: pop/house-alt-ui-tone.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/Metrolynn/sounds/719210/
+  licence: Creative Commons 0 (CC0 1.0) (Metrolynn, “soft electronic ping”)
+  role: alt
+- id: tick-house-soft-tick
+  category: tick
+  file: tick/house-soft-tick.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/NenadSimic/sounds/268108/
+  licence: Creative Commons 0 (CC0 1.0) (NenadSimic, “Button Tick”)
+  role: primary
+- id: ticks-house-soft-ticks
+  category: ticks
+  file: ticks/house-soft-ticks.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/NenadSimic/sounds/268108/
+  licence: Creative Commons 0 (CC0 1.0) (NenadSimic, “Button Tick”)
+  role: primary
+- id: stop-house-digital-stop
+  category: stop
+  file: stop/house-digital-stop.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/paep3nguin/sounds/388047/
+  licence: Creative Commons 0 (CC0 1.0) (paep3nguin, “beep_down.wav”)
+  role: primary
+- id: whoosh-house-quick-whoosh
+  category: whoosh
+  file: whoosh/house-quick-whoosh.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/D4XX/sounds/607252/
+  licence: Creative Commons 0 (CC0 1.0) (D4XX, “Swoosh 1”)
+  role: primary
+- id: page-house-page-flip
+  category: page
+  file: page/house-page-flip.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/fellur/sounds/429724/
+  licence: Creative Commons 0 (CC0 1.0) (fellur, “book_page.wav”)
+  role: primary
+- id: bad-house-gentle-error-buzz
+  category: bad
+  file: bad/house-gentle-error-buzz.wav
+  gain_db: 0.0
+  source: https://kenney.nl/assets/interface-sounds
+  licence: Creative Commons CC0 (Kenney (kenney.nl), “error_006.ogg (Kenney Interface Sounds)”)
+  role: primary
+- id: good-house-positive-notification
+  category: good
+  file: good/house-positive-notification.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/GabFitzgerald/sounds/625174/
+  licence: Creative Commons 0 (CC0 1.0) (GabFitzgerald, “[UI Sound] Approval - High Pitched Bell Synth”)
+  role: primary
+- id: chime-house-success-chime
+  category: chime
+  file: chime/house-success-chime.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/bwg2020/sounds/456161/
+  licence: Creative Commons 0 (CC0 1.0) (bwg2020, “Correct.wav”)
+  role: primary
+- id: type-house-key-press
+  category: type
+  file: type/house-key-press.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/Mediasaur/sounds/788932/
+  licence: Creative Commons 0 (CC0 1.0) (Mediasaur, “Key_Press”)
+  role: primary
+- id: boing-house-cartoon-boing
+  category: boing
+  file: boing/house-cartoon-boing.wav
+  gain_db: 0.0
+  source: https://freesound.org/people/el_boss/sounds/751699/
+  licence: Creative Commons 0 (CC0 1.0) (el_boss, “Game Jump Sound - Boing (2 of 2)”)
+  role: primary

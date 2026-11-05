@@ -2,12 +2,12 @@
 
 **Family:** core · **Layers:** plate
 
-Opening title over the intro shot: label, two-line title (second line in the brand gradient), optional focus chip.
+Opening or question title: a label and ONE line of hero text (shrunk to fit its box, never wrapped), optional focus chip.
 
 | Parameter | Meaning |
 |---|---|
 | `label` |  |
-| `title` | two lines separated by \n |
+| `title` | one line; *word* = marker highlight, **word** = brand gradient (an old "a\nb" title joins, with b in the gradient) |
 | `focus` | optional chip text (markdown) |
 | `at` |  |
 | `until` |  |

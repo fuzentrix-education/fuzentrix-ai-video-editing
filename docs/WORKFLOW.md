@@ -80,7 +80,7 @@ Any rule or default can be overridden in the prompt for that video; overrides ar
 bin/fzv edit "videos/loop-control"
 ```
 
-This picks the raw cut and recordings, extracts audio, transcribes (Telugu + English), finds every shot change, measures where
+This picks the raw cut and recordings, extracts audio, transcribes (Telugu + English; a Telugu-mode pass follows in the background), finds every shot change, measures where
 the instructor is, aligns recordings and saves their keyframes, saves the **footage sheet** (`edit/out/footage.jpg`: a frame every
 10 s and at every shot change), writes **`edit/plan_brief.md`**, drafts **`edit/beats.yaml`** and stops.
 

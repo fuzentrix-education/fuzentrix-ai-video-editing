@@ -504,6 +504,10 @@ concepts:
     phrases: ["try except", "try and except", "exception handling", "except block", "finally block", "raise an exception", "value error", "zero division error", "zerodivisionerror", "valueerror", "type error", "name error"]
     templates: [flowchart, terminal, code-card]
     show: "the program hits the bad value: instead of crashing (red), it jumps to the except block and carries on"
+  - id: calendar-date
+    phrases: ["calendar", "imagine a calendar", "particular date", "day month year", "date month year", "date of birth", "today's date", "datetime"]
+    templates: [calendar, form-card, picture]
+    show: "a month calendar filling in, the date she names lighting up, and its day / month / year beside it as she says each (Rani's edit)"
   - id: modules
     phrases: ["import module", "import the module", "import statement", "python module", "modules in python", "built in module", "math module", "random module", "datetime module"]
     templates: [hub, blocks, code-card]

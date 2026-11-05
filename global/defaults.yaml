@@ -13,13 +13,13 @@ subtitles: { enabled: false, language: en, max_chars: 42, max_lines: 2, sidecar_
 music:     { enabled: false, track: null, rel_lufs: -18, fade_s: 2.0 }   # audible bed 18 LU under the voice ("low" -22, "high" -14), gently ducked
 listen:    { enabled: true }        # the listening check after the final mix: buried / too-loud effects, clipping, noise, music balance
 voice:     { cleanup: true }        # rumble filter, speech denoiser, EQ, gentle levelling, de-esser; prompt "Voice: untouched" turns it off
-sfx:                                # rule A5: every visual event has its sound, never the same sound twice in a row
-  enabled: true                     # the team's library in global/sfx/ (fzv sfx add) is used first; files rotate per category
+sfx:                                # rule A5: meaningful visual events get a sound from the editors' house set (2026-11-04)
+  enabled: true                     # global/sfx/: per kind the editors' pick (role: primary) plays, its alt every third cue; kinds without one rotate their files
   level_db: 0                       # house levels: 18-26 dB under the voice by kind (fzv/audio.py UNDER), dipping 3 dB while she speaks
   minor: true                       # element entrances (pop, swish, blip, tick); prompt "SFX: minimal" turns them off
   minor_gap_s: 0.35                 # an entrance sound is skipped only when another sound lands within 0.35 s (no stacking)
   whoosh_gap_s: 1.5                 # whooshes never pile up
-  max_per_min: 0                    # optional cap per minute (0 = none)
+  max_per_min: 10                   # at most 10 effects in any minute (the manual edit the team liked: about 9); minor ones go first
   fallback: synth                   # categories missing from the library: synth (varied takes) | none
 recordings: { use: show, corrections: tidy }
   # use: show = the whole recording in a window | reference = never shown; code and output are rebuilt as animations from it
@@ -30,13 +30,20 @@ bug:       { layers: [] }             # no logo burned in: the team adds the Car
 chrome:    { progress: false, chapters: true }  # the chapter pill top left (sections with `chapter:`); no progress bar (user, 2026-11-02)
 presenter:                          # compose mode (raw / green-screen footage); rough cuts keep the editor's framing (rule L1)
   corner_box: true                  # bottom-right pose sits in a rounded brand box (rule L5); prompt "Presenter box: off" turns it off
-  box: { w: 500, h: 420, margin: 40, radius: 28 }
+  box: { w: 520, h: 480, margin: 40, radius: 28 }   # roomy (user 2026-11-05: "keep it freely"): her whole upper body, hands and a bit of the laptop
+  source: studio                    # studio: one keying with her laptop and desk (the studio shot, and the box shows them) | cutout: her alone
+  free: { focus_x: 1030, head_y: 250, desk_y: 1040 }  # source pixels: her centre, a little above her head, the desk edge: what the box frames
 
 cutaways: { max_each_s: 12, max_total_pct: 10 }
 clutter:  { max_blocks: 4, max_words: 40, max_code_lines: 12, max_focus: 1, studio_max_blocks: 1, studio_max_words: 12 }
 empty:    { max_gap_s: 2.0 }        # never a plain-instructor stretch (rule L4)
 visuals:  { max_text_only_s: 15, min_section_s: 30,    # rules V1/V2: show the process; at most 15 s of words-only screen
             max_repeat_share: 0.2 }                 # rule V5: no animation in more than 20% of a video's animations (and never twice in a row)
+sync:     { early_s: 0.15, early_title_s: 1.0,      # rule S2: nothing on screen more than 0.15 s before she says it (a title: 1 s)
+            late_s: 0.3,                            # rule S5: and no value or word more than 0.3 s after it (the kit's sync audit, 2026-11-05)
+            window_s: 30,                           #   ...looked for up to 30 s after it appears (a label she never says isn't early)
+            max_hold_s: 8, hold_min_words: 10,      # rule S4: while she explains (10+ words), something reacts at least every 8 s
+            repeat_gap_s: 1.2 }                     # rule S3 (advice): a value she says again while it's on screen gets a reaction within 1.2 s
 review:                             # the editor sees and approves before the slow steps (design §9f); prompt "Review: off" for none
   beats: "off"                      # off (default since 2026-10-28): Claude plans the beat sheet and goes straight on to the storyboard,
                                     # the editor's one approval | required: build waits for the editor to approve the beat sheet too
@@ -49,8 +56,8 @@ review:                             # the editor sees and approves before the sl
 graphics_fps: 25                    # graphics render at 25 fps; delivery keeps the source frame rate
 layout:                             # 1920x1080 slots; ingest trims them so they never touch the instructor's safe zone
   hero:      { x: 96,   y: 150, w: 800,  h: 420 }
-  header:    { x: 92,   y: 78,  w: 1240, h: 110 }
-  main:      { x: 96,   y: 230, w: 1220, h: 760 }
+  header:    { x: 92,   y: 116, w: 1240, h: 110 }    # under the chapter pill, with air between them (Rani's header band)
+  main:      { x: 96,   y: 270, w: 1220, h: 730 }
   side:      { x: 1360, y: 150, w: 480,  h: 560 }
   bottom:    { x: 96,   y: 736, w: 640,  h: 290 }
   recording: { x: 100,  y: 104, w: 1720, h: 600 }
@@ -58,7 +65,8 @@ layout:                             # 1920x1080 slots; ingest trims them so they
   namecard:  { x: 1452, y: 820 }
   bug:       { right: 64, top: 20 }   # level with the chapter pill
 
-transcription: { model: large-v3-turbo, language: en, chunk_max_s: 14, chunk_min_s: 5 }
+transcription: { model: large-v3-turbo, language: en, chunk_max_s: 14, chunk_min_s: 5,
+                 telugu: true, te_chunk_min_s: 4, te_chunk_max_s: 10 }   # + a Telugu-mode pass at ingest (background) for `@te:` anchors
 render:  { workers: auto, ram_per_worker_gb: 1.0, reserve_gb: 2.0 }
 output:
   name: "{title} - Edited.mp4"

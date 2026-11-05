@@ -37,8 +37,8 @@ window.FZ_RECORDINGS = {recs};
 """
 
 REC_MARKUP = """<div id="rec-{id}" class="fz-rec hide"><div class="bar"><div class="dot"></div><div class="dot"></div><div class="dot"></div>
-<div class="ttl" style="margin-left:16px;font:500 18px/1 var(--fz-font-mono);color:var(--fz-text2)"></div><div class="fz-steps"></div>
-<div style="margin-left:28px;display:flex;align-items:center;gap:8px;font:700 15px/1 var(--fz-font-mono);letter-spacing:.14em;color:var(--fz-danger)"><span style="width:10px;height:10px;border-radius:50%;background:var(--fz-danger);display:block"></span>SCREEN</div></div>
+<div class="ttl" style="margin-left:16px;font:500 22px/1 var(--fz-font-mono);color:var(--fz-text2)"></div><div class="fz-steps"></div>
+<div style="margin-left:28px;display:flex;align-items:center;gap:8px;font:700 22px/1 var(--fz-font-mono);letter-spacing:.14em;color:var(--fz-danger)"><span style="width:10px;height:10px;border-radius:50%;background:var(--fz-danger);display:block"></span>SCREEN</div></div>
 <div class="view"><div class="cam" style="width:{w}px;height:{h}px"><video id="rec-video-{id}" src="assets/rec/{file}" muted playsinline data-start="{start}" data-duration="{dur}" data-track-index="1" style="width:{w}px;height:{h}px"></video></div></div></div>"""
 
 
@@ -88,7 +88,7 @@ def props_used(clip: dict) -> set[str]:
     ids = set()
     for s in clip["scenes"]:
         p = s["params"]
-        if s["template"] in ("prop", "prop-move", "sketch-draw") and p.get("asset"):
+        if s["template"] in ("prop", "prop-move", "sketch-draw", "picture") and p.get("asset"):
             ids.add(p["asset"])
         if s["template"] == "prop-scene":
             ids.update(pr["asset"] for pr in p.get("props", []) if pr.get("asset"))

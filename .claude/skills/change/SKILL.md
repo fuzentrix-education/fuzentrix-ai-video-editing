@@ -20,6 +20,11 @@ Change those rows in `edit/beats.yaml` and add the editor's words to each row's 
 on to the storyboard (edit-video skill, step 3). Only with `Review: beats, storyboard` in the prompt: refresh the page
 (`bin/fzv review "<folder>" --open`), show only the changed rows in the chat and ask for approval (edit-video skill, step 2).
 
+## Change only what they asked
+Do exactly what each request says and nothing on top: no extra moves, colours, layout or style changes they didn't ask for. If a
+request could mean two things (for example "keep it freely": remove the box, or widen it?), ask one short question first. A change
+for one video stays in that video unless they say "always" / "for every video"; then say in one line what else it changes.
+
 ## 3. Once the storyboard or the final video exists
 1. Run `bin/fzv revise "<folder>" "<the requests>"`: it maps each beat or time to the scenes on screen, prints what the instructor
    says there and logs the request in `edit/revisions.md`.

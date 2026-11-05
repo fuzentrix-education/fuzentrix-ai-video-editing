@@ -11,6 +11,12 @@ rules:
   V3:  { check: advice, what: "concept moments (global/concepts.yaml) are shown with a matching template" }
   V4:  { check: auto, what: "every beat of the beat sheet is built with the templates it was approved with, inside its time" }
   V5:  { check: advice, what: "variety: no animation twice in a row, none in more than visuals.max_repeat_share (20%) of the animations", from_defaults: visuals }
+  S2:  { check: auto, what: "nothing on screen before she says it: a value, label or picture appears at most sync.early_s (0.15 s) before her word, timed to the frame; no faded previews (tiles entering dim)", from_defaults: sync }
+  S5:  { check: auto, what: "nothing lands late: a value or word shown more than sync.late_s (0.3 s) after she says it; `@te:` times are trusted (on her Telugu words)", from_defaults: sync }
+  S3:  { check: advice, what: "a value she says again while it is on screen reacts on her word (focus / highlight) within sync.repeat_gap_s", from_defaults: sync }
+  S4:  { check: auto, what: "while she explains (sync.hold_min_words+ words), something on screen changes at least every sync.max_hold_s (8 s)", from_defaults: sync }
+  S6:  { check: advice, what: "the English and Telugu transcripts agree on each anchored word (within 0.5 s); where they don't, check by ear and anchor on the Telugu word (`@te:`) when it is the right one" }
+  L15: { check: auto, what: "titles and headings sit on one line, shrunk to fit their box (never wrapped); one that can't fit at its minimum size is reported (shorten it or widen the box)" }
   S1:  { check: auto, what: "on-request styles (3D, sketch) appear only when the video's prompt asks for them (styles.on_request)", from_defaults: styles }
   R1:  { check: gate, what: "edit.yaml is built only from a beat sheet the editor approved (review.beats; any later change needs a new approval)", from_defaults: review }
   R2:  { check: gate, what: "rendering starts only after the editor approved, in order, the storyboard of the current build and then its preview: live in Studio or the draft video (review.storyboard, review.preview)", from_defaults: review }
@@ -30,4 +36,6 @@ rules:
   L11: { check: auto, what: "the background stays the brand plate all video: no dark scenes (scene) or full-frame backdrops (cutaway) unless the prompt asks (overrides: {L11: why})" }
   L12: { check: auto, what: "blocks (cards, code, terminals) never cover each other: place the next block below the previous one's real height" }
   T3:  { check: auto, what: "no text overflowing its card" }
+  L13: { check: auto, what: "one type scale (brand.yaml type-scale): no text on screen smaller than the label size (22 px), code not below code-min (40 px); 3D, sketch, registry items and mockups draw their own text" }
+  L14: { check: auto, what: "one left edge: every block starts at the left margin (96 px), lines up with another block's left edge, or sits in a row with one (wired notes, pictures, chrome exempt)" }
   A3:  { check: auto, what: "final mix -14 LUFS integrated, -1 dBTP", lufs: -14, true_peak: -1 }

@@ -17,7 +17,7 @@ import yaml
 from .anchors import Transcript
 
 TIME_KEYS = {"at", "until", "run", "caret_off", "active_off", "vs_at", "emphasis_at", "focus_at", "val", "chk", "res", "pr", "out", "hit"}
-TIME_LISTS = {"times", "row_at", "cues"}
+TIME_LISTS = {"times", "row_at", "cues", "appear"}
 REL = re.compile(r"^[+-]\d+(\.\d+)?$")
 
 
@@ -69,9 +69,14 @@ class Resolver:
         self.tx = transcript
         self.errors: list[str] = []
         self.anchors: list[tuple[str, float]] = []
+        self.typed = 0                                  # times written as plain seconds (the sync report counts them)
+        self.te_times: list[float] = []                 # times on her Telugu words (`@te:`): the sync checks trust them
 
     def time(self, v, base: float | None, lo: float, hi: float, where: str):
-        if v is None or isinstance(v, (int, float)):
+        if v is None:
+            return v
+        if isinstance(v, (int, float)):
+            self.typed += 1
             return v
         s = str(v).strip()
         if REL.match(s):
@@ -84,11 +89,18 @@ class Resolver:
             m = re.match(r"^(.*)#(\d+)$", phrase)
             if m:
                 phrase, occ = m.group(1), int(m.group(2))
-            t = self.tx.find(phrase, after=lo, before=hi, occurrence=occ)
+            tx = self.tx
+            if phrase.startswith("te:"):                 # a word of the Telugu transcript: where the English one misheard her
+                phrase, tx = phrase[3:], self.tx.te
+                if tx is None:
+                    self.errors.append(f"{where}: '@te:' anchor but no Telugu transcript (fzv words <folder> --te)"); return None
+            t = tx.find(phrase, after=lo, before=hi, occurrence=occ)
             if t is None:
                 self.errors.append(f"{where}: anchor '{phrase}' not found between {lo:.1f}s and {hi:.1f}s")
                 return None
             self.anchors.append((s, t))
+            if tx is not self.tx:
+                self.te_times.append(t)
             return t
         try:
             return float(s)
@@ -105,14 +117,16 @@ class Resolver:
             for k, v in obj.items():
                 if k == "at":
                     continue
-                if isinstance(k, str) and (k in TIME_KEYS or k.endswith("_at")):
+                if k == "label_at":                        # a row's label comes before its value: counted from the card, not the value
+                    out[k] = self.time(v, base, lo, hi, f"{where}.{k}")
+                elif isinstance(k, str) and (k in TIME_KEYS or k.endswith("_at")):
                     out[k] = self.time(v, base, max(lo, (base or lo) - 3), hi, f"{where}.{k}")
                 elif k in TIME_LISTS and isinstance(v, list):
                     out[k] = [self.time(x, base, max(lo, (base or lo) - 3), hi, f"{where}.{k}") for x in v]
                 elif k == "parts" and isinstance(v, list):
                     out[k] = [[p[0], self.time(p[1], base, max(lo, (base or lo) - 3), hi, f"{where}.parts")] for p in v]
-                else:
-                    out[k] = self.walk(v, base, lo, hi, f"{where}.{k}")
+                else:                       # items inside a scene (fields, states, agenda items…) count occurrences from its `at` too
+                    out[k] = self.walk(v, base, max(lo, (base or lo) - 3), hi, f"{where}.{k}")
             return out
         if isinstance(obj, list):
             return [self.walk(x, base, lo, hi, f"{where}[{i}]") for i, x in enumerate(obj)]
@@ -133,16 +147,15 @@ def resolve(spec: dict, transcript: Transcript, duration: float) -> tuple[dict, 
         lo, hi = sec["range"]
         scenes = []
         for name, params in scene_items(sec.get("scenes")):
-            rp = r.walk(params, None, lo - 1, hi + 1, f"{sec.get('id', i)}.{name}")
-            if isinstance(rp.get("at"), (int, float)):
-                lo_next = rp["at"]
-            scenes.append({name: rp})
+            scenes.append({name: r.walk(params, None, lo - 1, hi + 1, f"{sec.get('id', i)}.{name}")})
         secs.append(dict(sec, scenes=scenes))
     out["sections"] = secs
     studio = []
     for name, params in scene_items(spec.get("studio")):
         studio.append({name: r.walk(params, None, 0, duration, f"studio.{name}")})
     out["studio"] = studio
+    out["_anchoring"] = {"anchored": len(r.anchors), "typed": r.typed, "te_times": sorted(set(r.te_times)),
+                         "anchors": sorted({(ph, t) for ph, t in r.anchors}, key=lambda x: x[1])}   # for the two-transcript check (S6)
     return out, r.errors
 
 

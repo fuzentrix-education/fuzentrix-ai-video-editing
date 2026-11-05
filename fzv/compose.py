@@ -39,20 +39,50 @@ def ingest(proj, raw: Path, info: dict, log=print, rekey: bool = False, fps: int
     if rekey:
         for f in out.parent.glob("presenter*.webm"):
             f.unlink()
-    if not out.exists():
+    if ((proj.settings().get("presenter") or {}).get("source", "studio")) == "studio":
+        # the roomy box keying (her hands and the laptop stay); studio shots are keyed at build, only for their stretches
+        key_box(proj, raw, fps, log)
+    elif not out.exists():
         key_video(raw, out, info, plate, mode, crop, fps, log, opts)      # the render rate: no judder from 25 -> 30 fps
     return {"key_mode": mode, "crop": crop, "file": out.name, "key": opts, "fps": fps}
 
 
-def occupancy(proj, cell: int = 40) -> list[list[int]]:
-    """Cells [x0, y0, x1, y1] (cut-out pixels) where the keyed instructor ever appears: the union of the alpha over the video.
-    Cached in edit/comp/occupancy.json; validate maps it through the live pose to check rule L2 in compose mode."""
+def presenter_source(proj, settings: dict | None = None) -> tuple[str, list[int]]:
+    """(file, crop) of the keyed video the presenter plays. With `presenter.source: studio`: the whole studio keying if it exists, else
+    the box keying (her and the laptop's near end, the whole video; studio shots then come from short studio keyings); else the cut-out."""
+    settings = settings or proj.settings()
+    pdata = proj.load()
+    P = proj.edit / "comp" / "assets" / "presenter"
+    if (settings.get("presenter") or {}).get("source", "studio") == "studio":
+        name = f"studio_0.00_{float(pdata['duration']):.2f}.webm"
+        if (P / name).exists():
+            return name, STUDIO_CROP
+        if (P / "presenter_box.webm").exists():
+            return "presenter_box.webm", BOX_CROP
+    return "presenter.webm", pdata["compose"]["crop"]
+
+
+def key_box(proj, raw: Path, fps: int, log=print) -> str:
+    """Key what the roomy box shows (BOX_CROP, nothing cut away: her hands and the laptop stay) for the whole video."""
+    from .keyer import background, key_video
+    out = proj.edit / "comp" / "assets" / "presenter" / "presenter_box.webm"
+    if not out.exists():
+        info = media.probe(raw)
+        mode, plate = background(raw, info, log)
+        key_video(raw, out, info, plate, mode, BOX_CROP, fps, log, {})
+    return out.name
+
+
+def occupancy(proj, cell: int = 40, settings: dict | None = None) -> list[list[int]]:
+    """Cells [x0, y0, x1, y1] (keyed-video pixels) where the instructor (and, in the studio keying, her laptop and desk) ever
+    appears: the union of the alpha over the video. Cached in edit/comp; validate maps it through the live pose (rule L2)."""
     import numpy as np
-    cache = proj.edit / "comp" / "occupancy.json"
-    src = proj.edit / "comp" / "assets" / "presenter" / "presenter.webm"
+    file, crop = presenter_source(proj, settings)
+    cache = proj.edit / "comp" / f"occupancy_{Path(file).stem}.json"
+    src = proj.edit / "comp" / "assets" / "presenter" / file
     if cache.exists() and src.exists() and cache.stat().st_mtime >= src.stat().st_mtime:
         return json.loads(cache.read_text())
-    _, _, w, h = proj.load()["compose"]["crop"]
+    _, _, w, h = crop
     gw, gh = max(1, w // cell), max(1, h // cell)
     out = subprocess.run(["ffmpeg", "-v", "error", "-c:v", "libvpx-vp9", "-i", str(src), "-vf", f"fps=1,alphaextract,scale={gw}:{gh}:flags=area",
                           "-f", "rawvideo", "-pix_fmt", "gray", "-"], capture_output=True).stdout
@@ -61,6 +91,29 @@ def occupancy(proj, cell: int = 40) -> list[list[int]]:
     cells = [[int(x * w / gw), int(y * h / gh), int((x + 1) * w / gw), int((y + 1) * h / gh)] for y, x in zip(*np.nonzero(occ))]
     cache.write_text(json.dumps(cells))
     return cells
+
+
+STUDIO_CROP = [160, 260, 1600, 820]        # the studio shot: her, the laptop and the desk (source pixels); edges fade into the backdrop
+BOX_CROP = [600, 260, 920, 780]             # what the roomy corner box shows: her and the near end of the laptop (keyed for the whole video)
+STUDIO_MARKUP = """<div id="fz-studio-{k}" class="abs" style="left:0;top:0;width:{w}px;height:{h}px;opacity:0;visibility:hidden;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%)"><video id="fz-studio-video-{k}" src="assets/presenter/{file}" muted playsinline data-start="{start}" data-playback-start="{offset}" data-duration="{dur}" data-track-index="{track}" style="width:{w}px;height:{h}px"></video></div>"""
+
+
+def studio_spans(poses: list[dict], duration: float) -> list[tuple[float, float]]:
+    """Stretches in the `studio` pose (the intro, a chapter opener), each with 1.2 s more for the move out of it."""
+    ps = sorted(poses, key=lambda q: q["at"])
+    return [(q["at"], min(duration, (ps[i + 1]["at"] if i + 1 < len(ps) else duration) + 1.2)) for i, q in enumerate(ps) if q.get("name") == "studio"]
+
+
+def key_studio(proj, raw: Path, span: tuple[float, float], fps: int, log=print) -> str:
+    """Key one studio stretch with the laptop and desk kept (no exclude areas): her studio shot, on the kit's backdrop (rule L11)."""
+    from .keyer import background, key_video
+    name = f"studio_{span[0]:.2f}_{span[1]:.2f}.webm"
+    out = proj.edit / "comp" / "assets" / "presenter" / name
+    if not out.exists():
+        info = media.probe(raw)
+        mode, plate = background(raw, info, log)
+        key_video(raw, out, info, plate, mode, STUDIO_CROP, fps, log, {}, span=span)
+    return name
 
 
 def trimmed_presenter(proj, clip: dict) -> str:
@@ -94,11 +147,27 @@ def build_compose(proj, settings, pdata, sp, cuts, tx, log) -> int:
     pset = dict(settings.get("presenter") or {})
     pset.update({k: v for k, v in (res.get("presenter") or {}).items() if k != "poses"})   # the spec may override per video
     box = pset.get("box") if pset.get("corner_box", True) else None
+    raw = proj.folder / pdata["raw"]
+    pfile, pcrop = presenter_source(proj, settings)
+    studio_src = pfile.startswith("studio_")              # one keying of the whole studio: every pose (and the box) comes from it
+    roomy = pfile != "presenter.webm"                      # the box shows her freely, with the laptop (studio or box keying)
+    spans = [] if studio_src else [(s, key_studio(proj, raw, s, comp.get("fps", 25), log)) for s in studio_spans(poses, pdata["duration"])]
     for c in clips:
-        c["scenes"].insert(0, {"template": "presenter", "params": {"poses": poses, "crop": comp["crop"], "box": box}})
+        studio, extra = [], ""
+        for k, ((t0, t1), file) in enumerate(spans):
+            a0, a1 = max(t0, c["start"]), min(t1, c["end"])
+            if a1 - a0 > 0.05:                             # this clip shows (part of) a studio stretch: its own keyed video
+                studio.append({"t0": t0, "t1": t1, "el": f"fz-studio-{k}", "crop": STUDIO_CROP})
+                extra += STUDIO_MARKUP.format(k=k, w=STUDIO_CROP[2], h=STUDIO_CROP[3], file=file, start=round(a0 - c["start"], 3),
+                                              offset=round(a0 - t0, 3), dur=round(a1 - a0, 3), track=1 + k)
+        c["scenes"].insert(0, {"template": "presenter", "params": {"poses": poses, "crop": pcrop, "box": box, "studio": studio,
+                                                                   **({"free": pset.get("free")} if roomy else {})}})
         # every section plays the one keyed video from its own start (data-playback-start): no per-section re-encode
-        c["static"] = PRESENTER_MARKUP.format(w=comp["crop"][2], h=comp["crop"][3], file="presenter.webm", offset=round(c["start"], 3),
-                                              dur=round(c["end"] - c["start"], 3))
+        mk = PRESENTER_MARKUP.format(w=pcrop[2], h=pcrop[3], file=pfile, offset=round(c["start"], 3), dur=round(c["end"] - c["start"], 3))
+        if roomy:                                          # no shadowed cut-out edge; a studio keying's desk fades out at its ends
+            mk = mk.replace(";filter:drop-shadow(0 18px 34px rgba(13,39,76,.28))", "").replace(
+                'id="fz-presenter" class="abs" style="', 'id="fz-presenter" class="abs" style="-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 9%,#000 91%,transparent 100%);')
+        c["static"] = mk + extra
         c["opaque"] = True
     man = build_clips(proj, res, clips, settings)
     proj.p("clips.json").write_text(json.dumps(clips, indent=1))

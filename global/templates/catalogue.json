@@ -16,8 +16,8 @@
    "at": "",
    "until": "",
    "box": "default: main slot (left)",
-   "fs": "font px (default 38)",
-   "type": "[{line, at, cps} | {line, parts: [[lastCharIndex, at], ...]}]",
+   "fs": "font px (default: the kit's code size, 52, fitted to the box; never below 40)",
+   "type": "[{line, at, cps} | {line, parts: [[lastCharIndex, at], ...]}] (parts: each segment on its word, 45 ms/char + 40 ms, max 0.55 s)",
    "reveal": "[{lines: [n...], at}] show whole lines",
    "highlights": "[{line, cols: [c0, c1], at, until, tone: ''|green|red}]",
    "active": "[{line, at}]",
@@ -62,7 +62,7 @@
    "lines": "[{text, input, at, tone: ok|warn|bad|dim}] (filled by exec; by hand needs `manual`)",
    "chips": "[{text, at}] instead of lines (needs `manual`)",
    "manual": "reason the output is written by hand (rule E7)",
-   "lh": "line height (default 44)"
+   "lh": "line height (default: 1.45 x the kit's terminal size)"
   }
  },
  "tiles": {
@@ -79,10 +79,11 @@
    "at": "",
    "until": "",
    "box": "x, y (default main slot)",
-   "size": "tile px (default 100)",
-   "gap": "px (default size+16)",
+   "size": "tile px (default 150)",
+   "gap": "px (default size+24)",
    "cols": "wrap after n tiles",
-   "states": "[{i: index | value: v, state, at}]",
+   "appear": "[t per tile]: each tile enters on the word that names it (rule S2; default: all at `at`)",
+   "states": "[{i: index | value: v, state, at}]: now | ok | bad | skip | dim | on (back to plain) | focus (amber outline; the focus moves: the last focused tile goes back), e.g. a focus each time she names a value (rule S3) | pick (solid blue: the one chosen, e.g. the index asked for)",
    "note": "{text, at, until} small text under the tiles"
   }
  },
@@ -133,6 +134,7 @@
   ],
   "doc": "Variable boxes that update as the code runs (name = value).",
   "params": {
+   "label": "card label (default Variables), e.g. Accessing values",
    "vars": "[{name, value, at}]",
    "updates": "[{name, value, at}]",
    "at": "",
@@ -380,10 +382,10 @@
   "layers": [
    "plate"
   ],
-  "doc": "Opening title over the intro shot: label, two-line title (second line in the brand gradient), optional focus chip.",
+  "doc": "Opening or question title: a label and ONE line of hero text (shrunk to fit its box, never wrapped), optional focus chip.",
   "params": {
    "label": "",
-   "title": "two lines separated by \\n",
+   "title": "one line; *word* = marker highlight, **word** = brand gradient (an old \"a\\nb\" title joins, with b in the gradient)",
    "focus": "optional chip text (markdown)",
    "at": "",
    "until": "",
@@ -412,12 +414,13 @@
   "layers": [
    "plate"
   ],
-  "doc": "Numbered list of cards, each entering when said (agenda, plan, steps).",
+  "doc": "Numbered list of roomy cards, each entering when said (agenda, plan, steps); the one she is naming is outlined in blue (Rani's agenda).",
   "params": {
    "label": "optional label above",
    "items": "[{text, icon, tone, at}]",
    "until": "",
-   "box": "default: main slot"
+   "box": "default: main slot",
+   "icons": "true to show each item's icon on the right"
   }
  },
  "definition": {
@@ -522,6 +525,36 @@
    "at": "",
    "until": "required",
    "tone": "light (plate image) | deep (dark brand gradient)"
+  }
+ },
+ "freeform": {
+  "name": "freeform",
+  "family": "core",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "Free composition for a moment no template shows well: your own markup (the kit's classes and --fz-* colours, sizes from the type scale) and its animation steps, each on her word. Checked like any scene (sync, sizes, overlaps).",
+  "params": {
+   "html": "markup inside the box; give parts classes or ids to animate (start hidden ones with class `hide`)",
+   "box": "x, y, w, h",
+   "at": "",
+   "until": "",
+   "steps": "[{sel: CSS selector inside, at, from: {y, x, scale, opacity\u2026} (enter from), to: {\u2026} (change to), dur, ease, out: time, sfx: kind}]"
+  }
+ },
+ "sound": {
+  "name": "sound",
+  "family": "core",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "One of the editors' sounds on her word, with nothing on screen, for moments no template covers: boing on a playful 'no', ticks while she counts, chime on the final answer, decision when she picks one option. Use rarely.",
+  "params": {
+   "kind": "pop | blip | click | decision | tick | ticks | stop | whoosh | page | bad | good | chime | type | boing",
+   "at": "",
+   "times": "[more times for the same sound]"
   }
  },
  "studio-tag": {
@@ -686,6 +719,26 @@
    "cell": "px (default 44)"
   }
  },
+ "calendar": {
+  "name": "calendar",
+  "family": "explainer",
+  "layers": [
+   "plate"
+  ],
+  "doc": "A month calendar (Rani's 'Imagine a calendar'): the card comes in, the dates fill in row by row, one date turns solid blue; optional rows beside it (DAY / MONTH / YEAR) pop in on her words, their values come in as she says them, and an amber outline follows her. For dates, schedules, 'imagine a calendar'.",
+  "params": {
+   "month": "e.g. August",
+   "year": "e.g. 2026",
+   "fill_at": "when the dates fill in (default at + 0.4)",
+   "select": "{day, at}: that date turns solid blue",
+   "fields": "[{label, value, at, label_at}] rows beside the calendar (label colours: blue, green, amber)",
+   "focus": "[{field: 1-based, at}] the amber outline on a row",
+   "stamp": "{text, at, tone: ok|bad|accent|warn}",
+   "at": "",
+   "until": "",
+   "box": "x, y, w (calendar width, default 520)"
+  }
+ },
  "form-card": {
   "name": "form-card",
   "family": "explainer",
@@ -696,8 +749,9 @@
   "params": {
    "title": "",
    "icon": "",
-   "fields": "[{label, value, at}]",
+   "fields": "[{label, value, at, label_at}]: label_at = when she names the field (the row pops in then; default with the card), at = when the value types in",
    "stamp": "{text, at, tone: ok|bad|accent}",
+   "focus": "[{field: 1-based number or label, at}]: the field she is talking about gets the amber outline; it moves with her (rule S3)",
    "at": "",
    "until": "",
    "box": "x, y, w (default side slot)"
@@ -841,11 +895,13 @@
    "plate"
   ],
   "static": true,
-  "doc": "Keyed instructor with poses: wide, close, side-right, side-left, corner (bottom right). Added automatically in compose mode from the spec's `presenter.poses`.",
+  "doc": "Keyed instructor with poses: studio (her whole studio shot, laptop and desk, life-size and centred: the intro), wide, close, side-right, side-left, corner (bottom right, boxed). Added automatically in compose mode from the spec's `presenter.poses`.",
   "params": {
    "poses": "[{name, at, x, y, scale (optional custom)}]",
    "crop": "[x, y, w, h] of the cut-out in source pixels (set by ingest)",
-   "box": "{w, h, margin, radius}: the bottom-right pose sits in a rounded box (setting presenter.corner_box)"
+   "box": "{w, h, margin, radius}: the bottom-right pose sits in a rounded box (setting presenter.corner_box)",
+   "studio": "[{t0, t1, el, crop}]: the keyed studio shots this clip shows (set by build)",
+   "max_scale": "largest face enlargement (default 1.1: never soft)"
   }
  },
  "corner-box": {
@@ -881,6 +937,25 @@
    "flip": "mirror horizontally",
    "react": "[{kind: shake|pulse|tick|cross, at}]",
    "label": "{text, at} caption under the prop"
+  }
+ },
+ "picture": {
+  "name": "picture",
+  "family": "props",
+  "layers": [
+   "plate",
+   "studio"
+  ],
+  "doc": "A picture moment (rule P1): an illustration from the library (kind illustration, or any prop/character) on the word that names the analogy or example, with an optional caption bubble under it, like the manual edit's water-bottle and calendar pictures. One at a time, only at key points.",
+  "params": {
+   "asset": "library id (fzv illus search <words>)",
+   "box": "x, y, w, h of the picture",
+   "at": "on her word",
+   "until": "",
+   "enter": "pop | fade | slide (default pop)",
+   "caption": "{text, at} a short line in a soft bubble under the picture (markdown, 12 words max)",
+   "react": "[{kind: shake|pulse|tick|cross, at}]",
+   "flip": "mirror"
   }
  },
  "prop-move": {

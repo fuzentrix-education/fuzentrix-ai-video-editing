@@ -16,6 +16,6 @@ Output panel. With `exec` it runs the code card's program and prints its exact o
 | `lines` | [{text, input, at, tone: ok|warn|bad|dim}] (filled by exec; by hand needs `manual`) |
 | `chips` | [{text, at}] instead of lines (needs `manual`) |
 | `manual` | reason the output is written by hand (rule E7) |
-| `lh` | line height (default 44) |
+| `lh` | line height (default: 1.45 x the kit's terminal size) |
 
 _Generated from runtime/templates; edit the template's meta there._

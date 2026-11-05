@@ -39,7 +39,7 @@
     const tgt = a.el(targetHtml(t.kind || "database", a), "abs hide", { left: tx, top: ty, width: sz, height: sz * (t.kind === "database" || !t.kind ? 1.25 : 1) }, a.root, "part");
     a.pop(tgt, p.at); a.out(tgt, U);
     const parts = [tgt];
-    if (t.label) { const l = a.el(a.md(t.label), "abs hide", { left: tx - 60, top: ty + sz * 1.3 + 14, width: sz + 120, textAlign: "center", font: "800 30px/1.1 var(--fz-font-display)" }, a.root, "part"); a.show(l, p.at + 0.2, U, { y: 10 }); parts.push(l); }
+    if (t.label) { const l = a.el(a.md(t.label), "abs hide", { left: tx - 60, top: ty + sz * 1.3 + 14, width: sz + 120, textAlign: "center", font: "800 30px/1.1 var(--fz-font-body)" }, a.root, "part"); a.show(l, p.at + 0.2, U, { y: 10 }); parts.push(l); }
     let cnt = null;
     if (p.count) { cnt = a.el("0", "abs hide", { left: tx - 80, top: ty - 96, width: sz + 160, textAlign: "center", font: "900 46px/1 var(--fz-font-display)", color: "var(--fz-emph)", whiteSpace: "nowrap" }, a.root, "part"); a.show(cnt, p.at + 0.2, U, { y: 10 }); parts.push(cnt); }
     const items = p.items || [], n = Math.max(1, items.length);
@@ -49,7 +49,7 @@
       const c = a.el(`${it.icon ? `<div class="fz-ic" style="width:46px;height:46px;font-size:24px">${a.icon(it.icon)}</div>` : ""}<span>${a.md(it.text)}</span>`, "fz-chip", { left: 0, top: 0, fontSize: 26 }, wrap);
       const appear = Math.max(p.at, it.at - 0.9);
       a.set(wrap, appear, { autoAlpha: 1 });
-      a.tl.fromTo(c, { scale: 0.6 }, { scale: 1, duration: 0.35, ease: "back.out(2)", immediateRender: false }, a.T(appear));
+      a.tl.fromTo(c, { scale: 0.6 }, { scale: 1, duration: 0.35, ease: a.M.pop[1], immediateRender: false }, a.T(appear));
       // wait at the source, then fly into the container's mouth (the wrapper carries the flight, the chip its own pop)
       fly(a, wrap, [sx, sy], [tx + sz / 2 - 60, ty + sz * 0.2], it.at, 0.85, -140, 0.3);
       wrap.style.transform = `translate(${sx}px, ${sy}px) translate(-50%, -50%)`;
@@ -60,7 +60,7 @@
         const v0 = Math.round((i / n) * (p.count.to || n)), v1 = Math.round(((i + 1) / n) * (p.count.to || n)), o = { v: v0 };
         a.tl.fromTo(o, { v: v0 }, { v: v1, duration: 0.4, immediateRender: false, onUpdate: () => { cnt.textContent = `${Math.round(o.v).toLocaleString("en-IN")}${p.count.label ? " " + p.count.label : ""}`; } }, a.T(it.at + 0.85));
       }
-      a.sfx("swish", it.at);
+      a.sfx("pop", it.at);
     });
     a.group(parts, p.at, U);
   });
@@ -81,7 +81,7 @@
       "abs hide", { left: px0, top: bx.y + (H - pw * 1.05) / 2, width: pw, height: pw * 1.05, borderRadius: 30, background: "var(--fz-text)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxShadow: "0 30px 70px -20px rgba(16,42,86,.55)" }, a.root, "part");
     const run = pr.at != null ? pr.at : p.at + 1;
     a.pop(proc, Math.max(p.at, run - 0.8)); a.out(proc, U);
-    a.tl.to(proc.querySelector(".gear"), { rotation: 360, duration: 1.6, ease: "power1.inOut", immediateRender: false }, a.T(run));
+    a.pulse(proc.querySelector(".gear"), run, 1.08);          // a soft pulse while it works (no spins)
     const arrow = (x, g) => { const e = a.el(a.icon("arrow"), "abs hide", { left: x, top: bx.y + H / 2 - 40, fontSize: 80, color: "var(--fz-action)" }, a.root, "part"); a.inn(e, g, { x: -20 }, 0.35); a.out(e, U); return e; };
     const a1 = arrow(bx.x + iw + gap / 2 - 40, run - 0.4), a2 = arrow(px0 + pw + gap / 2 - 40, run + 0.9);
     for (let k = 0; k < 3; k++) { const d = a.el("", "abs hide", { left: 0, top: 0, width: 22, height: 22, borderRadius: 11, background: "var(--fz-accent)" }, a.root, "deco"); a.set(d, run + k * 0.18, { autoAlpha: 1 }); fly(a, d, [bx.x + iw * 0.6, bx.y + H * (0.35 + k * 0.15)], [px0 + pw / 2, bx.y + H / 2], run + k * 0.18, 0.6, -60, 0.4); a.set(d, run + k * 0.18 + 0.6, { autoAlpha: 0 }); }
@@ -89,7 +89,7 @@
     const outc = a.el(`<div class="fz-label" style="display:inline-block;background:var(--fz-action);color:#fff;padding:9px 14px;border-radius:10px">${a.esc(o.label || "Information")}</div>
       <div class="txt" style="font:700 46px/1.2 var(--fz-font-display);margin-top:26px">${a.md(o.text || "")}</div>${o.note ? `<div class="fz-small" style="margin-top:18px">${a.md(o.note)}</div>` : ""}`,
       "fz-card hide", { left: ox, top: bx.y + 20, width: ow, minHeight: H - 40, padding: "30px 34px" }, a.root, "part");
-    a.show(outc, oat, U, { x: 30 }); a.sfx("ding", oat);
+    a.show(outc, oat, U, { x: 30 }); a.sfx("good", oat);
     const parts = [inp, proc, a1, a2, outc];
     if (p.banner) { const b = a.el(a.md(p.banner.text), "fz-dark abs hide", { left: bx.x, top: bx.y + H + 40, width: W, height: 110, borderRadius: 26, background: "var(--fz-text)", color: "#fff", display: "grid", placeItems: "center", font: "800 54px/1 var(--fz-font-display)" }, a.root, "part"); a.show(b, p.banner.at, U, { y: 30 }); parts.push(b); }
     a.group(parts, p.at, U);
@@ -103,9 +103,9 @@
     const bx = a.box(p, "side"), U = a.until(p), W = Math.max(bx.w, 460), cv = p.convert_at != null ? p.convert_at : p.at + 2;
     const fromT = p.from_type || "str", toT = p.to_type || "int", fn = p.fn || "int()";
     const parts = [];
-    if (p.label) { const l = a.el(a.md(p.label), "abs hide", { left: bx.x, top: bx.y, width: W, font: "700 28px/1.25 var(--fz-font-display)" }, a.root, "part"); a.show(l, p.at, U, { y: 10 }); parts.push(l); }
+    if (p.label) { const l = a.el(a.md(p.label), "abs hide", { left: bx.x, top: bx.y, width: W, font: "700 28px/1.25 var(--fz-font-body)" }, a.root, "part"); a.show(l, p.at, U, { y: 10 }); parts.push(l); }
     const y0 = bx.y + (p.label ? 70 : 0);
-    const chip = (txt, type, tone) => `<div style="font:800 52px/1 var(--fz-font-mono);color:var(--fz-text)">${a.esc(txt)}</div><div style="margin-top:12px;font:700 20px/1 var(--fz-font-mono);letter-spacing:.12em;padding:6px 12px;border-radius:8px;background:${tone};color:#fff;display:inline-block">${a.esc(type)}</div>`;
+    const chip = (txt, type, tone) => `<div style="font:800 52px/1 var(--fz-font-mono);color:var(--fz-text)">${a.esc(txt)}</div><div style="margin-top:12px;font:700 22px/1 var(--fz-font-mono);letter-spacing:.12em;padding:6px 12px;border-radius:8px;background:${tone};color:#fff;display:inline-block">${a.esc(type)}</div>`;
     const inC = a.el(chip(`"${p.value}"`, fromT, "var(--fz-highlight-text)"), "fz-card hide", { left: bx.x, top: y0, width: W * 0.36, padding: "22px 20px", textAlign: "center" }, a.root, "part");
     a.pop(inC, p.at); parts.push(inC);
     const mach = a.el(`<div style="font:800 40px/1 var(--fz-font-mono);color:#fff">${a.esc(fn)}</div>`, "abs hide",
@@ -115,7 +115,7 @@
     // the input drops into the machine, the machine pulses, the converted value pops out
     a.to(inC, cv, { y: 150, x: W * 0.04, scale: 0.55, autoAlpha: 0.25, duration: 0.5, ease: "power2.in" });
     a.pulse(mach, cv + 0.45, 1.12);
-    a.inn(outC, cv + 0.7, { y: 150, x: -W * 0.08, scale: 0.55 }, 0.55, "back.out(1.6)"); a.sfx("ding", cv + 0.7);
+    a.inn(outC, cv + 0.7, { y: 150, x: -W * 0.08, scale: 0.55 }, 0.55, a.M.pop[1]); a.sfx("good", cv + 0.7);
     a.to(inC, cv + 1.3, { y: 0, x: 0, scale: 1, autoAlpha: 0.45, duration: 0.4 });
     parts.push(outC);
     a.out([inC, mach, outC], U);
@@ -147,8 +147,8 @@
       const stopHere = p.stop_value != null && v === p.stop_value;
       const tile = a.el(a.esc(v), "fz-tile hide", { left: x, top: y, width: sz, height: sz, fontSize: Math.round(sz * (String(v).length > 2 ? 0.32 : 0.42)), borderRadius: 18 }, a.root, "part");
       a.set(tile, g, { autoAlpha: 1 });
-      a.tl.fromTo(tile, { x: bx.x + 60 - x, y: bx.y + 10 - y, scale: 0.4 }, { x: 0, y: 0, scale: 1, duration: 0.45, ease: "back.out(1.6)", immediateRender: false }, a.T(g));
-      if (stopHere) { a.to(tile, p.stop_at || g + 0.6, { backgroundColor: a.cv("danger-soft"), borderColor: a.cv("danger"), color: a.cv("danger"), duration: 0.3 }); a.sfx("bad", p.stop_at || g + 0.6); }
+      a.tl.fromTo(tile, { x: bx.x + 60 - x, y: bx.y + 10 - y, scale: 0.4 }, { x: 0, y: 0, scale: 1, duration: 0.45, ease: a.M.pop[1], immediateRender: false }, a.T(g));
+      if (stopHere) { a.to(tile, p.stop_at || g + 0.6, { backgroundColor: a.cv("danger-soft"), borderColor: a.cv("danger"), color: a.cv("danger"), duration: 0.3 }); a.sfx("stop", p.stop_at || g + 0.6); }
       else if (i < 6) a.sfx("tick", g);
       a.out(tile, U); parts.push(tile);
     });
@@ -184,7 +184,7 @@
       const [x0, y0] = N[k.from], [x1, y1] = N[k.to], d = k.dur || 1.2;
       a.set(e, k.at, { autoAlpha: 1 }); fly(a, e, [x0, y0 - 120], [x1, y1 - 120], k.at, d, -80); a.set(e, k.at + d + 0.15, { autoAlpha: 0 });
       if (NE[k.to]) a.pulse(NE[k.to], k.at + d, 1.06);
-      a.sfx(res ? "good" : "swish", k.at);
+      a.sfx(res ? "good" : "pop", k.at);
     });
     (p.results || []).forEach((r) => { const e = a.el(a.md(r.text), "fz-card hide", { left: bx.x + (r.x || 0), top: bx.y + (r.y || 0), padding: "14px 22px", font: "700 26px/1 var(--fz-font-mono)", whiteSpace: "nowrap" }, a.root, "part"); a.show(e, r.at, U, { y: 14 }); parts.push(e); });
     a.group(parts, p.at, U);
@@ -216,9 +216,9 @@
       for (let r = 0; r < legs; r++) {
         a.to(m, p.scan.at + (r * d) / legs, { x: r % 2 ? bx.x - 30 : bx.x + cols * (c + 8) - 80, y: gy - 30 + r * ((rows - 1) * (c + 8) / Math.max(1, legs - 1)), duration: d / legs, ease: "sine.inOut" });
       }
-      a.out(m, p.scan.until || U); a.sfx("swish", p.scan.at);
+      a.out(m, p.scan.until || U); a.sfx("pop", p.scan.at);
     }
-    if (p.find) { const e = cells[p.find.index || 0]; if (e) { a.to(e, p.find.at, { color: "var(--fz-success)", scale: 1.6, autoAlpha: 1, duration: 0.35, ease: "back.out(2)" }); a.sfx("good", p.find.at); } }
+    if (p.find) { const e = cells[p.find.index || 0]; if (e) { a.to(e, p.find.at, { color: "var(--fz-success)", scale: 1.6, autoAlpha: 1, duration: 0.35, ease: a.M.pop[1] }); a.sfx("good", p.find.at); } }
     if (p.cross) {
       const s = a.el("", "abs hide", { left: bx.x - 10, top: gy + rows * (c + 8) / 2 - 5, width: cols * (c + 8) + 20, height: 10, borderRadius: 5, background: "var(--fz-danger)", transform: "rotate(-6deg)", transformOrigin: "0 50%" }, a.root, "deco");
       a.tl.fromTo(s, { autoAlpha: 1, scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power2.out", immediateRender: false }, a.T(p.cross.at)); a.out(s, U); a.sfx("bad", p.cross.at);
@@ -227,20 +227,97 @@
     a.group(parts, p.at, U);
   });
 
+  // ---------- calendar: a month whose dates fill in, one date chosen, its parts beside it (Rani's real-world example) ----------
+  const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+  R({ name: "calendar", family: "explainer", layers: ["plate"],
+      doc: "A month calendar (Rani's 'Imagine a calendar'): the card comes in, the dates fill in row by row, one date turns solid blue; optional rows beside it (DAY / MONTH / YEAR) pop in on her words, their values come in as she says them, and an amber outline follows her. For dates, schedules, 'imagine a calendar'.",
+      params: { month: "e.g. August", year: "e.g. 2026", fill_at: "when the dates fill in (default at + 0.4)", select: "{day, at}: that date turns solid blue",
+                fields: "[{label, value, at, label_at}] rows beside the calendar (label colours: blue, green, amber)", focus: "[{field: 1-based, at}] the amber outline on a row",
+                stamp: "{text, at, tone: ok|bad|accent|warn}", at: "", until: "", box: "x, y, w (calendar width, default 520)" } }, (a, p) => {
+    const bx = a.box(p, "main"), U = a.until(p), W = p.box && p.box.w ? p.box.w : 520;
+    const mi = Math.max(0, MONTHS.indexOf(String(p.month || "january").toLowerCase())), yr = +p.year || 2026;
+    const first = new Date(yr, mi, 1).getDay(), days = new Date(yr, mi + 1, 0).getDate(), weeks = Math.ceil((first + days) / 7);
+    const CW = (W - 40) / 7, RH = 54, HEAD = 76, WK = 56;
+    const card = a.el(`<div style="height:${HEAD}px;background:var(--fz-text);display:flex;align-items:center;justify-content:space-between;padding:0 28px;color:#fff">
+        <span style="font:800 32px/1 var(--fz-font-body)">${a.esc(MONTHS[mi][0].toUpperCase() + MONTHS[mi].slice(1))}</span><span style="font:500 26px/1 var(--fz-font-body);opacity:.85">${yr}</span></div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:18px 20px 0;height:${WK - 18}px;font:700 22px/1 var(--fz-font-body);color:var(--fz-text2);text-align:center">${"SMTWTFS".split("").map((d) => `<span>${d}</span>`).join("")}</div>`,
+      "abs hide", { left: bx.x, top: bx.y, width: W, height: HEAD + WK + weeks * RH + 18, borderRadius: 22, background: "var(--fz-card)", overflow: "hidden",
+                    boxShadow: "0 1px 2px rgba(16,42,86,.05), 0 16px 38px rgba(16,42,86,.09)" }, a.root, "block");
+    const cells = [], grid = a.el("", "", { position: "absolute", inset: 0 }, card);
+    card.setAttribute("data-nowords", "");                // the calendar is a picture of a month (its header and dates aren't words she
+                                                          // says, L10 and sync); the Day / Month / Year rows beside it are checked
+    for (let d = 1; d <= days; d++) {
+      const k = first + d - 1;
+      cells.push(a.el(String(d), "hide", { position: "absolute", left: 20 + (k % 7) * CW + (CW - 50) / 2, top: HEAD + WK + Math.floor(k / 7) * RH + 2, width: 50, height: 46,
+        display: "grid", placeItems: "center", borderRadius: 14, font: "600 24px/1 var(--fz-font-body)", color: "var(--fz-text2)" }, grid));
+    }
+    a.show(card, p.at, U, { y: 24 }); a.sfx("pop", p.at);
+    const fill = p.fill_at != null ? p.fill_at : p.at + 0.4;
+    for (let w = 0; w < weeks; w++) {                  // the dates come in row by row
+      const row = cells.filter((_, i) => Math.floor((first + i) / 7) === w);
+      if (row.length) a.inn(row, fill + w * 0.12, { y: 8 }, 0.3, a.M.enter[1], { stagger: 0.015 });
+    }
+    a.sfx("ticks", fill);
+    if (p.select && cells[p.select.day - 1]) {
+      const c = cells[p.select.day - 1], g = p.select.at;
+      a.to(c, g, { backgroundColor: a.cv("accent", "#2563EB"), color: "#FFFFFF", fontWeight: 800, boxShadow: "0 8px 18px rgba(37,99,235,.35)", duration: 0.25 });
+      a.pulse(c, g + 0.05, 1.12); a.sfx("decision", g);
+    }
+    const FX = bx.x + W + 34, FW = 330, FH = 96, FG = 18, LC = ["var(--fz-emph)", "var(--fz-success)", "var(--fz-highlight-text)"];
+    const fs = p.fields || [], col = fs.length ? a.el("", "abs hide", { left: FX, top: bx.y, width: FW, height: fs.length * (FH + FG) - FG }, a.root, "block") : null;
+    if (col) { a.set(col, Math.min(...fs.map((f) => (f.label_at != null ? f.label_at : p.at))) - 0.01, { autoAlpha: 1 }); a.out(col, U); }   // one block: the rows
+    const rows = fs.map((f, i) => {
+      const r = a.el(`<span style="color:${LC[i % 3]};font:800 22px/1 var(--fz-font-body);letter-spacing:.14em;text-transform:uppercase">${a.esc(f.label)}</span><span class="v" style="font:700 44px/1 var(--fz-font-mono);color:var(--fz-text)"></span>`,
+        "abs hide", { left: 0, top: i * (FH + FG), width: FW, height: FH, display: "flex", alignItems: "center", gap: 30, padding: "0 30px", boxSizing: "border-box",
+                      borderRadius: 20, background: "var(--fz-card)", boxShadow: "0 1px 2px rgba(16,42,86,.05), 0 14px 32px rgba(16,42,86,.08)" }, col, "part");
+      const g0 = f.label_at != null ? f.label_at : p.at;
+      a.show(r, g0, U, { x: 24 }, 0.4); a.sfx("blip", g0);
+      if (f.value != null) { typed(a, r.querySelector(".v"), String(f.value), f.at != null ? f.at : g0 + 0.5, 20); a.sfx("pop", f.at != null ? f.at : g0 + 0.5); }
+      return r;
+    });
+    if ((p.focus || []).length && rows.length) {      // one amber outline that follows her from row to row (rule S3)
+      const ring = a.el("", "abs hide", { left: FX - 5, top: bx.y - 5, width: FW + 10, height: FH + 10, borderRadius: 24, border: "3px solid var(--fz-highlight)", pointerEvents: "none" }, a.root);
+      [...p.focus].sort((x, y) => x.at - y.at).forEach((fo, k) => {
+        const i = Math.max(0, Math.min(rows.length - 1, (+fo.field || 1) - 1)), top = bx.y + i * (FH + FG) - 5;
+        if (k === 0) { a.set(ring, fo.at - 0.01, { top }); a.inn(ring, fo.at, {}, 0.25); }
+        else a.to(ring, fo.at, { top, duration: 0.3, ease: "power2.out" });
+        a.sfx("tick", fo.at);
+      });
+      a.out(ring, U, {}, 0.2);
+    }
+    if (p.stamp) { const s = a.el(a.esc(p.stamp.text), "abs hide", { right: 22, top: HEAD + 10, padding: "8px 14px", border: `3px solid ${TONE[p.stamp.tone] || TONE.ok}`, color: TONE[p.stamp.tone] || TONE.ok, background: "var(--fz-card)", borderRadius: 10, font: "800 22px/1 var(--fz-font-mono)", transform: "rotate(-8deg)" }, card); a.pop(s, p.stamp.at); a.sfx("stop", p.stamp.at); }
+  });
+
   // ---------- form-card: a record whose fields fill in ----------
   R({ name: "form-card", family: "explainer", layers: ["plate"],
       doc: "A record / form / receipt card whose field values type in as they are said. For 'your name, age, branch…', a student record, a filled form.",
-      params: { title: "", icon: "", fields: "[{label, value, at}]", stamp: "{text, at, tone: ok|bad|accent}", at: "", until: "", box: "x, y, w (default side slot)" } }, (a, p) => {
-    const bx = a.box(p, "side"), U = a.until(p), fs = p.fields || [];
+      params: { title: "", icon: "", fields: "[{label, value, at, label_at}]: label_at = when she names the field (the row pops in then; default with the card), at = when the value types in", stamp: "{text, at, tone: ok|bad|accent}",
+                focus: "[{field: 1-based number or label, at}]: the field she is talking about gets the amber outline; it moves with her (rule S3)", at: "", until: "", box: "x, y, w (default side slot)" } }, (a, p) => {
+    const bx = a.box(p, "side"), U = a.until(p), fs = p.fields || [], rows = [];
     const card = a.el(`<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">${p.icon ? `<div class="fz-ic">${a.icon(p.icon)}</div>` : ""}<div class="fz-label">${a.esc(p.title || "Record")}</div></div>`,
       "fz-card fz-pad hide", { left: bx.x, top: bx.y, width: bx.w }, a.root, "block");
-    fs.forEach((f) => {
-      const row = a.el(`<span style="color:var(--fz-text2)">${a.esc(f.label)}</span><span class="v" style="font:700 30px/1 var(--fz-font-mono);color:var(--fz-text)"></span>`, "", { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0", borderTop: "1px solid var(--fz-line)", font: "600 26px/1 var(--fz-font-body)" }, card);
+    const LC = ["var(--fz-emph)", "var(--fz-success)", "var(--fz-highlight-text)"];   // DAY / MONTH / YEAR: blue, green, amber (Rani's mix)
+    fs.forEach((f, fi) => {
+      const row = a.el(`<span style="color:${LC[fi % 3]};font:800 22px/1 var(--fz-font-body);letter-spacing:.12em;text-transform:uppercase">${a.esc(f.label)}</span><span class="v" style="font:700 38px/1 var(--fz-font-mono);color:var(--fz-text)"></span>`, f.label_at != null ? "hide" : "", { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 4px", borderTop: "1px solid var(--fz-line)", gap: 24 }, card, "part");
+      if (f.label_at != null) { a.inn(row, f.label_at, { y: 14 }, 0.35); a.sfx("blip", f.label_at); }
       const txt = String(f.value == null ? "" : f.value), g = f.at != null ? f.at : p.at + 0.5;
       typed(a, row.querySelector(".v"), txt, g, 20);
       if (txt) a.sfx("type", g);
+      rows.push(row);
     });
     a.show(card, p.at, U, { x: 30 });
+    if ((p.focus || []).length) {                     // one outline that follows her from field to field
+      const ring = a.el("", "abs hide", { left: 12, top: 0, width: bx.w - 24, height: 10, borderRadius: 14, border: "3px solid var(--fz-highlight)", background: "rgba(245,158,11,.06)", pointerEvents: "none" }, card);
+      const find = (f) => (typeof f === "number" ? f - 1 : fs.findIndex((x) => String(x.label).toLowerCase() === String(f).toLowerCase()));
+      [...p.focus].sort((x, y) => x.at - y.at).forEach((fo, k) => {
+        const r = rows[find(fo.field)]; if (!r) return;
+        const geo = { top: r.offsetTop + 2, height: r.offsetHeight - 4 };
+        if (k === 0) { a.set(ring, fo.at - 0.01, geo); a.inn(ring, fo.at, {}, 0.25); }
+        else a.to(ring, fo.at, Object.assign({ duration: 0.3, ease: "power2.out" }, geo));
+        a.sfx("tick", fo.at);
+      });
+      a.out(ring, U, {}, 0.2);
+    }
     if (p.stamp) { const s = a.el(a.esc(p.stamp.text), "abs hide", { right: 24, top: 22, padding: "8px 14px", border: `3px solid ${TONE[p.stamp.tone] || TONE.ok}`, color: TONE[p.stamp.tone] || TONE.ok, borderRadius: 10, font: "800 22px/1 var(--fz-font-mono)", transform: "rotate(-8deg)" }, card); a.pop(s, p.stamp.at); }
   });
 
@@ -255,7 +332,7 @@
     const fr = a.el("", "abs hide", { left: bx.x - 20, top: bx.y + 76, width: bx.w + 40, height: rowsN * (th + 24) + 30, borderRadius: 30, border: "3px dashed var(--fz-action)", background: "rgba(229,239,253,.35)" }, a.root, "part");
     a.inn(fr, p.at + 0.1, { scale: 0.97 }, 0.45); a.out(fr, U); parts.push(fr);
     ts.forEach((t, i) => {
-      const e = a.el(`<div style="display:flex;align-items:center;gap:12px;font:800 28px/1 var(--fz-font-display);margin-bottom:12px">${t.icon ? `<div class="fz-ic" style="width:44px;height:44px;font-size:24px">${a.icon(t.icon)}</div>` : ""}${a.esc(t.title)}</div>` +
+      const e = a.el(`<div style="display:flex;align-items:center;gap:12px;font:800 28px/1 var(--fz-font-body);margin-bottom:12px">${t.icon ? `<div class="fz-ic" style="width:44px;height:44px;font-size:24px">${a.icon(t.icon)}</div>` : ""}${a.esc(t.title)}</div>` +
         (t.rows || []).map((r) => `<div style="font:600 22px/1 var(--fz-font-mono);color:var(--fz-text2);padding:10px 0;border-top:1px solid var(--fz-line)">${a.esc(r)}</div>`).join(""),
         "fz-card hide", { left: bx.x + (i % 2) * (cw + 30), top: bx.y + 96 + Math.floor(i / 2) * (th + 24), width: cw, height: th, padding: "20px 24px" }, a.root, "part");
       a.pop(e, t.at != null ? t.at : p.at + 0.4 + i * 0.4); a.out(e, U); a.sfx("pop", t.at); parts.push(e);
@@ -279,7 +356,7 @@
       a.edge(`M ${cx} ${cy} L ${sx} ${sy}`, s.at, U, "", 0.35);
       const c = a.el(`${s.icon ? `<div class="fz-ic">${a.icon(s.icon)}</div>` : ""}<span>${a.md(s.text)}</span>`, "fz-chip hide", { left: sx, top: sy }, a.root, "part");
       gsap.set(c, { xPercent: -50, yPercent: -50 });
-      a.tl.fromTo(c, { autoAlpha: 0, scale: 0.5 }, { autoAlpha: 1, scale: 1, duration: 0.4, ease: "back.out(2)", immediateRender: false }, a.T(s.at)); a.out(c, U); parts.push(c);
+      a.tl.fromTo(c, { autoAlpha: 0, scale: 0.5 }, { autoAlpha: 1, scale: 1, duration: 0.4, ease: a.M.pop[1], immediateRender: false }, a.T(s.at)); a.out(c, U); parts.push(c);
     });
     if (p.caption) { const t = a.el(a.md(p.caption.text), "abs hide", { left: bx.x, top: cy + ry + 80, width: bx.w, textAlign: "center", font: "600 30px/1.3 var(--fz-font-body)", color: "var(--fz-text2)" }, a.root, "part"); a.show(t, p.caption.at, U, { y: 10 }); parts.push(t); }
     a.group(parts, p.at, U);
@@ -292,8 +369,8 @@
                 cursor: "[{x, y, at, click}] in frame coords", at: "", until: "", box: "x, y, w, h (default main slot)" } }, (a, p) => {
     const bx = a.box(p, "main"), U = a.until(p), phone = p.kind === "phone";
     const W = phone ? Math.min(bx.w, 380) : bx.w, H = phone ? W * 2 : Math.min(bx.h, W * 0.66);
-    const frame = a.el(phone ? `<div style="height:44px;display:flex;align-items:center;justify-content:center;font:700 18px/1 var(--fz-font-body);color:var(--fz-text2)">${a.esc(p.url || "")}</div>`
-      : `<div style="height:52px;display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid var(--fz-line)"><div style="width:13px;height:13px;border-radius:7px;background:var(--fz-line)"></div><div style="width:13px;height:13px;border-radius:7px;background:var(--fz-line)"></div><div style="width:13px;height:13px;border-radius:7px;background:var(--fz-line)"></div><div style="margin-left:18px;padding:7px 18px;border-radius:10px;background:var(--fz-tint);font:500 18px/1 var(--fz-font-mono);color:var(--fz-text2)">${a.esc(p.url || "")}</div></div>`,
+    const frame = a.el(phone ? `<div style="height:44px;display:flex;align-items:center;justify-content:center;font:700 22px/1 var(--fz-font-body);color:var(--fz-text2)">${a.esc(p.url || "")}</div>`
+      : `<div style="height:52px;display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid var(--fz-line)"><div style="width:13px;height:13px;border-radius:7px;background:var(--fz-line)"></div><div style="width:13px;height:13px;border-radius:7px;background:var(--fz-line)"></div><div style="width:13px;height:13px;border-radius:7px;background:var(--fz-line)"></div><div style="margin-left:18px;padding:7px 18px;border-radius:10px;background:var(--fz-tint);font:500 22px/1 var(--fz-font-mono);color:var(--fz-text2)">${a.esc(p.url || "")}</div></div>`,
       "fz-card hide", { left: bx.x, top: bx.y, width: W, height: H, overflow: "hidden", borderRadius: phone ? 46 : 22, border: phone ? "10px solid var(--fz-text)" : undefined }, a.root, "block");
     a.show(frame, p.at, U, { y: 30 });
     const screens = p.screens || [];
@@ -303,10 +380,10 @@
       a.set(sc, g0, { autoAlpha: 1 }); if (g1 != null) a.set(sc, g1, { autoAlpha: 0 });
       (s.elements || []).forEach((e) => {
         const before = sc.children.length;
-        if (e.title) a.el(a.md(e.title), "", { font: `800 ${phone ? 30 : 40}px/1.1 var(--fz-font-display)` }, sc);
-        else if (e.subtitle) a.el(a.md(e.subtitle), "", { font: "500 20px/1.2 var(--fz-font-mono)", color: "var(--fz-text2)" }, sc);
+        if (e.title) a.el(a.md(e.title), "", { font: `800 ${phone ? 30 : 40}px/1.1 var(--fz-font-body)` }, sc);
+        else if (e.subtitle) a.el(a.md(e.subtitle), "", { font: "500 22px/1.2 var(--fz-font-mono)", color: "var(--fz-text2)" }, sc);
         else if (e.field != null) {
-          const f = a.el(`<div style="font:600 18px/1 var(--fz-font-body);color:var(--fz-text2);margin-bottom:8px">${a.esc(e.field)}</div><div class="v" style="height:52px;border:2px solid var(--fz-line);border-radius:12px;padding:0 16px;display:flex;align-items:center;font:600 24px/1 var(--fz-font-mono)"></div>`, "", {}, sc);
+          const f = a.el(`<div style="font:600 22px/1 var(--fz-font-body);color:var(--fz-text2);margin-bottom:8px">${a.esc(e.field)}</div><div class="v" style="height:52px;border:2px solid var(--fz-line);border-radius:12px;padding:0 16px;display:flex;align-items:center;font:600 24px/1 var(--fz-font-mono)"></div>`, "", {}, sc);
           const txt = String(e.value || ""), g = e.at != null ? e.at : g0 + 0.5;
           typed(a, f.querySelector(".v"), txt, g, 14);
           if (txt) a.sfx("type", g);
@@ -319,7 +396,7 @@
           const g = e.at != null ? e.at : g0, gu = e.until != null ? e.until : g + 2;
           a.set(r, g, { autoAlpha: 1 }); a.set(r, gu, { autoAlpha: 0, display: "none" });
           a.tl.fromTo(r.querySelector(".sp"), { rotation: 0 }, { rotation: 360 * Math.max(1, Math.round(gu - g)), duration: Math.max(0.5, gu - g), ease: "none", immediateRender: false }, a.T(g));
-        } else if (e.stat != null) a.el(`${a.esc(e.stat)} <span style="color:var(--fz-on-dark-accent)">${a.esc(e.value || "")}</span>`, "", { alignSelf: "flex-start", padding: "14px 22px", borderRadius: 14, background: "var(--fz-text)", color: "#fff", font: "800 30px/1 var(--fz-font-display)" }, sc);
+        } else if (e.stat != null) a.el(`${a.esc(e.stat)} <span style="color:var(--fz-on-dark-accent)">${a.esc(e.value || "")}</span>`, "", { alignSelf: "flex-start", padding: "14px 22px", borderRadius: 14, background: "var(--fz-text)", color: "#fff", font: "800 30px/1 var(--fz-font-body)" }, sc);
         else if (e.badge) a.el(a.md(e.badge), "fz-pill", {}, sc);
         if (e.at != null && e.field == null && e.spinner == null && sc.children.length > before) { const n = sc.children[sc.children.length - 1]; a.set(n, g0, { autoAlpha: 0 }); a.inn(n, e.at, { y: 12 }, 0.35); }
       });
@@ -355,13 +432,13 @@
       doc: "Rows that tick off one by one as they are said (benefits, requirements, a recap). The last row may be a highlighted conclusion.",
       params: { title: "", items: "[{text, icon, at}]", conclusion: "{text, at} dark banner under the list", at: "", until: "", box: "x, y, w (default main slot)" } }, (a, p) => {
     const bx = a.box(p, "main"), U = a.until(p), parts = [];
-    if (p.title) { const t = a.el(a.esc(p.title), "fz-label abs hide", { left: bx.x, top: bx.y }, a.root, "part"); a.show(t, p.at, U, { y: 8 }); parts.push(t); }
+    if (p.title) { const t = a.el(a.md(p.title), "fz-h2 fz-h1x abs hide", { left: bx.x, top: bx.y - 14 }, a.root, "part"); a.show(t, p.at, U, { y: 8 }); parts.push(t); }
     (p.items || []).forEach((it, i) => {
       const r = a.el(`<div class="fz-ic">${a.icon(it.icon || "check")}</div><span style="flex:1">${a.md(it.text)}</span><div class="ck" style="width:40px;height:40px;border-radius:20px;background:var(--fz-success);color:#fff;display:grid;place-items:center;font-size:24px">${a.icon("check")}</div>`,
-        "fz-card hide", { left: bx.x, top: bx.y + 44 + i * 92, width: bx.w, height: 78, display: "flex", alignItems: "center", gap: 18, padding: "0 20px", font: "600 28px/1 var(--fz-font-body)" }, a.root, "part");
-      a.show(r, it.at, U, { x: 30 }); a.tl.fromTo(r.querySelector(".ck"), { scale: 0 }, { scale: 1, duration: 0.35, ease: "back.out(2.2)", immediateRender: false }, a.T(it.at + 0.4)); a.sfx("tick", it.at + 0.4); parts.push(r);
+        "fz-card hide", { left: bx.x, top: bx.y + (p.title ? 80 : 0) + i * 92, width: bx.w, height: 78, display: "flex", alignItems: "center", gap: 18, padding: "0 20px", font: "600 28px/1 var(--fz-font-body)" }, a.root, "part");
+      a.show(r, it.at, U, { x: 30 }); a.tl.fromTo(r.querySelector(".ck"), { scale: 0 }, { scale: 1, duration: 0.35, ease: a.M.pop[1], immediateRender: false }, a.T(it.at + 0.4)); a.sfx("tick", it.at + 0.4); parts.push(r);
     });
-    if (p.conclusion) { const c = a.el(a.md(p.conclusion.text), "fz-dark abs hide", { left: bx.x, top: bx.y + 60 + (p.items || []).length * 92, width: bx.w, padding: "26px 30px", borderRadius: 22, background: "var(--fz-text)", color: "#fff", font: "800 36px/1.2 var(--fz-font-display)" }, a.root, "part"); a.show(c, p.conclusion.at, U, { y: 20 }); a.sfx("ding", p.conclusion.at); parts.push(c); }
+    if (p.conclusion) { const c = a.el(a.md(p.conclusion.text), "fz-dark abs hide", { left: bx.x, top: bx.y + (p.title ? 96 : 16) + (p.items || []).length * 92, width: bx.w, padding: "26px 30px", borderRadius: 22, background: "var(--fz-text)", color: "#fff", font: "800 36px/1.2 var(--fz-font-body)" }, a.root, "part"); a.show(c, p.conclusion.at, U, { y: 20 }); a.sfx("good", p.conclusion.at); parts.push(c); }
     a.group(parts, p.at, U);
   });
 
@@ -373,7 +450,7 @@
     const w = a.el([...String(p.text)].map((ch) => `<span class="ch" style="display:inline-block">${a.esc(ch)}</span>`).join(""), "abs hide",
       { left: bx.x, top: bx.y, font: `900 ${size}px/1 var(--fz-font-display)`, letterSpacing: "-.02em", color: "var(--fz-bigword, var(--fz-action))", whiteSpace: "nowrap" }, a.root, "block");
     a.set(w, p.at, { autoAlpha: 1 });
-    a.tl.fromTo(w.querySelectorAll(".ch"), { yPercent: 60, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.5, ease: "back.out(1.6)", stagger: 0.06, immediateRender: false }, a.T(p.at));
+    a.tl.fromTo(w.querySelectorAll(".ch"), { yPercent: 60, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.5, ease: a.M.pop[1], stagger: 0.06, immediateRender: false }, a.T(p.at));
     a.out(w, U); a.sfx("whoosh", p.at);
     if (p.sub) { const s = a.el(a.md(p.sub), "abs hide", { left: bx.x + 6, top: bx.y + size * 1.05, font: "700 40px/1.2 var(--fz-font-display)", color: "var(--fz-text)" }, a.root, "text"); a.show(s, p.sub_at || p.at + 0.8, U, { y: 14 }); }
   });
@@ -420,7 +497,7 @@
       a.to(svg.querySelector(".bg-" + k), g + 0.3, { opacity: 1, duration: 0.5 });
       if (S.label) { const l = a.el(a.md(S.label), "abs hide", { left: cx + side * r * 0.55 - 160, top: 0, width: 320, textAlign: "center", font: "700 30px/1 var(--fz-font-mono)", color: "var(--fz-text)" }, box, "part");
                      a.inn(l, g + 0.2, { y: 12 }, 0.4); }
-      a.sfx("swish", g);
+      a.sfx("pop", g);
     });
     const cols = { a: cxA - r * 0.5, both: (cxA + cxB) / 2, b: cxB + r * 0.5 }, count = { a: 0, both: 0, b: 0 }, total = { a: 0, both: 0, b: 0 };
     (p.items || []).forEach((it) => { total[it.in || "a"] = (total[it.in || "a"] || 0) + 1; });
@@ -433,7 +510,7 @@
     });
     (p.rings || []).forEach((rg) => { const c = chips[String(rg.v)]; if (!c) return;
       const ring = a.el("", "abs hide", { left: -6, top: -6, right: -6, bottom: -6, borderRadius: 30, border: "4px solid var(--fz-highlight)" }, c);
-      a.inn(ring, rg.at, { scale: 1.4 }, 0.35, "back.out(2)"); if (rg.until != null) a.out(ring, rg.until); a.sfx("blip", rg.at); });
+      a.inn(ring, rg.at, { scale: 1.4 }, 0.35, a.M.pop[1]); if (rg.until != null) a.out(ring, rg.until); a.sfx("blip", rg.at); });
     (p.strike || []).forEach((st) => { const c = chips[String(st.v)]; if (!c) return;
       const line = a.el("", "abs", { left: 18, right: 18, top: 24, height: 5, borderRadius: 3, background: "var(--fz-danger)", transformOrigin: "0 50%", transform: "scaleX(0)" }, c);
       a.to(line, st.at, { scaleX: 1, duration: 0.3, ease: "power2.out" }); a.to(c, st.at + 0.1, { opacity: 0.45, duration: 0.3 }); a.sfx("bad", st.at); });
@@ -442,7 +519,7 @@
       fill.forEach((f) => a.to(svg.querySelector(".f-" + f), p.op.at, { opacity: 0.22, duration: 0.5, ease: "power2.out" }));
       if (p.op.label) { const l = a.el(a.md(p.op.label), "abs hide", { left: 0, top: cy + r + 18, width: W, textAlign: "center", font: "700 28px/1 var(--fz-font-body)", color: "var(--fz-emph)" }, box, "part");
                         a.inn(l, p.op.at + 0.2, { y: 10 }, 0.4); }
-      a.sfx("ding", p.op.at);
+      a.sfx("good", p.op.at);
     }
     if (p.result) { const rr = a.el(a.hlCode(p.result.text), "fz-cchip hide", { left: W / 2 - 300, top: cy + r + (p.op && p.op.label ? 62 : 24), width: 600, textAlign: "center", fontSize: 34 }, box, "part");
                     a.pop(rr, p.result.at); a.sfx("good", p.result.at); }

@@ -22,7 +22,10 @@ Request: `$ARGUMENTS`: the video folder (for example `videos/dbms-trail`), optio
 ## 1. Ingest and plan
 Run `bin/fzv edit "<folder>"`. It transcribes (several minutes), finds the shots and drafts the beat sheet, then stops. Tell the
 editor in one line what it detected: a *rough cut* (graphics go around the instructor) or *raw footage* (the instructor is
-placed on a brand background).
+placed on a brand background). The Mac is kept awake while it works. Two long jobs carry on in the background: the **Telugu
+transcript** (about 2.5x the video's length; the English one mishears her Telugu and its times drift by 1–3 s there) and, for raw
+footage, the instructor keying (its log shows the time left). Plan meanwhile; don't build the storyboard before the Telugu
+transcript is done (`edit/transcript_te.done`) and its moments are checked (step 3).
 
 ## 2. Plan the beat sheet (no stop for the editor)
 1. Follow CLAUDE.md "Editing a video" steps 2–3: read `edit/plan_brief.md`, look at `edit/out/footage.jpg`, and fill every row of
@@ -39,17 +42,24 @@ placed on a brand background).
 ## 3. Build, storyboard, then the editor's approval
 1. Write `edit/edit.yaml` from the beat sheet, beat by beat (CLAUDE.md steps 4–6). Run `bin/fzv build`, `bin/fzv validate`
    and fix everything it reports (V4: every beat built with the templates the beat sheet names).
-2. Run `bin/fzv storyboard "<folder>"` (about a minute; one frame per beat over the real footage). Look at
-   `edit/out/storyboard.jpg` yourself first and fix wrong visuals, overlaps, empty or cluttered frames before the editor sees it.
-3. **Show the storyboard directly.** Run `bin/fzv review "<folder>" --open`; the grid is also saved in the video's folder as
+2. **Telugu check.** In the Telugu stretches, compare her words in both transcripts (`bin/fzv words "<folder>" <from>-<to>` and the
+   same with `--te`); `bin/fzv validate` lists every anchor where the two disagree by more than 0.5 s (S6). Fix each one: when the
+   Telugu transcript is right, anchor on its word (`"@te:<word>"`). Every moment lands within 0.15 s before / 0.3 s after her word
+   (S2, S5) or validate says so.
+3. Run `bin/fzv storyboard "<folder>"` (about a minute; one frame per beat over the real footage) **and** `bin/fzv storyboard
+   "<folder>" --every 5` (a frame every 5 s with her words under it: it shows what a per-beat frame hides, things arriving early or
+   late, stretches where nothing changes, a title over a header). **Self-review before the editor sees anything:** look at both
+   sheets yourself, frame by frame, and fix wrong visuals, overlaps, crowding, empty or frozen stretches, titles that don't match
+   what she is saying, and anything off-brand; rebuild and look again until you'd show it to a senior editor.
+4. **Show the storyboard directly.** Run `bin/fzv review "<folder>" --open`; the grid is also saved in the video's folder as
    `<Title> - Storyboard.jpg`. Tell them it's ready, point out anything to look at closely (illustrative details, rebuilt code), and
    ask them to approve the frames or request changes. **Stop and wait.** Approval: `bin/fzv approve "<folder>" storyboard --note "<their words>"`.
-4. **Then the preview, before rendering.** Default (`review.preview: browser`): `bin/fzv studio "<folder>"` opens the **live preview** in
+5. **Then the preview, before rendering.** Default (`review.preview: browser`): `bin/fzv studio "<folder>"` opens the **live preview** in
    HyperFrames Studio in their browser (no rendering, the real sound; music is its own track they can mute). If the prompt says
    `Review: on, preview video`, run `bin/fzv draft "<folder>"` instead (a quick low-frame-rate video). Refresh the page and ask them to
    watch it and approve, or request changes. **Stop and wait.** Approval: `bin/fzv approve "<folder>" preview --note "<their words>"`; then
    close the live preview (`bin/fzv studio "<folder>" --stop`).
-5. Changes at either step: use the `change` skill's "after approval" steps.
+6. Changes at either step: use the `change` skill's "after approval" steps (change only what they asked).
 
 ## 4. Render and hand over
 Run `bin/fzv edit "<folder>"` in the background (renders, mixes, checks; 10–40 minutes depending on length). Then run

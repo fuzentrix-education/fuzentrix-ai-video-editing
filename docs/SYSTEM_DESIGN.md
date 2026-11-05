@@ -188,7 +188,7 @@ Only **plan** and **revise** are creative work, done by Claude. Every other stag
 | 2 | `fzv plan` | Claude reads the prompt, the compact transcript, the cut summary, defaults, rules, the style catalogue and the template catalogue. It writes `edit.yaml` and `decisions.md`. | edit.yaml, decisions.md | video length (Claude) |
 | 3 | `fzv build [sections]` | Resolve word anchors, compile sections from templates, syntax-check. | built/*.html, edit.resolved.yaml | seconds |
 | 4 | `fzv preview <section> <times>` | Snapshot the overlay and composite it onto the real footage frames. | out/preview_*.jpg | sections previewed |
-| 5 | `fzv validate` | Run the rule checks (§8) on DOM boxes sampled every 0.5 s, with any prompt overrides applied. | validate.json (blocks the render on failure) | video length |
+| 5 | `fzv validate` | Run the rule checks (§8) on DOM boxes sampled every 0.5 s (the sync rules on exact first-seen times found inside each step), with any prompt overrides applied. | validate.json (blocks the render on failure) | video length |
 | 6 | `fzv render [sections]` | Transparent WebM per section: parallel workers, skips studio intervals, cached by content hash. | out/*.webm | frames ÷ workers (workers sized to the machine) |
 | 7 | `fzv finish` | Collect SFX cues and synthesise them; mix with two-pass loudnorm; composite per section, hardware encode, concat. The previous final moves to `_prev/`. | the final MP4 | video length; hardware encoder if present |
 | 8 | `fzv verify` | Duration, fps, frame counts, frames on both sides of every cut, loudness and peak; verification sheet. | out/verify.jpg, verify.json | video length |
@@ -227,8 +227,10 @@ There is **one** brand kit, `global/brand/brand.yaml` (Career Orbit, the Fuzentr
 or duration. A `Brand:` line in an older prompt changes nothing. Decided 2026-11-02: "no multiple kits now for fuzentrix or careerorbit,
 only one" (the Fuzentrix Education logo set is kept in `global/brand/archive/`).
 
-**Source:** the Career Orbit LMS design's default theme, so the videos look like the product students use: navy text, one blue, Manrope
-and Bricolage Grotesque, white cards with 22 px corners and soft navy shadows.
+**Source:** the Career Orbit LMS design's default theme, so the videos look like the product students use: navy text, one blue,
+Bricolage Grotesque headings with Inter for everything else (since 2026-11-05), white cards with 22 px corners and soft navy shadows.
+Text and UI may be blue; pictures keep their own natural colours, the item she talks about gets a warm amber outline, and labels in a
+row of parts use blue / green / amber (the team's review of Rani's edit and the Career Orbit Lesson Video Kit, 2026-11-05).
 
 **Colour budget** (2026-11-02: the other editing pipeline's videos used "so many colors, not consistent"):
 
@@ -242,8 +244,9 @@ code:     { bg: ["#0D1A3A", "#0A1530"], text: "#E1EBFF", keyword: "#A5B6FF", str
 - No per-topic colours; teal stays inside the logo artwork; no violet, pink, orange or rose; window dots are neutral.
 - **Backdrop:** the pale page with a navy dot grid (34 px) and two faint blue light pools, rendered from `backdrop:` and fixed for the whole
   video (L11). In overlay mode the rough cut's own background shows instead (the editors' slide in `global/brand/plates/`).
-- **Fonts:** Bricolage Grotesque (display), Manrope (body), JetBrains Mono (code), Caveat (sketch only). Registry items that name Inter or
-  Outfit get the kit's fonts through `fonts.aliases`.
+- **Fonts:** Bricolage Grotesque only for headings, titles and big statements (40 px and up); Inter for body text, cards, chips,
+  labels, tiles and values (the heading font in small cards "is not looking good", user 2026-11-05); JetBrains Mono (code); Caveat
+  (sketch only). Older edits or registry items that name Manrope or Outfit get the kit's fonts through `fonts.aliases`.
 - **Logo:** not burned into videos: the team adds the Career Orbit logo after the final render (2026-11-02). With prompt `Logo: on` the
   horizontal lockup goes top right, 40 px high, straight on the backdrop (no box), the on-dark version during dark scenes.
 - **Emphasis and pointers:** highlighted words turn blue with a drawn blue underline. A note's pointer is a thin blue line with rounded
@@ -367,6 +370,19 @@ These are the global defaults. A video's prompt may override any of them (D9); o
 | L10 | **Clutter budget** at any moment: at most 4 content blocks (for example a code card, its output and two supporting visuals; header and logo don't count; a list, tile row or diagram counts once), 40 words of non-code text, 12 code lines, and 1 animated focus point. Studio-layer graphics: 1 block, 12 words. | auto (sampled every 0.5 s) |
 | L11 | **The background stays the brand plate for the whole video**: no dark `scene` and no full-frame `cutaway` backdrop unless the prompt asks (override `L11`). Big moments are made big by the graphics themselves. | auto |
 | L12 | **Blocks never cover each other**: a card, code card or terminal never overlaps another's painted area (text that wraps longer than planned pushes a card into its neighbour). Place the next block below the previous one's real height, or shorten the text. | auto |
+| L13 | **Readable:** no text under 22 px; code at the kit size (52 px), shrinking only to fit, never below 40 (terminal 40). | auto (sampled font sizes) |
+| L14 | **One grid:** every block starts at the 96 px margin or lines up with the block above or beside it. | auto |
+| L15 | **Titles on one line:** headings and hero titles never wrap; the templates shrink them to fit their box and report one that can't fit (2026-11-05). Titles count in L12 too: a title never overlaps another title or a card. | auto |
+
+### 8.2b Sync (on her words, to the frame; 2026-11-05)
+
+| ID | Rule | Check |
+|---|---|---|
+| S2 | **Nothing early:** a value, label or picture is never on screen more than 0.15 s before she says it (a title: 1 s); no faded previews. Timed to the frame: the sampler searches inside each 0.5 s step for the moment each element's text, and each of its words, first becomes readable. A negative number on screen ("-1") is said "minus 1". | auto |
+| S3 | **Follow her:** a value she says again while it is on screen reacts on her word (focus / highlight). | advice |
+| S4 | **Never frozen:** while she explains, something changes at least every 8 s. | auto |
+| S5 | **Nothing late:** no value or word more than 0.3 s after she says it (the Career Orbit kit's sync audit). Times on `@te:` anchors are trusted (on her Telugu words). | auto |
+| S6 | **Two transcripts agree:** each anchored word is at the same moment (within 0.5 s) in the English-mode and the Telugu-mode transcript; where they don't, check by ear and anchor on the Telugu word when it is right. | advice |
 
 ### 8.2a Visual explanation
 
@@ -435,7 +451,7 @@ The library lives in `runtime/templates/*.js`. Each template carries its own doc
 | `name-card` | Core | Instructor name card |
 | `studio-tag` | Core | Light graphic for the instructor's studio shots (rule L4): a keyword, the step in progress or a short takeaway, in the studio frame's free area |
 | `summary` | Core | Recap rows with optional keyword chips at the end of a row |
-| `title-hero` | Core | Opening title over the intro shot: label, two-line title (second line in the brand gradient), optional focus chip |
+| `title-hero` | Core | Opening or question title: a label and one line of hero text (`*word*` marker, `**word**` gradient), shrunk to fit, never wrapped; optional focus chip |
 | `type-cards` | Core | 2-4 concept cards side by side (e.g |
 | `code-card` | Code | Dark editor card |
 | `note` | Code | An explanation card outside the code, joined to its target by a wire (rule L6) |
@@ -461,6 +477,7 @@ The library lives in `runtime/templates/*.js`. Each template carries its own doc
 | `data-flow` | Explainer | Items (chips with icons) fly into a container (database, table, folder, server, cloud) as they are named; the container fills and counts |
 | `db-tables` | Explainer | A database frame with its tables appearing inside, each with rows |
 | `form-card` | Explainer | A record / form / receipt card whose field values type in as they are said |
+| `calendar` | Explainer | Rani's month calendar: the dates fill in, the named date turns blue, Day / Month / Year rows pop in beside it on her words, with an amber outline that follows her |
 | `hub` | Explainer | A central badge (the system) with spokes to what it does, each appearing as named |
 | `icon-grid` | Explainer | A grid of icons standing for many items (students, records, files) with a count; optional magnifier scanning row by row, a found cell, or a cross |
 | `mockup` | Explainer | A browser window or phone with app screens that change as they are described: typing into fields, pressing buttons, a loading spinner, results |
@@ -560,7 +577,7 @@ Characters (people, a police officer, a student) and props (a car, an ambulance,
 
 **The library:**
 - **Manifest:** `manifest.yaml` lists each asset: id, kind (character or prop), tags, style (`flat` for the Core family, `line` for Sketch), source and licence, and its anchor point.
-- **Brand-ready:** assets are SVGs coloured only with brand variables (`--fz-ink`, `--fz-accent`, `--fz-tint`, skin and hair tones), so they recolour automatically per brand.
+- **Brand-ready:** icons, props and characters are SVGs coloured only with brand variables (`--fz-ink`, `--fz-accent`, `--fz-tint`, skin and hair tones), so they recolour automatically per brand. **Illustrations** (kind `illustration`, rule P1) keep their own natural colours (`palette: natural`, since 2026-11-05: "images and other properties should have natural colors").
 - **Starter set:** a starter set is drawn in-house (no licence questions).
 - **Growing it:**
   - Open-licence sets (for example Open Peeps, CC0, for Sketch people) can be imported after their licence is checked and recorded.
@@ -628,7 +645,7 @@ sections:
 - `279.6`: absolute seconds.
 - `"+0.3"`: relative to the previous anchor.
 
-**Matching** is fuzzy and case-insensitive, and tolerates Telugu romanised by the English-mode transcript (up to 30% character edits). An unresolved anchor fails the build and lists the nearest candidates.
+**Matching** is fuzzy and case-insensitive, and tolerates Telugu romanised by the English-mode transcript (up to 30% character edits). Numbers match exactly, also inside words ("value2" is not "value1"), and a short phrase (1–3 words) matches only when each of its words does ("the name is" is not "the data is"). `"@te:<word>"` anchors on the Telugu-mode transcript, where the English one misheard her (`fzv words <folder> --te`). An unresolved anchor fails the build and lists the nearest candidates.
 
 ## 11. Claude's role
 
@@ -673,7 +690,7 @@ sections:
 - **Settings:** Whisper large-v3-turbo (mlx-whisper on Apple Silicon, faster-whisper or whisper.cpp elsewhere; §5.1), **English mode**, temperature 0 with fallback to 0.2 / 0.4 when a chunk's text compresses too well (a repetition loop), chunks of at most 14 s split at pauses, word timestamps, appended per chunk to `transcript.jsonl`. About 1.3× real time.
 - **Loops:** any run of one word repeated more than twice ("colon colon colon…") is collapsed in both the text and the words.
 - **Background and resume:** ingest starts transcription in a background process (`transcribe.pid`) and finishes with `transcript.done`; a transcript without the marker is partial. Plan and ingest wait for it, and resume it from the last written chunk if the process stopped. A transcript that came from elsewhere (no `transcribe.log`) counts as complete.
-- **Avoid Telugu-script mode:** about 0.3× real time and loops. Use it only for short windows.
+- **The Telugu-mode pass (2026-11-05):** after the English transcript, ingest starts a second, Telugu-mode pass in the background (4–10 s chunks, about 2.5x the video's length on an M-series Mac; `transcript_te.jsonl`, `transcript_te.done`; setting `transcription.telugu`). The English pass mishears her Telugu and its word times drift by 1–3 s there (Tuples: "add" 1.1 s early, "Student is equal" 3 s); the Telugu pass has her real words and times. The brief shows it, `@te:` anchors use it, and validate compares the two (S6). Every long command keeps the Mac awake (`caffeinate`).
 - **Purpose:** timing and content only; never burned in.
 
 ### 12.4 Rendering and finish

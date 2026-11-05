@@ -232,7 +232,7 @@
       const m = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), card);
       const e = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.84, 0.84), new THREE.MeshToonMaterial({ color: plain.clone(), transparent: true, opacity: 0.18 })); m.add(e);
       S.scene.add(m);
-      const lab = S.label(a.esc(v), "", "font:800 34px/1 var(--fz-font-display);color:var(--fz-text)");
+      const lab = S.label(a.esc(v), "", "font:800 34px/1 var(--fz-font-body);color:var(--fz-text)");
       if (i <= (stopIdx >= 0 ? stopIdx : vals.length - 1)) a.sfx(i === stopIdx ? "bad" : "tick", times[i]);
       return { v, i, m, e, lab };
     });

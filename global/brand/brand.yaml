@@ -1,10 +1,11 @@
 # The brand kit: the ONE kit every Fuzentrix video uses (Career Orbit, the Fuzentrix LMS). There are no per-brand kits.
-# Colours, fonts and shapes follow the Career Orbit LMS design (its default theme: navy and one blue, Manrope and
-# Bricolage Grotesque, soft 22 px cards). The colour budget keeps every video calm and consistent:
+# Colours, fonts and shapes follow the Career Orbit LMS design (its default theme: navy and one blue; Bricolage Grotesque headings,
+# Inter for every card, label and value since 2026-11-05; soft 22 px cards). The colour budget keeps every video calm and consistent:
 #   - neutrals (navy text, slate, white cards, the pale dotted backdrop)
 #   - ONE brand colour: blue
 #   - three colours that only ever carry meaning: green = correct / True / output, red = error / False, amber = look here
-# There are no per-topic colours. Teal appears only inside the logo artwork.
+# There are no per-topic colours. Since 2026-11-05 (the team's final review, Rani's edit): an amber highlighter marker under the key
+# words of titles and of what she is saying; kickers in the brand blue (no teal: "more natural colours that fit the theme").
 id: career-orbit
 name: Career Orbit
 product: Fuzentrix LMS
@@ -38,6 +39,7 @@ colors:                                # from the LMS design's default theme
   line:      "#DCE7FA"                 # LMS surface-3: card borders, dividers, wires at rest
   dim:       "#F1F4F9"                 # inactive chips and tiles
   page:      "#F4F7FC"                 # the backdrop's base
+  marker:    "rgba(251,191,36,.55)"    # the amber highlighter band under spoken key words
 
 semantic:                              # meaning only, never decoration
   success:        "#15803D"            # correct, True, found, output OK (LMS success; text-safe on white)
@@ -72,7 +74,7 @@ roles:
 
 backdrop:                              # behind every graphic for the whole video (rule L11). Rendered from these values at build
   base: page
-  dots: { color: navy, opacity: 0.15, pitch: 34, radius: 1.8 }
+  dots: { color: navy, opacity: 0.07, pitch: 34, radius: 1.3 }   # light, like Rani's (user 2026-11-05: "so much dotted")
   glows:                               # two very soft light pools, fixed (no drift, so clips join seamlessly)
     - { color: blue, x: 0.10, y: 0.08, radius: 0.55, opacity: 0.06 }
     - { color: sky,  x: 0.95, y: 0.96, radius: 0.60, opacity: 0.12 }
@@ -80,21 +82,23 @@ backdrop:                              # behind every graphic for the whole vide
 plates: plates/                        # the editors' slide backgrounds: only to recognise and key rough cuts made on them
 
 fonts:                                 # all SIL Open Font Licence; files in ./fonts
-  display: { family: Bricolage Grotesque, weights: [500, 600, 700, 800], use: titles, headings, big numbers }
-  body:    { family: Manrope,             weights: [500, 600, 700, 800], use: body text, chips, labels }
+  display: { family: Bricolage Grotesque, weights: [500, 600, 700, 800], use: headings, titles, big statements (40 px and up) only }
+  body:    { family: Inter,               weights: [500, 600, 700, 800], use: body text, cards, chips, labels, values }   # 2026-11-05 (user: B for the cards)
   mono:    { family: JetBrains Mono,      weights: [400, 500, 700],      use: code, values, terminals, ligatures: false }
   hand:    { family: Caveat,              weights: [600, 700],           use: Sketch style labels only }
-  aliases: { Inter: body, Outfit: display }   # registry animations ask for these by name; they get the kit's fonts
+  aliases: { Manrope: body, Outfit: display }   # registry animations ask for these by name; they get the kit's fonts
 
-type-scale:                            # px at 1920x1080
+type-scale:                            # px at 1920x1080, read by every template as --fz-fs-* (Rani's edit: big, sharp, few sizes)
   hero: 92
-  h1: 60
-  h2: 44
-  body: 30
-  small: 26                            # never smaller for on-screen text
-  label: 20                            # mono, uppercase, 0.2em tracking
-  code-card: [34, 46]
-  terminal: 30
+  h1: 64                               # section titles
+  h2: 46
+  body: 32                             # cards, definitions
+  small: 26                            # captions, notes, secondary lines
+  label: 22                            # uppercase kickers and small labels: the floor for ANY text on screen (rule L13)
+  chip: 28
+  code: 52                             # the code card's default; long or many lines shrink to fit, never below code-min
+  code-min: 40
+  terminal: 40
 
 shape:                                 # the LMS card language
   card-radius: 22
@@ -116,10 +120,11 @@ code:                                  # the dark editor and terminal: the LMS c
   comment: "#7483AD"
   on-light: { keyword: "#3546B8", string: "#0E7A50", number: "#B4530A", function: "#0B6FBF", type: "#8A5A00", comment: "#6B7794" }   # code inside white cards
 
-motion:
-  enter:     { duration: 0.55, ease: power3.out }
-  exit:      { duration: 0.35, ease: power2.in }
-  pop:       { duration: 0.5,  ease: "back.out(1.8)" }
+motion:                                # one vocabulary for every template: soft, never flashy (no wipes, spins or flips)
+  enter:     { duration: 0.5,  ease: power3.out }    # fade in with a 24 px rise
+  exit:      { duration: 0.3,  ease: power2.in }     # fade out with a small lift
+  pop:       { duration: 0.45, ease: "back.out(1.4)" }  # values and pictures landing: a gentle settle, not a bounce
+  move:      { duration: 0.5,  ease: power2.inOut }  # things that travel or resize
   stagger: 0.04
   wire-draw: 0.45
   draw-on:   { speed-px-per-s: 900 }   # Sketch strokes
@@ -133,7 +138,7 @@ audio:
 
 layout:                                # 1920x1080
   margin-left: 96
-  header-band: [78, 180]
+  header-band: [116, 220]               # chapter pill at 30-74, then the kicker and the title
   edge-safe: 40
   bug: { position: top-right, inset: [20, 64], pill: false }   # the logo sits straight on the backdrop
 

@@ -22,14 +22,15 @@
     const root = (cfg.root && document.querySelector(cfg.root)) || document.getElementById("root");
     const OFF = cfg.offset, END = cfg.offset + cfg.duration;
     const B = cfg.brand || {}, LAY = cfg.layout || {};
-    const M = Object.assign({ enter: [0.55, "power3.out"], exit: [0.35, "power2.in"], pop: [0.5, "back.out(1.8)"], stagger: 0.04, wire: 0.45 }, B.motion || {});
+    const M = Object.assign({ enter: [0.5, "power3.out"], exit: [0.3, "power2.in"], pop: [0.45, "back.out(1.4)"], move: [0.5, "power2.inOut"], stagger: 0.04, wire: 0.45 }, B.motion || {});
+    const TY = Object.assign({ code: 52, codeMin: 40, terminal: 40, label: 22 }, B.type || {});   // the kit's type scale, for sizes computed in JS
     const T = (g) => Math.max(0, +(g - OFF).toFixed(3));
     const $ = (s) => (typeof s === "string" ? root.querySelector(s) || document.querySelector(s) : s);
     const byId = (id) => root.querySelector("#" + CSS.escape(id)) || document.getElementById(id);   // this clip's element first
     const NS = "http://www.w3.org/2000/svg";
     const REST = { x: 0, y: 0, scale: 1, rotation: 0, xPercent: 0, yPercent: 0, scaleX: 1, scaleY: 1 };
     const UNITLESS = ["opacity", "zIndex", "fontWeight", "lineHeight", "flex", "flexGrow", "flexShrink", "order", "scale"];
-    let uid = 0;
+    let uid = 0, curTpl = null;                           // the template being run: stamped on its elements (data-tpl) for the sync checks
 
     // ---------- timeline helpers ----------
     function inn(sel, g, from = {}, d = M.enter[0], ease = M.enter[1], to = {}) {
@@ -55,12 +56,29 @@
       if (cls) e.className = cls;
       e.innerHTML = html;
       Object.assign(e.style, px(style));
-      if (role) e.setAttribute("data-fz", role);
+      if (role) { e.setAttribute("data-fz", role); if (curTpl) e.setAttribute("data-tpl", curTpl); }
       $(parent).appendChild(e);
       e.id = e.id || "fz" + ++uid;
       return e;
     }
     const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    // a title on one line (user, 2026-11-05: "Career Orbit", "Previous session" never wrap): shrunk to fit maxW, not below min;
+    // measured again once the fonts are in, and reported when it still doesn't fit (shorten it or widen its box)
+    const fitLine = (e, maxW, min = 46) => {
+      e.style.whiteSpace = "nowrap";
+      // pin the font first: changing font-size on an inline `font: … var(--fz-font-display)` shorthand drops its family in Chrome,
+      // and the title fell back to the body font (Career Orbit / Previous session in Inter, 2026-11-05)
+      const cs = getComputedStyle(e);
+      Object.assign(e.style, { fontFamily: cs.fontFamily, fontWeight: cs.fontWeight, lineHeight: cs.lineHeight, fontStyle: cs.fontStyle });
+      const base = parseFloat(cs.fontSize) || 64;
+      const go = (last) => {
+        e.style.fontSize = base + "px";
+        const w = e.scrollWidth;
+        if (w > maxW) e.style.fontSize = Math.max(min, Math.floor(base * maxW / w)) + "px";
+        if (last && e.scrollWidth > maxW + 2) window.__fz_errors.push(`title "${e.textContent.trim().slice(0, 40)}" doesn't fit on one line in ${maxW}px (even at ${min}px): shorten it or widen its box`);
+      };
+      if (document.fonts && document.fonts.ready) { go(false); document.fonts.ready.then(() => go(true)); } else go(true);
+    };
     // *word* → emphasis span, **word** → strong; everything else escaped
     const md = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<em>$1</em>").replace(/`(.+?)`/g, "<code>$1</code>");
     const icon = (name) => `<svg class="i"><use href="#i-${name}"/></svg>`;
@@ -282,15 +300,16 @@
     }
 
     const api = {
-      tl, T, OFF, END, B, LAY, M, root, $, byId, NS, el, px, esc, md, icon, cv, box, inn, out, pop, set, to, show, pulse, sfx,
+      tl, T, OFF, END, B, LAY, M, TY, root, $, byId, NS, el, px, esc, md, fitLine, icon, cv, box, inn, out, pop, set, to, show, pulse, sfx,
       classify, hlCode, wire, route, pointer, edge, group, refs: {},
       // default exit for a scene: its own `until`, else the end of the clip
-      until: (p) => (p.until != null ? p.until : END - 0.1),
+      until: (p) => (p.until != null ? p.until : END - 0.35),          // the exit fade ends before the next section begins
       // run scenes in spec order: [{template, params}]
       run(scenes) {
         scenes.forEach((s, i) => {
           const fn = FZ.templates[s.template];
           if (!fn) { window.__fz_errors.push(`scene ${i}: unknown template "${s.template}"`); return; }
+          curTpl = s.template;
           try { fn(api, s.params || {}); } catch (e) { window.__fz_errors.push(`scene ${i} (${s.template}): ${e.message}`); }
         });
         try { layoutPointers(); } catch (e) { window.__fz_errors.push(`pointers: ${e.message}`); }

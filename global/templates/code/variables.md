@@ -6,6 +6,7 @@ Variable boxes that update as the code runs (name = value).
 
 | Parameter | Meaning |
 |---|---|
+| `label` | card label (default Variables), e.g. Accessing values |
 | `vars` | [{name, value, at}] |
 | `updates` | [{name, value, at}] |
 | `at` |  |

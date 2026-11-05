@@ -181,7 +181,82 @@ def storyboard(proj, workers: int = 3, redo_all: bool = False, log=print) -> dic
     return meta
 
 
+def storyboard_every(proj, every: float = 5.0, workers: int = 3, log=print) -> Path | None:
+    """A frame every `every` seconds across the whole edit, captioned with the time and what she says then: shows how each screen
+    builds up on her words (the per-beat storyboard shows one moment per beat). Unchanged frames are kept between runs."""
+    from .preview import raw_frame
+    from .render import snapshot
+    man = json.loads((proj.edit / "built" / "clips.json").read_text())
+    pdata = proj.load()
+    raw, dur = proj.folder / pdata["raw"], float(pdata["duration"])
+    cuts = json.loads(proj.p("cuts.json").read_text()) if proj.p("cuts.json").exists() else []
+    D = proj.edit / "review" / f"storyboard_{int(every)}s"
+    D.mkdir(parents=True, exist_ok=True)
+    meta_f = D / "frames.json"
+    old = json.loads(meta_f.read_text()) if meta_f.exists() else {}
+    times = [round(min(dur - 0.1, every / 2 + i * every), 2) for i in range(int(dur // every) + 1)]
+    frames, jobs = {}, {}
+    for t in times:
+        layer = "studio" if B.kind_at(cuts, t) == "studio" else "plate"
+        clip = next((m for m in man if m["start"] <= t < m["end"] and m["layer"] == layer), None)
+        sig = f"{clip['id']}:{clip['hash']}:{t:.2f}" if clip else f"none:{t:.2f}"
+        name = f"t{int(t * 10):06d}.jpg"
+        frames[name] = {"t": t, "sig": sig}
+        if old.get(name, {}).get("sig") == sig and (D / name).exists():
+            continue
+        jobs.setdefault(clip["id"] if clip else None, []).append(name)
+    free = queue.Queue()
+    for k in range(max(1, min(workers, len(jobs) or 1))):
+        free.put(140 + k)
+
+    def shoot(cid, names):
+        k = free.get()
+        try:
+            ts = [frames[n]["t"] for n in names]
+            if cid is None:
+                for n, t in zip(names, ts):
+                    raw_frame(raw, t).convert("RGB").resize((640, 360)).save(D / n, quality=85)
+                return
+            clip = next(m for m in man if m["id"] == cid)
+            local = [round(max(0.0, t - clip["start"]), 3) for t in ts]
+            snap = snapshot(proj, clip, local, proj.edit / "out" / f"story{int(every)}_{cid}", k=k)
+            for n, t, lt in zip(names, ts, local):
+                ov = Image.open(snap / f"at-{('%.3f' % lt).rstrip('0').rstrip('.')}s.png").convert("RGBA")
+                base = raw_frame(raw, t).resize(ov.size) if not clip.get("opaque") else Image.new("RGBA", ov.size, (0, 0, 0, 255))
+                Image.alpha_composite(base, ov).convert("RGB").resize((640, 360)).save(D / n, quality=85)
+        finally:
+            free.put(k)
+
+    t0 = time.time()
+    if jobs:
+        log(f"storyboard: {sum(len(v) for v in jobs.values())} frame(s) every {every:g} s from {len(jobs)} clip(s)")
+        with ThreadPoolExecutor(max(1, min(workers, len(jobs)))) as ex:
+            for f in [ex.submit(shoot, cid, names) for cid, names in jobs.items()]:
+                f.result()
+    meta_f.write_text(json.dumps(frames))
+    segs = segments(proj)
+    out = sheet([(D / n, f"{B.mmss(f['t'])}  {line_at(segs, f['t'])}") for n, f in frames.items()], proj.edit / "out" / f"storyboard_{int(every)}s.jpg", 6, 400)
+    keep = proj.folder / f"{title_of(proj)} - Storyboard (every {every:g} s).jpg"
+    if out:
+        shutil.copy2(out, keep)
+        log(f"storyboard: {len(frames)} frames every {every:g} s in {time.time() - t0:.0f}s -> {keep}")
+    return keep if out else None
+
+
 # ---------------------------------------------------------------- review page
+def sync_report(proj) -> dict | None:
+    """Rules S2-S5 from the last `fzv validate`: things on screen before or after she says them, frozen stretches, repeats."""
+    f = proj.p("validate.json")
+    if not f.exists():
+        return None
+    v = json.loads(f.read_text())
+    s = v.get("sync") or {}
+    items = [p for p in v.get("problems", []) if p.get("rule") in ("S2", "S4", "S5")] + [p for p in v.get("advice", []) if p.get("rule") in ("S3", "S6")]
+    line = (f"{s.get('early', 0)} shown before she says them · {s.get('late', 0)} after · {s.get('holds', 0)} frozen stretch(es) (longest {s.get('longest_hold_s', 0)} s) · "
+            f"{s.get('repeats_without_reaction', 0)} repeat(s) with nothing reacting · {s.get('times_on_words', 0)} times on her words, {s.get('times_typed', 0)} typed in seconds")
+    return {"line": line, "items": sorted(items, key=lambda p: p.get("t", 0))[:60]}
+
+
 def folder_ref(proj) -> str:
     try:
         ref = str(proj.folder.relative_to(REPO.resolve()))
@@ -323,6 +398,7 @@ def page(proj, settings: dict | None = None, log=print) -> Path:
         "audio": audio_info(proj, R, settings, has_final),
         "live": {"url": live.get("url"), "current": live.get("build") == B.build_signature(proj)} if live.get("url") else None,
         "confirm": section(dec, "To confirm"),
+        "sync": sync_report(proj),
         "sheet": f"../out/storyboard.jpg?v={stamp(proj.edit / 'out' / 'storyboard.jpg')}" if (proj.edit / "out" / "storyboard.jpg").exists() and sb else None,
         "beats": beats,
         "footage": [dict(r, file=f"{r['file']}?v={stamp(R / r['file'])}") for r in rows],
@@ -503,6 +579,8 @@ function render() {
     if (D.final.sound && D.final.sound.length) h += `<h2>Listening check</h2><ul class="confirm">${D.final.sound.map(n => `<li>${esc(n)}</li>`).join("")}</ul>`;
   }
   h += board();
+  if (D.sync && D.sync.items.length) h += `<h2>Sync check</h2><div class="sub" style="margin-bottom:8px">${esc(D.sync.line)}</div><ul class="confirm">${D.sync.items.map(p =>
+      `<li><b>${mmss(p.t)}</b> ${esc(p.msg)}</li>`).join("")}</ul>`;
   if (D.confirm.length) h += `<h2>To confirm</h2><ul class="confirm">${D.confirm.map(c => `<li>${esc(c)}</li>`).join("")}</ul>`;
   if (D.beats.length) h += `<h2>Beat details (${D.beats.length})</h2>` + D.beats.map(beatCard).join("");
   if (store.times.length) h += `<h2>Requests at a time</h2><ul class="confirm" id="times">${store.times.map((r, i) => `<li>${mmss(r.t)} ${esc(r.text)} <a class="time" data-del="${i}">remove</a></li>`).join("")}</ul>`;

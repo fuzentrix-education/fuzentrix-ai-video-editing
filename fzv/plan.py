@@ -45,6 +45,22 @@ def compact_transcript(path: Path) -> str:
     return "\n".join(lines)
 
 
+def telugu_block(proj) -> list[str]:
+    """The Telugu-mode transcript beside the English one: where the English pass misheard her Telugu (or drifted in time by 1-3 s,
+    as in Tuples, 2026-11-05), her real words and times are here; anchor those moments with `"@te:<her word>"`."""
+    te = proj.p("transcript_te.jsonl")
+    if proj.p("transcript_te.done").exists() and te.exists():
+        return ["## Transcript, Telugu mode (her Telugu words: use it to understand and time the Telugu stretches)",
+                "Where the two disagree, trust this one in Telugu speech and anchor with `\"@te:<word as written here>\"`; "
+                "`bin/fzv words <folder> <from>-<to> --te` prints its words and times. Spoken English (definitions, code) agrees in both.",
+                "```\n" + compact_transcript(te) + "\n```"]
+    return ["## Transcript, Telugu mode",
+            "Still being made in the background (`edit/transcribe_te.log`). Plan from the English one now; before the storyboard, check the "
+            "Telugu stretches with `bin/fzv words <folder> <from>-<to> --te` and move misheard moments to `@te:` anchors." if te.exists() or
+            proj.p("transcribe_te.pid").exists() else "Not made for this video (setting `transcription.telugu: false`, or ingest ran before 2026-11-05: "
+            "`bin/fzv ingest <folder>` starts it)."]
+
+
 def registry_items() -> list[dict]:
     from .registry import manifest
     return manifest()
@@ -62,9 +78,9 @@ def concept_notes(proj) -> list[str]:
            f"**Vary (V5):** never the same animation twice in a row, and no animation in more than {vis.get('max_repeat_share', 0.2):.0%} "
            "of the video's animations. When a concept comes back, show it another way: each moment lists its templates freshest first."]
     if ms:
-        out.append("**Concept moments found in the transcript** (global/concepts.yaml, one collection for every course). Use the ones "
-                   "that fit this lesson: show each with one of its templates, the first where it fits. Skip a match that means "
-                   "something else here (a word from another subject), with a word in the beat's notes:")
+        out.append("**Concept moments found in the transcript** (global/concepts.yaml, one collection for every course): suggestions, "
+                   "not a script. Use the ones that fit this lesson, with the listed templates or anything that shows it better (another "
+                   "template, a picture, a `freeform` composition of your own). Skip a match that means something else here:")
         out.append("\n".join(f"- {m['t']:7.1f}s  “{m['phrase']}” → {', '.join(m['templates'])}: {m['show']}" for m in ms))
     return out
 
@@ -145,7 +161,14 @@ def brief(proj, settings: dict) -> Path:
         "Full parameters: global/templates/catalogue.json (or the cards in global/templates/<family>/).",
         "## Props library (template `prop`, `prop-move`, `prop-scene`; asset ids)",
         "**characters:** " + ", ".join(a["id"] for a in props if a["kind"] == "character"),
-        "**props:** " + ", ".join(a["id"] for a in props if a["kind"] != "character"),
+        "**props:** " + ", ".join(a["id"] for a in props if a["kind"] not in ("character", "illustration")),
+        "## Pictures (rule P1; template `picture`)",
+        "When she uses an analogy or a real-world example (a calendar, water in a bottle, a map), show it with a picture on her word, "
+        "with a short caption bubble, like the manual edit. Key points only: one picture at a time, never next to a busy diagram. "
+        "Library first (`bin/fzv illus search <words>`), then the web (`bin/fzv illus search <words> --online --sheet`, look at the sheet, "
+        "`bin/fzv illus add <url> --id il-… --title … --tags … --source <page> --licence <licence>`); if nothing fits, draw one in the house "
+        "style (global/props/ILLUSTRATION-STYLE.md) and add it with `--source generated --licence \"Fuzentrix (original)\"`.",
+        "**illustrations:** " + ", ".join(f"{a['id']} ({a.get('title', '')})" for a in props if a["kind"] == "illustration"),
         "## Icons (`icon: <name>` in agenda, chips, cards…)", ", ".join(re.findall(r'symbol id="i-([a-z0-9-]+)"', (RUNTIME / "icons.svg").read_text(encoding="utf-8"))),
         "## Registry animations (template `hf`: `- hf: {item, at, until, box: {x, y, w, h}, vars: {...}, cues: [word anchors]}`)",
         "\n".join(f"- `{x['name']}` ({x['type']}): {x['description'][:110]}" + (f" · vars: {', '.join(v['id'] for v in x.get('variables', []))}" if x.get("variables") else "")
@@ -155,8 +178,10 @@ def brief(proj, settings: dict) -> Path:
         "## House rules (global/RULES.md: the master prompt every edit follows)",
         re.sub(r"^# .*\n", "", (GLOBAL / "RULES.md").read_text(encoding="utf-8"), count=1).strip().replace("\n## ", "\n### "),
         "## Transcript (timing only; English-mode, may be romanised Telugu)",
-        "Anchors: write `at: \"@phrase the instructor says\"` (fuzzy match), `\"@phrase#2\"` for the 2nd occurrence, or seconds.",
+        "Anchors (rules S2–S5): write every `at` as `\"@phrase the instructor says\"` (fuzzy match; numbers exact), `\"@phrase#2\"` for the 2nd "
+        "occurrence; seconds only for what isn't said. Exact words and times per stretch: `bin/fzv words <folder> <from>-<to>`.",
         "```\n" + (compact_transcript(tx) if tx.exists() else "(not transcribed yet)") + "\n```",
+        *telugu_block(proj),
     ]
     out = proj.p("plan_brief.md")
     out.write_text("\n\n".join(parts) + "\n", encoding="utf-8")

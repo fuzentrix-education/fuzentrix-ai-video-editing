@@ -8,6 +8,7 @@ Background models, tried in order:
 from __future__ import annotations
 
 import subprocess
+import time
 from pathlib import Path
 
 import numpy as np
@@ -141,18 +142,22 @@ def crop_box(src: Path, info: dict, plate: np.ndarray, mode: str, opts: dict | N
     return [int(x0), int(y0), int((x1 - x0) // 2 * 2), int((y1 - y0) // 2 * 2)]
 
 
-def key_video(src: Path, out: Path, info: dict, plate: np.ndarray, mode: str, crop: list[int], fps: int = 25, log=print, opts: dict | None = None) -> Path:
+def key_video(src: Path, out: Path, info: dict, plate: np.ndarray, mode: str, crop: list[int], fps: int = 25, log=print, opts: dict | None = None,
+              span: tuple[float, float] | None = None) -> Path:
+    """Key the instructor inside `crop` to a VP9-alpha video; `span` (t0, t1) keys only that stretch of the source."""
     W, H = info["width"], info["height"]
     x, y, w, h = crop
     region = region_mask(H, W, opts)
     region = region[y:y + h, x:x + w] if region is not None else None       # key only the instructor's box: ~3x less work per frame
     plate = plate[y:y + h, x:x + w]
     tmp = out.with_name(out.stem + ".part" + out.suffix)                    # an interrupted run never leaves a "finished" file
-    dec = subprocess.Popen(["ffmpeg", "-v", "error", "-i", str(src), "-vf", f"fps={fps},crop={w}:{h}:{x}:{y}", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+    seek = ["-ss", f"{span[0]:.3f}", "-t", f"{span[1] - span[0]:.3f}"] if span else []
+    dec = subprocess.Popen(["ffmpeg", "-v", "error", *seek, "-i", str(src), "-vf", f"fps={fps},crop={w}:{h}:{x}:{y}", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
                            stdout=subprocess.PIPE)
     enc = subprocess.Popen(["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgba", "-s", f"{w}x{h}", "-r", str(fps), "-i", "-",
                             "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "-crf", "22", "-b:v", "0", "-row-mt", "1", "-deadline", "good", "-cpu-used", "4", str(tmp)], stdin=subprocess.PIPE)
     n, size = 0, w * h * 3
+    total, t_start = int(((span[1] - span[0]) if span else info.get("duration", 0)) * fps), time.time()
     while True:
         b = dec.stdout.read(size)
         if len(b) < size:
@@ -160,8 +165,10 @@ def key_video(src: Path, out: Path, info: dict, plate: np.ndarray, mode: str, cr
         rgba = matte(np.frombuffer(b, np.uint8).reshape(h, w, 3), plate, mode, region)
         enc.stdin.write(rgba.tobytes())
         n += 1
-        if n % 250 == 0:
-            log(f"keyer: {n} frames")
+        if n % 250 == 0:                               # progress with a time estimate: long keyings belong at ingest, in the background
+            rate = n / max(1e-6, time.time() - t_start)
+            left = f", about {max(0, total - n) / rate / 60:.0f} min left" if total > n else ""
+            log(f"keyer: {n}/{total or '?'} frames ({rate:.1f}/s{left})")
     enc.stdin.close(); enc.wait(); dec.wait()
     if enc.returncode != 0 or n == 0:
         raise SystemExit(f"keyer: encoding failed after {n} frames")

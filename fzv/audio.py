@@ -74,16 +74,19 @@ KINDS = {
     "blip": (blip, -29, 0.0), "tick": (tick, -33, 0.0), "click": (click, -26, 0.0), "ding": (ding, -27, 0.0),
     "good": (lambda: ding(1568), -28, 0.1), "bad": (lambda: pop(520, 300, 0.12), -26, 0.0), "thud": (thud, -21, 0.0),
     "impact": (impact, -25, 0.0), "chime": (chime, -23, 0.0), "type": (lambda: tick(0.008), -38, 0.0),
+    # the editors' sound names (2026-11-04); synthesised only if their files are missing
+    "decision": (lambda: pop(1200, 700, 0.06), -26, 0.0), "ticks": (tick, -33, 0.0), "stop": (lambda: blip(600, 0.12), -26, 0.0),
+    "page": (lambda: whoosh(0.45, 900, 4200), -27, 0.0), "boing": (lambda: pop(300, 900, 0.3), -26, 0.0),
 }
 
 
 # kind -> dB under the voice's loudness, measured on the sound's loudest 100 ms (master prompt: 18-26 dB under the narration)
 UNDER = {"ding": 18, "good": 18, "bad": 19, "chime": 18, "impact": 18, "thud": 19, "click": 21, "whoosh": 22, "swish": 23,
-         "pop": 23, "blip": 24, "tick": 25, "type": 26}
+         "pop": 23, "blip": 24, "tick": 25, "type": 26, "decision": 21, "ticks": 25, "stop": 20, "page": 22, "boing": 20}
 SPEECH_DIP = 0.7                     # SFX x0.7 (-3 dB) while she speaks, +-0.05 s, so an effect never masks a word
 
 IMPORTANT = {"ding", "good", "bad", "click", "impact", "chime", "thud", "type"}   # results, presses, typing: always kept
-TRANSITION = {"whoosh"}                                                               # scene changes: spaced out
+TRANSITION = {"whoosh", "page"}                                                       # chapter changes and new topics: spaced out
 MINOR = {"pop", "swish", "blip", "tick"}                                              # element entrances: only when the moment is quiet
 
 
@@ -100,12 +103,13 @@ def thin_cues(cues: list, cfg: dict) -> list:
             continue
         if kind in TRANSITION and any(k[0] in TRANSITION and t - k[1] < whoosh_gap for k in kept):
             continue
-        if kind == "type" and any(k[0] == "type" and t - k[1] < 1.0 for k in kept):
+        if kind == "type" and any(k[0] == "type" and t - k[1] < 2.5 for k in kept):     # one key press per typing burst, not per chunk
             continue
         if any(k[0] == kind and abs(t - k[1]) < 0.25 for k in kept):
             continue
         kept.append((kind, t))
-    rank = lambda k: 0 if k[0] in MINOR else 1 if k[0] in TRANSITION else 2
+    # over the cap, drop in this order: typing, small blips and ticks, then pops (the editors' main sound), then transitions; results never
+    rank = lambda k: 0 if k[0] == "type" else 1 if k[0] in MINOR - {"pop"} else 2 if k[0] == "pop" else 3 if k[0] in TRANSITION else 4
     changed = bool(per_min)
     while changed:                                       # optional cap: at most per_min cues in any 60 s window, dropping minor ones first
         changed = False
@@ -187,11 +191,16 @@ def synth_sfx(cues: list, duration: float, out: Path, voice_lufs: float = -14.0,
         db = -UNDER.get(kind, 22)
         extra = cfg.get("minor_db", 0.0) if kind in MINOR else 0.0
         rng = np.random.default_rng(abs(hash((kind, int(round(t * 100))))) % (2 ** 32))
-        if lib.get(kind):                                    # the team's library first: files rotate, never the same one twice in a row
+        if lib.get(kind):                                    # the team's library first
             files = lib[kind]
             k = rotation.get(kind, -1) + 1
             rotation[kind] = k
-            s = files[k % len(files)]
+            prim = [f for f in files if f.get("role") == "primary"]
+            if prim:                                         # the editors' house sound; its alt partner every third cue, for variety
+                alts = [f for f in files if f.get("role") == "alt"]
+                s = alts[(k // 3) % len(alts)] if alts and k % 3 == 2 else prim[k % len(prim)]
+            else:                                            # no house sound: files rotate, never the same one twice in a row
+                s = files[k % len(files)]
             x = _load_sound(GLOBAL / "sfx" / s["file"]) * 10 ** ((db + offset_db + extra + s.get("gain_db", 0.0)) / 20)
         elif fallback == "synth":                            # synthesised: every cue a slightly different take (pitch, level)
             base = _norm(gen())

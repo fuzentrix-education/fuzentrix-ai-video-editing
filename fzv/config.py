@@ -102,6 +102,8 @@ def css_vars(brand: dict) -> dict[str, str]:
         "highlight-strong": C(r.get("highlight"), "#F59E0B"),
         "highlight-soft": sem.get("highlight-soft", "#FEF3DC"),
         "highlight-text": sem.get("highlight-text", "#9A4A06"),
+        "kicker": C(r.get("kicker", "blue-text"), "#1D4ED8"),        # section kickers ("• EXAMPLE 1"): the brand blue
+        "marker": (brand.get("colors") or {}).get("marker", "rgba(251,191,36,.55)"),
         "card": C(r.get("card"), "#FFFFFF"),
         "line": C(r.get("card-border"), "#DCE7FA"),
         "tint": C(r.get("pill"), "#E3EDFF"),
@@ -136,6 +138,10 @@ def css_vars(brand: dict) -> dict[str, str]:
         "font-mono": f'"{fonts.get("mono", {}).get("family", "JetBrains Mono")}", monospace',
         "font-hand": f'"{fonts.get("hand", {}).get("family", "Caveat")}", cursive',
     }
+    ts = brand.get("type-scale", {})                        # one type scale (rule L13): --fz-fs-h1, --fz-fs-body …
+    for k, d in (("hero", 92), ("h1", 64), ("h2", 46), ("body", 32), ("small", 26), ("label", 22), ("chip", 28), ("code", 52), ("code-min", 40), ("terminal", 40)):
+        v[f"fs-{k}"] = f"{ts.get(k, d)}px"
+    v["margin"] = f"{(brand.get('layout') or {}).get('margin-left', 96)}px"
     return v
 
 
@@ -198,7 +204,7 @@ def brand_js(brand: dict) -> dict:
     """The small part of the brand the runtime needs as data."""
     m = brand.get("motion", {})
     motion = {}
-    for k in ("enter", "exit", "pop"):
+    for k in ("enter", "exit", "pop", "move"):
         if isinstance(m.get(k), dict):
             motion[k] = [m[k].get("duration", 0.5), m[k].get("ease", "power3.out")]
     if "stagger" in m:
@@ -206,7 +212,9 @@ def brand_js(brand: dict) -> dict:
     if "wire-draw" in m:
         motion["wire"] = m["wire-draw"]
     bug = brand.get("bug", {})
+    ts = brand.get("type-scale", {})
     return {"id": brand.get("id"), "name": brand.get("name"), "motion": motion,
+            "type": {"code": ts.get("code", 52), "codeMin": ts.get("code-min", 40), "terminal": ts.get("terminal", 40), "label": ts.get("label", 22)},
             "bug": {"logo": Path(bug.get("logo", "")).name, "dark": Path(bug.get("on-dark", "") or bug.get("logo", "")).name, "height": bug.get("height", 40)},
             "nameCard": brand.get("name-card", {}).get("title", "Instructor")}
 

@@ -8,15 +8,16 @@
       params: { text: "markdown, 12 words max", times: "optional [time per word]; default staggered from at", at: "", until: "", box: "default: main slot", size: "px (default 88)" } }, (a, p) => {
     const bx = a.box(p, "main"), words = String(p.text || "").split(/\s+/).filter(Boolean);
     if (words.length > 12) window.__fz_errors.push(`term-reveal: ${words.length} words (max 12)`);
-    const wrap = a.el("", "abs", { left: bx.x, top: bx.y, width: bx.w, font: `900 ${p.size || 88}px/1.05 var(--fz-font-display)`, color: "var(--fz-text)", letterSpacing: "-.015em" }, a.root, "block");
+    const wrap = a.el("", "abs hide", { left: bx.x, top: bx.y, width: bx.w, font: `900 ${p.size || 88}px/1.05 var(--fz-font-display)`, color: "var(--fz-text)", letterSpacing: "-.015em" }, a.root, "block");
+    a.set(wrap, p.at - 0.01, { autoAlpha: 1 }); if (a.until(p) != null) a.set(wrap, a.until(p) + 0.35, { autoAlpha: 0 });   // on screen only while its words are
     words.forEach((w, i) => {
       const grad = /^\*.*\*[.,!?:]?$/.test(w), clean = w.replace(/\*/g, "");
       const s = a.el(a.esc(clean), "hide", { display: "inline-block", marginRight: "0.25em" }, wrap);
       if (grad) s.style.cssText += ";background:var(--fz-grad-text, var(--fz-grad));-webkit-background-clip:text;background-clip:text;color:transparent";
       const t = p.times && p.times[i] != null ? p.times[i] : p.at + i * 0.12;
-      a.inn(s, t, { yPercent: 60 }, 0.55, "power4.out"); a.out(s, a.until(p), { yPercent: -30 }, 0.3);
+      a.inn(s, t, { yPercent: 60 }, 0.55, a.M.enter[1]); a.out(s, a.until(p), { yPercent: -30 }, 0.3);
     });
-    a.sfx("whoosh", p.at);
+    a.sfx("pop", p.at);                                   // whooshes are for chapter changes and the tutor's moves
   });
 
   R({ name: "rule-stack", family: "kinetic", layers: ["plate", "studio"], doc: "Two or three short lines that stack into a rule or takeaway; the last line is emphasised.",
@@ -25,8 +26,8 @@
     const parts = L.map((ln, i) => {
       const last = i === L.length - 1;
       const e = a.el(a.md(ln.text), "abs hide", { left: bx.x, top: bx.y + i * fs * 1.25, font: `${last ? 900 : 800} ${fs}px/1.1 var(--fz-font-display)`, color: last ? "var(--fz-emph)" : "var(--fz-text)" }, a.root, "block");
-      a.tl.fromTo(e, { autoAlpha: 0, clipPath: "inset(0% 100% 0% 0%)" }, { autoAlpha: 1, clipPath: "inset(0% 0% 0% 0%)", duration: 0.6, ease: "power3.out", immediateRender: false }, a.T(ln.at));
-      a.out(e, a.until(p)); a.sfx(last ? "ding" : "swish", ln.at);
+      a.inn(e, ln.at, { y: 20 }, 0.45);                     // fade in with a soft rise (no wipes)
+      a.out(e, a.until(p)); a.sfx(last ? "good" : "pop", ln.at);
       return e;
     });
     a.group(parts, L.length ? L[0].at : p.at, a.until(p));
@@ -38,12 +39,12 @@
     const parts = [["left", 0], ["right", w + 140]].map(([k, dx]) => {
       const s = p[k]; if (!s) return null;
       const tfs = Math.min(64, Math.floor((w - 72) / (0.62 * Math.max(4, String(s.title).replace(/[*_`]/g, "").length))));   // long titles shrink to fit
-      const e = a.el(`<div style="font:900 ${tfs}px/1 var(--fz-font-display);color:var(--fz-${s.tone || "text"})">${a.md(s.title)}</div><div class="fz-body" style="margin-top:16px">${a.md(s.text || "")}</div>`, "fz-card fz-pad hide", { left: bx.x + dx, top: bx.y, width: w }, a.root, "block");
-      a.show(e, s.at, a.until(p), { x: k === "left" ? -40 : 40 }, 0.55, "back.out(1.3)"); a.sfx("swish", s.at);
+      const e = a.el(`<div style="font:800 ${tfs}px/1 var(--fz-font-body);color:var(--fz-${s.tone || "text"})">${a.md(s.title)}</div><div class="fz-body" style="margin-top:16px">${a.md(s.text || "")}</div>`, "fz-card fz-pad hide", { left: bx.x + dx, top: bx.y, width: w }, a.root, "block");
+      a.show(e, s.at, a.until(p), { x: k === "left" ? -40 : 40 }, 0.55, a.M.pop[1]); a.sfx("pop", s.at);
       return e;
     });
     a.group(parts, p.left ? p.left.at : p.at, a.until(p));
-    const vs = a.el("vs", "abs hide", { left: bx.x + w + 30, top: bx.y + 60, width: 80, textAlign: "center", font: "900 44px/1 var(--fz-font-display)", color: "var(--fz-accent)" }, a.root, "text");
+    const vs = a.el("vs", "abs hide", { left: bx.x + w + 30, top: bx.y + 60, width: 80, textAlign: "center", font: "800 44px/1 var(--fz-font-body)", color: "var(--fz-accent)" }, a.root, "text");
     a.pop(vs, p.vs_at != null ? p.vs_at : p.right.at); a.out(vs, a.until(p));
   });
 
@@ -53,10 +54,10 @@
     const bx = a.box(p, "main"), U = a.until(p), N = {};
     if (p.grid !== false) { const g = a.el("", "abs hide", { left: bx.x, top: bx.y, width: bx.w, height: bx.h, borderRadius: 20, backgroundImage: "linear-gradient(var(--fz-line) 1px, transparent 1px), linear-gradient(90deg, var(--fz-line) 1px, transparent 1px)", backgroundSize: "40px 40px", opacity: 0.55 }, a.root, "deco"); a.show(g, p.at, U, { scale: 0.98 }, 0.5); }
     (p.nodes || []).forEach((n) => {
-      const e = a.el(`${n.icon ? `<div class="fz-ic" style="width:64px;height:64px;font-size:36px">${a.icon(n.icon)}</div>` : ""}<div style="font:800 28px/1.15 var(--fz-font-display);margin-top:${n.icon ? 12 : 0}px">${a.md(n.text)}</div>`,
+      const e = a.el(`${n.icon ? `<div class="fz-ic" style="width:64px;height:64px;font-size:36px">${a.icon(n.icon)}</div>` : ""}<div style="font:800 28px/1.15 var(--fz-font-body);margin-top:${n.icon ? 12 : 0}px">${a.md(n.text)}</div>`,
         "fz-card hide", { left: bx.x + n.x, top: bx.y + n.y, width: n.w || 220, height: n.h || 150, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 16 }, a.root, "block");
       N[n.id] = { x: bx.x + n.x, y: bx.y + n.y, w: n.w || 220, h: n.h || 150, e };
-      a.show(e, n.at, U, { scale: 0.8 }, 0.45, "back.out(1.6)"); a.sfx("pop", n.at);
+      a.show(e, n.at, U, { scale: 0.8 }, 0.45, a.M.pop[1]); a.sfx("pop", n.at);
     });
     a.group(Object.values(N).map((n) => n.e), Math.min(...(p.nodes || []).map((n) => n.at)), U);
     (p.links || []).forEach((l) => {
@@ -76,7 +77,7 @@
       "abs hide", { left: bx.x, top: bx.y, width: bx.w }, a.root, "block");
     const tw = tbl.querySelector(".tw"), grid = `display:grid;grid-template-columns:repeat(${cols.length},1fr)`;
     a.el(cols.map((c, i) => `<div style="padding:16px 20px;font:700 22px/1 var(--fz-font-mono);letter-spacing:.06em;text-transform:uppercase;color:${(p.key_cols || []).includes(i) ? "var(--fz-emph)" : "var(--fz-text2)"}">${a.esc(c)}</div>`).join(""), "", { cssText: grid + ";background:var(--fz-tint)" }, tw);
-    a.show(tbl, p.at, U, { y: 24 }, 0.55); a.sfx("swish", p.at);
+    a.show(tbl, p.at, U, { y: 24 }, 0.55); a.sfx("pop", p.at);
     const R_ = (p.rows || []).map((r, i) => {
       const row = a.el(r.map((c) => `<div class="c" style="padding:14px 20px;font:600 28px/1.2 var(--fz-font-body);border-top:1px solid var(--fz-line)">${a.esc(c)}</div>`).join(""), "hide", { cssText: grid }, tw);
       a.inn(row, p.row_at && p.row_at[i] != null ? p.row_at[i] : p.at + 0.2 + i * 0.08, { x: -16 }, 0.3);
@@ -95,7 +96,7 @@
     it.forEach((b, i) => {
       const x = bx.x + 20 + i * (bw + 40), h = Math.max(6, (b.value / max) * chartH), base = bx.y + 80 + chartH;
       const bar = a.el("", "abs hide", { left: x, top: base - h, width: bw, height: h, borderRadius: "14px 14px 4px 4px", background: `var(--fz-${b.tone || "accent"})`, transformOrigin: "50% 100%" }, a.root, "block");
-      const val = a.el(`${a.esc(b.value)}${a.esc(p.unit || "")}`, "abs hide", { left: x, top: base - h - 44, width: bw, textAlign: "center", font: "800 32px/1 var(--fz-font-display)" }, a.root, "text");
+      const val = a.el(`${a.esc(b.value)}${a.esc(p.unit || "")}`, "abs hide", { left: x, top: base - h - 44, width: bw, textAlign: "center", font: "800 32px/1 var(--fz-font-body)" }, a.root, "text");
       const lab = a.el(a.esc(b.label), "abs hide", { left: x - 20, top: base + 14, width: bw + 40, textAlign: "center", font: "600 24px/1.2 var(--fz-font-body)", color: "var(--fz-text2)" }, a.root, "text");
       a.inn(bar, b.at, { scaleY: 0 }, 0.6, "power3.out"); a.inn(val, b.at + 0.4, { y: 10 }, 0.3); a.inn(lab, b.at, { y: 10 }, 0.3);
       a.out([bar, val, lab], U); a.sfx("pop", b.at);
@@ -127,8 +128,8 @@
       const path = a.edge(d, s.at, U, s.tone === "red" ? "red" : s.tone === "green" ? "green" : "hot", 1.2);
       path.removeAttribute("marker-end");
       const last = s.points[s.points.length - 1];
-      if (s.label) { const t = a.el(a.md(s.label), "abs hide", { left: X(last[0]) - 200, top: Y(last[1]) - 44, width: 190, textAlign: "right", font: "700 26px/1.1 var(--fz-font-display)" }, a.root, "text"); a.show(t, s.at + 1.0, U, { y: 8 }, 0.3); }
-      a.sfx("swish", s.at);
+      if (s.label) { const t = a.el(a.md(s.label), "abs hide", { left: X(last[0]) - 200, top: Y(last[1]) - 44, width: 190, textAlign: "right", font: "700 26px/1.1 var(--fz-font-body)" }, a.root, "text"); a.show(t, s.at + 1.0, U, { y: 8 }, 0.3); }
+      a.sfx("pop", s.at);
     });
   });
 })();

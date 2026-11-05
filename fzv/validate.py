@@ -14,7 +14,7 @@ BLOCKS = {"block", "code", "term", "note"}
 # rule V1/V2: templates that SHOW a process (things move, transform, flow) vs templates that only put words on screen
 TEXT_ONLY = {"header", "title-hero", "card", "definition", "chips", "term-reveal", "rule-stack", "summary", "agenda", "problem", "note",
              "name-card", "studio-tag", "captions", "contrast", "big-word", "callouts", "checklist", "bug", "scene", "presenter",
-             "progress", "chapter"}
+             "progress", "chapter", "sound"}
 
 
 def text_only_stretches(sec: dict, end_default: float, hidden: list[tuple[float, float]] = ()) -> list[tuple[float, float]]:
@@ -44,6 +44,9 @@ def text_only_stretches(sec: dict, end_default: float, hidden: list[tuple[float,
         out += pieces
     return out
 CONTENT = BLOCKS | {"text", "cutaway", "part"}
+TYPE_EXEMPT = {"hf", "db3d", "network3d", "loop3d", "sketch-board", "sketch-draw", "sketch-text", "sketch-list", "sketch-flow", "sketch-mark", "mockup"}   # L13: they draw their own text
+ALIGN_EXEMPT = {"header", "title-hero", "chapter", "progress", "bug", "name-card", "studio-tag", "captions", "presenter", "note", "hf",
+                "prop-move", "prop-scene", "picture", "prop", "cutaway", "scene", "big-word", "contrast"}   # L14: chrome, wired notes, pictures and free-moving props
 
 
 def scene_in(spec: dict, want: str, lo: float, hi: float) -> bool:
@@ -77,7 +80,7 @@ def sample(html: Path, local_times: list[float]) -> dict:
 
 def sample_cached(proj, m: dict, local_times: list[float]) -> dict:
     """DOM samples of a clip, cached by its content hash (a revision re-samples only the clips that changed)."""
-    key = f"{m['id']}_{m.get('hash', 'nohash')}_{len(local_times)}_{local_times[0] if local_times else 0:.2f}_s2.json"   # s2: samples carry painted boxes
+    key = f"{m['id']}_{m.get('hash', 'nohash')}_{len(local_times)}_{local_times[0] if local_times else 0:.2f}_s10.json"   # s10: + painted boxes of titles (L12); exact first-seen times (refine); data-nowords left out
     D = proj.edit / "validate_cache"
     f = D / key
     if m.get("hash") and f.exists():
@@ -145,8 +148,17 @@ def validate(proj, spec: dict, clips: list[dict], manifest: list[dict], cuts: li
     occ_cells, crop_wh = [], (1, 1)
     if (proj.load().get("compose") or {}).get("crop"):
         from .compose import occupancy
-        occ_cells, crop_wh = occupancy(proj), tuple(proj.load()["compose"]["crop"][2:4])
+        from .compose import presenter_source
+        occ_cells, crop_wh = occupancy(proj, settings=settings), tuple(presenter_source(proj, settings)[1][2:4])
     by_id = {c["id"]: c for c in clips}
+    from .config import load_brand
+    kit = load_brand()
+    ts, margin = kit.get("type-scale", {}), (kit.get("layout") or {}).get("margin-left", 96)
+    floor, code_min = ts.get("label", 22), ts.get("code-min", 40)
+    looked = set()                                        # rules L13/L14: each element is reported once
+    from . import sync as S
+    seen_el = {}                                          # rules S2/S3: what each element shows, and when (see fzv/sync.py)
+    refined = []                                          # per clip: the exact first-seen times (sample.mjs refine)
     for m in manifest:
         c = by_id[m["id"]]
         times = [round(m["start"] + i * step, 2) for i in range(int((m["end"] - m["start"]) / step))]
@@ -157,6 +169,7 @@ def validate(proj, spec: dict, clips: list[dict], manifest: list[dict], cuts: li
             sfx += [q for q in res["sfx"] if c["cut"][0] <= q[1] < c["cut"][1]]
         errors += [f"{m['id']}: {e}" for e in res["errors"]]
         last_content = None
+        refined.append((m["id"], m["start"], res.get("refine") or {}))
         for fr in res["frames"]:
             t = round(m["start"] + fr["t"], 2)
             kind = kind_at(cuts, t)
@@ -164,6 +177,7 @@ def validate(proj, spec: dict, clips: list[dict], manifest: list[dict], cuts: li
                 last_content = None                         # plate layer is hidden during studio shots; gaps restart after
                 continue
             items = fr["items"]
+            S.collect(seen_el, m["id"], m["layer"], t, items)
             cut_away = any(i["role"] == "cutaway" for i in items)
             blocks = [i for i in items if i["role"] in BLOCKS]
             content = [i for i in items if i["role"] in CONTENT]
@@ -172,9 +186,14 @@ def validate(proj, spec: dict, clips: list[dict], manifest: list[dict], cuts: li
             rects = (z.get("cells") or [z.get("bbox")]) if isinstance(z, dict) else ([z] if z else [])
             rects = rects + [box(i) for i in items if i["role"] == "presenter-frame"]
             # compose mode: where the keyed instructor really is, mapped through her live pose (box of #fz-presenter)
+            frames_ = [box(i) for i in items if i["role"] == "presenter-frame"]
             for pb in (box(i) for i in items if i["role"] == "presenter"):
                 sx, sy = (pb[2] - pb[0]) / crop_wh[0], (pb[3] - pb[1]) / crop_wh[1]
-                rects = rects + [[round(pb[0] + c[0] * sx), round(pb[1] + c[1] * sy), round(pb[0] + c[2] * sx), round(pb[1] + c[3] * sy)] for c in occ_cells]
+                cells = [[round(pb[0] + c[0] * sx), round(pb[1] + c[1] * sy), round(pb[0] + c[2] * sx), round(pb[1] + c[3] * sy)] for c in occ_cells]
+                if frames_:                                   # boxed: only what the box shows of her counts
+                    f0 = frames_[0]
+                    cells = [[max(c[0], f0[0]), max(c[1], f0[1]), min(c[2], f0[2]), min(c[3], f0[3])] for c in cells if inter(c, f0)]
+                rects = rects + cells
             if rects and not cut_away:
                 for i in blocks + [i for i in items if i["role"] in ("text", "part")]:
                     hit = next((r for r in rects if r and inter(box(i), r)), None)
@@ -191,6 +210,12 @@ def validate(proj, spec: dict, clips: list[dict], manifest: list[dict], cuts: li
                 hit = next((b2 for b2 in solid[k + 1:] if overlap_share(b1, b2) > 0.04 and not contains(b1, b2) and not contains(b2, b1)), None)
                 if hit:
                     flag("L12", t, f"block at {b1} overlaps the block at {hit}"); break
+            # L12 for titles too: a header under a hero title or a card (the 6:27 title-over-header slipped through, 2026-11-05)
+            heads = [i["pb"] for i in items if i["role"] == "title" and i.get("o", 1) > 0.6 and i.get("pb")]
+            for k, h1 in enumerate(heads):
+                hit = next((b2 for b2 in heads[k + 1:] + solid if overlap_share(h1, b2) > 0.04 and not contains(b2, h1)), None)
+                if hit:
+                    flag("L12", t, f"title at {h1} overlaps {hit}: one title at a time, clear of the cards"); break
             # L8: edges
             for i in blocks:
                 bx = box(i)
@@ -200,12 +225,34 @@ def validate(proj, spec: dict, clips: list[dict], manifest: list[dict], cuts: li
             maxb, maxw = (clutter["studio_max_blocks"], clutter["studio_max_words"]) if m["layer"] == "studio" else (clutter["max_blocks"], clutter["max_words"])
             if len(blocks) > maxb:
                 flag("L10", t, f"{len(blocks)} content blocks on screen (max {maxb})")
-            words = sum(i.get("words", 0) for i in items if i["role"] in ("block", "note", "text", "part"))
+            words = sum(i.get("words", 0) for i in items if i["role"] in ("block", "note", "text", "part") and not i.get("nest"))
             if words > maxw:
                 flag("L10", t, f"{words} words of text on screen (max {maxw})")
             lines = sum(i.get("lines", 0) for i in items if i["role"] == "code")
             if lines > clutter["max_code_lines"]:
                 flag("L10", t, f"{lines} code lines on screen (max {clutter['max_code_lines']})")
+            # L13: one type scale; nothing on screen smaller than the kit's label size, code not below code-min (registry items, 3D and
+            # sketch draw their own text)
+            for i in items:
+                if i.get("fs") is None or i.get("tpl") in TYPE_EXEMPT or (m["id"], i["id"], "L13") in looked:
+                    continue
+                checks = [(i["fs"], floor, "text")] + ([(i["cfs"], code_min if i["role"] == "code" else 30, "code")] if i.get("cfs") else [])
+                for size, low, what in checks:
+                    if size < low:
+                        looked.add((m["id"], i["id"], "L13"))
+                        flag("L13", t, f"{i.get('tpl') or i['role']} {what} is {size} px (min {low}): use the kit's type scale (--fz-fs-*)")
+                        break
+            # L14: one left edge: every block starts at the margin, lines up with another block's left edge, or sits in a row with one
+            al = [i for i in items if i["role"] in ("block", "code", "term", "text") and i.get("tpl") not in ALIGN_EXEMPT and i.get("o", 1) > 0.6]
+            refs = al + [i for i in items if i.get("tpl") in ("picture", "prop", "note") and i["role"] in ("block", "note") and i.get("o", 1) > 0.6]
+            for i in al:
+                if (m["id"], i["id"], "L14") in looked:
+                    continue
+                others = [o for o in refs if o is not i]
+                ok = (abs(i["x"] - margin) <= 6 or any(abs(i["x"] - o["x"]) <= 6 or abs(i["y"] - o["y"]) <= 12 or contains(box(o), box(i)) for o in others))
+                if not ok:
+                    looked.add((m["id"], i["id"], "L14"))
+                    flag("L14", t, f"{i.get('tpl') or i['role']} at x {i['x']} lines up with nothing: start it at the left margin ({margin}) or align it with the block above or beside it")
             # T3: overflow
             if any(i.get("overflow") for i in items):
                 flag("T3", t, "text overflows its card")
@@ -321,6 +368,16 @@ def validate(proj, spec: dict, clips: list[dict], manifest: list[dict], cuts: li
         poses = (spec.get("presenter") or {}).get("poses") or []
         if len(poses) - 1 > 2:
             flag("L5", 0, f"{len(poses) - 1} presenter moves (max 2: intro focus, then one fixed position)")
+    for (clip_id, start, ref) in refined:
+        S.refine(seen_el, clip_id, start, ref)
+    # S2-S5: in step with her words (fzv/sync.py)
+    from .anchors import Transcript
+    tx_all = Transcript(proj.p("transcript.jsonl"))
+    s_prob, s_adv, s_sum = S.check(seen_el, spec, tx_all, cuts, quiet, settings.get("sync", {}))
+    s_adv += S.disagreements((spec.get("_anchoring") or {}).get("anchors") or [], tx_all)   # S6: the two transcripts disagree
+    for p in s_prob:
+        flag(p["rule"], p["t"], p["msg"])
+    advice += s_adv
     for e in errors:
         problems.append({"rule": "script", "t": 0, "msg": e})
     # collapse repeats of the same rule within 2 s
@@ -331,14 +388,17 @@ def validate(proj, spec: dict, clips: list[dict], manifest: list[dict], cuts: li
             continue
         seen[k] = p["t"]
         out.append(p)
-    report = {"ok": not out, "problems": out, "advice": advice, "sfx_cues": len(sfx)}
+    report = {"ok": not out, "problems": out, "advice": advice, "sfx_cues": len(sfx), "sync": s_sum}
     (proj.edit / "validate.json").write_text(json.dumps(report, indent=1))
     (proj.edit / "audio").mkdir(exist_ok=True)
     (proj.edit / "audio" / "cues.json").write_text(json.dumps(sorted(sfx, key=lambda x: x[1])))
     log(f"validate: {'OK' if not out else str(len(out)) + ' problem(s)'}; {len(sfx)} SFX cues")
     for p in out[:40]:
         log(f"  [{p['rule']}] {p['t']:.2f}s  {p['msg']}")
-    for rule, what in (("V3", "concept moment(s) without a matching animation"), ("V5", "variety note(s): an animation repeated")):
+    log(f"validate: sync: {s_sum['early']} early, {s_sum['late']} late, {s_sum['holds']} hold(s) (longest {s_sum['longest_hold_s']}s), "
+        f"{s_sum['repeats_without_reaction']} repeat(s) with no reaction; {s_sum['times_on_words']} times on her words, {s_sum['times_typed']} typed in seconds")
+    for rule, what in (("V3", "concept moment(s) without a matching animation"), ("V5", "variety note(s): an animation repeated"),
+                       ("S3", "repeat(s) with nothing reacting"), ("S6", "time(s) where the English and Telugu transcripts disagree")):
         adv = [p for p in advice if p["rule"] == rule]
         if adv:
             log(f"validate: {len(adv)} {what} (advice, rule {rule}):")
