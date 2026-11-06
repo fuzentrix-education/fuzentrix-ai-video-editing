@@ -111,11 +111,12 @@ code:                                  # the dark editor and terminal: the LMS c
   bg: ["#0D1A3A", "#0A1530"]
   text: "#E1EBFF"                      # names and operators
   gutter: "rgba(225,235,255,.30)"
-  keyword: "#A5B6FF"                   # def, for, if, in, True, None ... and print, len, range, str, int, dict, list, set (as the LMS editor)
+  keyword: "#5EB2FF"                   # def, for, if, in, True, None ... and print, len, range, str, int, dict, list, set: sky blue
+                                       # (2026-11-06, user: the lavender "not highlighting enough"; chose blue over aqua and gold)
   string: "#7EE0B5"
   number: "#F7B267"
-  function: "#5CC8FF"                  # any other call: input(), float(), date.count()
-  type: "#FFD580"                      # Capitalised names (classes)
+  function: "#FFD580"                  # names you call or define: greet(), __init__(), sqrt(), pop(): soft yellow, apart from the blue
+  type: "#FFD580"                      # Capitalised names (classes), the same soft yellow
   operator: "#E1EBFF"
   comment: "#7483AD"
   on-light: { keyword: "#3546B8", string: "#0E7A50", number: "#B4530A", function: "#0B6FBF", type: "#8A5A00", comment: "#6B7794" }   # code inside white cards
